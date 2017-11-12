@@ -22,9 +22,7 @@ Tile Data        (LCDC.4) 0:8800-97FF, 1:8000-8FFF
 #define SCREEN_W 160
 #define SCREEN_H 144
 
-extern unsigned int videoTicks;
-extern char frameReady;
-char video(void);
+void video(void);
 void lycIrq(void);
 void scanline(void);
 void scanOAM(void);

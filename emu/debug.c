@@ -12,7 +12,7 @@
 #define FPS_ROW 0
 #define REGISTERS_ROW 11
 
-uint16_t breakpoint = 0xc300;
+uint16_t breakpoint = 0x100;
 uint8_t key;
 char _logline = 0;
 int fps;
@@ -215,16 +215,12 @@ static uint8_t stepping = 0;
 	}	
 	decode();	
 	timer();	
-	if(!video()){
-		frameReady = 0;
-		LCD_Window(0,0,160,144);
-	}	
+	video();
 	interrupts();	        
 }
 
 extern uint16_t machine_cycles;
 void debug(void){	
-	//machine_cycles = 2; 
 	while(key != 255){
 		step();		
 		key = readJoyPad();		
@@ -240,9 +236,7 @@ void debug(void){
 void oneFrame(void)
 {
 	LCD_Window(160,96,160,144);
-
-#if 1	
-	frameReady = 0;	
+#if 0	
 	do{
 		cycles = 0;
 		interrupts();		     
@@ -258,7 +252,7 @@ void oneFrame(void)
 
 	    IOSTAT |= 3;  // mode 3
 	    runCpu(172);
-	    _scanline();
+	    scanline();
     
 	    IOSTAT &= 0xFC; // mode 0
 	   	lycIrq();

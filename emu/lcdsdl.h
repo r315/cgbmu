@@ -11,7 +11,7 @@
 #define COSTUM_LCD
 
 #define LCD_W 240
-#define LCD_H 160
+#define LCD_H 144
 
 #ifndef LCD_W
 	#define LCD_W LCD_GetWidth()

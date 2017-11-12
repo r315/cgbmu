@@ -150,7 +150,8 @@ extern uint8_t vram[0x2000]; // 0x8000-0x9FFF
 extern uint8_t oam[0xA0];    // 0xFE00-0xFEBF
 //extern uint8_t hram[256];   // 0xFF80-0xFFFE
 
-extern uint32_t  cycles;
+extern uint8_t  cycles;
+extern uint32_t machine_cycles;
 extern uint8_t halted, stopped;
 extern uint8_t IME; // interrupt master enable
 

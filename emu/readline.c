@@ -11,8 +11,9 @@ int c;
 	if(!p) p = dst;
 
 	if(_kbhit()){
-		c = getchar();
-		if( c == '\n'){
+		c = _getche();
+		if( c == '\r'){
+			*p = '\0';
             p = dst;
 			return 1;
         }

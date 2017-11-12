@@ -1,12 +1,10 @@
-
-
 #include "dmgcpu.h"
 #include "video.h"
 #include "lcd.h"
 
 
-unsigned int videoTicks;
-char frameReady;
+uint16_t video_cycles = 0;
+
 const unsigned short pal[]={0xE7DA,0x8E0E,0x334A,0x08C4};
 //const unsigned short pal[]={0x08C4,0x334A,0x8E0E,0xE7DA};
 unsigned char spriteTable[40]; // masx 10 sprites
@@ -129,39 +127,39 @@ void lycIrq(void)
 //-----------------------------------------
 //
 //-----------------------------------------
-char video(void)
+void video(void)
 {	
-	if(!(IOLCDC & LCD_DISPLAY)) return 0; // lcd controller off	
+	if(!(IOLCDC & LCD_DISPLAY)) return; // lcd controller off	
 		
-	videoTicks += (cycles>>2);		
+	video_cycles += (cycles>>2);		
 		 	
 	switch(IOSTAT & 3)	
 	{
 		case 2: // oam access start scanline	
-			if(videoTicks > 83)
+			if(video_cycles > 83)
 			{							
 				IOSTAT |= 3;	// next mode 3, oam and vram access				
-				videoTicks -= 83;
+				video_cycles -= 83;
 				scanOAM(); 
 			}
 			break;
 			
 		case 3: // oam and vram access
-			if(videoTicks > 175)
+			if(video_cycles > 175)
 			{
 				 IOSTAT &= 0xFC;     // next mode 0, H-blank				 
 				 if((IOIE & STAT_IE) && (IOSTAT & HB_IE)) // LCD STAT & H-Blank IE
 				 		IOIF |= STAT_IF;
-				videoTicks -= 175;				 		
+				video_cycles -= 175;				 		
 			 	scanline();				 		
 			}
 			break;
 			
 		case 0: // H-Blank
-			if(videoTicks > 207)
+			if(video_cycles > 207)
 			{
 				IOLY++;
-				videoTicks -= 207;
+				video_cycles -= 207;
 				if(IOLY > (SCREEN_H-1))
 				{				
 					IOSTAT |= 1;     //next mode 1, v-blank
@@ -180,14 +178,14 @@ char video(void)
 			break;
 			
 		case 1: // V-blank 10 lines
-			if(videoTicks > 456)
+			if(video_cycles > 456)
 			{
 				IOLY++;									
-				videoTicks -= 456;
+				video_cycles -= 456;
 				lycIrq();
 				
 				if(IOLY < 154)								 
-					return frameReady;
+					return;
 			
 				IOSTAT &= 0xFC; // next mode 2
 				IOSTAT |= 2;
@@ -195,10 +193,9 @@ char video(void)
 				lycIrq();
 				IOLY = 0;					
 					
-				frameReady = 1;
+				LCD_Window(0, 0, 160, 144);
 			}
 			break;			
 		
 	}
-	return frameReady;
 }

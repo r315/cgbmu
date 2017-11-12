@@ -16,30 +16,14 @@
 #include "io.h"
 #include "tests.h"
 
-
-void run(void){
-char pause = 1, key = 0;
- dumpRegisters();
- while(key != -1){
-	if(!pause){
-		dumpRegisters();
-		interrupts();		     
-   		decode();
-		timer();		
-		if(!video()){
-			cycles = 0;	
-			frameReady = 0;
-			LCD_Window(0,0,160,144);	
-		}
-		//pause = 1;
+void run(void) {
+	while (readJoyPad() != 255) {		
+		interrupts();
+		decode();
+		timer();			
+		video();
 	}
-	
-	key = joyPad();
-	if(key == 1)
-		pause = 0;
- }
 }
-
 //-----------------------------------------------------------
 //instructions test
 //-----------------------------------------------------------
@@ -54,16 +38,20 @@ int main (int argc, char *argv[])
 		
 		case 2:
 			loadRom(argv[1]);
-			runTest();
+			run();
 			break;
 
 		case 3:
-			loadRom(argv[2]);
 			if(!strcmp(argv[1], "debug")){
+				loadRom(argv[2]);
 				debug();
 			}
+			else if (!strcmp(argv[1], "test")) {
+				testRom(argv[2]);
+			}
 			else{
-				runTest();
+				loadRom(argv[2]);
+				run();
 			}
 
 		default: 

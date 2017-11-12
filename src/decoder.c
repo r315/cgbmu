@@ -20,6 +20,7 @@ uint16_t aux16;
 	src = (opcode & 0x07);	
 	dst = ((opcode >> 3) & 0x07);
 	
+	machine_cycles += (cycles>>2);		// one machine cycle = 4 clock cycles
 	cycles = 0;
 
 	switch(opcode)

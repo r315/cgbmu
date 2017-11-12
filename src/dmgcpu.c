@@ -40,8 +40,9 @@ uint8_t iram[0x2000]; // 0xC000-0xBFFF
 uint8_t oam[0xA0];    // 0xFE00-0xFEBF
 uint8_t hram[128];    // 0xFF80-0xFFFE
 
-uint32_t machine_cycles;
-uint32_t  cycles;
+uint8_t  cycles;
+uint32_t machine_cycles = 0;
+uint16_t timer_cycles = 0;
 uint8_t halted, stopped;
 uint8_t IME;  
 
@@ -110,7 +111,7 @@ uint16_t prescaler;
 
 	if(!(IOTAC & TIMER_STOP)) return; // timer stopped
 	
-	machine_cycles += (cycles >> 2);
+	timer_cycles += (cycles>>2);
 
 	switch(IOTAC & 3)	{
 		case 0: // 4096Hz		
@@ -127,14 +128,13 @@ uint16_t prescaler;
 			break;		
 	}
 	
-	while(machine_cycles >= prescaler)	{
+	while(timer_cycles >= prescaler)	{
 		IOTIMA++;
-		if(!IOTIMA){	
-			IOTIMA = IOTMA;			//Reload Timer
-			//if(IOIE & TIMER_IE)
-				IOIF |= TIMER_IF;
+		if(!IOTIMA){			
+			IOTIMA = IOTMA;		// on overflow TIMA is reloaded with TMA
+			IOIF |= TIMER_IF;	// and TIMER_IF is set
 		}
-		machine_cycles -= prescaler;
+		timer_cycles -= prescaler;
 	}
 }
 //-----------------------------------------
@@ -183,7 +183,7 @@ uint8_t memoryRead(uint16_t address)
 	switch(address)
 	{
 		case 0xFF00: return joyPad();
-		case 0xFF04: return cycles&255;
+		case 0xFF04: return (uint8_t)(machine_cycles>>6);  // = Fosc/256 ~ 16384Hz
 		case 0xFF05: return IOTIMA;
 		case 0xFF06: return IOTMA;
 		case 0xFF07: return IOTAC;
@@ -324,9 +324,6 @@ void initCpu(void)
     IOWX   = 0x00;
     IOIE   = 0x00;    
 	IOSTAT = 0x82; //81
-	IOLY   = 0x94;    
-	 
-	machine_cycles = 0;   
-	videoTicks = 0;
+	IOLY   = 0x94; 	 
 	halted = 0;
 }
