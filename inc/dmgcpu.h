@@ -1,0 +1,188 @@
+/*
+
+IE Register
+--------------- FFFF
+High ram
+--------------- FF80
+free
+--------------- FF4C
+ I/O
+--------------- FF00
+FREE
+--------------- FEA0
+OAM
+--------------- FE00
+Echo ram
+--------------- E000
+Ram 8kB
+--------------- C000
+cartrigbe Ram
+--------------- A000
+VRAM
+--------------- 8000
+ cartrigbe
+--------------- 0000
+http://verhoeven272.nl/cgi-bin/FSgz?fruttenboel%2FGameboy&Fruttenboel+GameBoy&GBtop&pandocs&GBcontent
+http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
+*/
+#ifndef _dmgcpu_h_
+#define _dmgcpu_h_
+
+#include <stdint.h>
+
+//Flags
+#define FZ (1<<7)
+#define FN (1<<6)
+#define FH (1<<5)
+#define FC (1<<4)
+
+// LCDC bits
+#define LCD_DISPLAY  (1<<7)
+#define W_MAP        (1<<6)
+#define W_DISPLAY    (1<<5)
+#define W_BG_DATA    (1<<4)
+#define BG_MAP       (1<<3)
+#define L_SPRITES    (1<<2)
+#define S_DISPLAY    (1<<1)
+#define W_BG_DISPLAY (1<<0)
+
+// STAT bits
+#define LYC_LY_IE   (1<<6)
+#define OAM_IE      (1<<5)
+#define VB_IE       (1<<4)
+#define HB_IE       (1<<3)
+#define LYC_LY_FLAG (1<<2)
+
+// IE bits
+#define JOYPAD_IE  (1<<4)
+#define SERIAL_IE  (1<<3)
+#define TIMER_IE   (1<<2)
+#define STAT_IE    (1<<1)
+#define V_BLANK_IE (1<<0)
+
+// IF bits
+#define JOYPAD_IF  (1<<4)
+#define SERIAL_IF  (1<<3)
+#define TIMER_IF   (1<<2)
+#define STAT_IF    (1<<1)
+#define V_BLANK_IF (1<<0)
+
+// TAC bits
+#define TIMER_STOP (1<<2)
+
+/*
+ 15..8  7..0
++-----+-----+
+|  B  |  C  |
++-----+-----+
+|  D  |  E  |
++-----+-----+
+|  H  |  L  |
++-----+-----+
+|  A  |  F  |
++-----+-----+
+|     SP    |
++-----------+
+|     PC    |
++-----------+
+*/
+
+/**
+ dmgcpu is big endian format, when indexing registers the bit0 must be xor'd with 1
+*/
+typedef struct _regs{
+    union{        
+        struct{
+            uint8_t C;
+            uint8_t B;
+        };
+        uint16_t BC;        
+    };
+    union{
+        struct{
+            uint8_t E;
+            uint8_t D;
+        };            
+        uint16_t DE;
+    };
+    union{
+        struct{
+            uint8_t L;
+            uint8_t H;
+        };            
+        uint16_t HL;
+    };
+    union{
+        struct{            
+            uint8_t A;
+            uint8_t F; // Z|N|H|C|0|0|0|0
+        };            
+        uint16_t AF; // FIX: this reg is swaped 
+    };
+    uint16_t SP;
+    uint16_t PC;
+}Regs;
+
+#define REGS_BASE (&regs)
+#define REG_ADDR(r)   ((uint8_t*)REGS_BASE + (r ^ 1))   // swap bit0 of r for endian
+#define REG_INDEX(r) *((uint8_t*)REG_ADDR(r))  
+
+#define PSW     regs.F
+#define REG_A   regs.A
+#define REG_B   regs.B
+#define REG_C   regs.C
+#define REG_D   regs.D
+#define REG_E   regs.E
+#define REG_F   regs.F
+#define REG_H   regs.H
+#define REG_L   regs.L
+
+#define REG_AF  regs.AF
+#define REG_BC  regs.BC
+#define REG_DE  regs.DE
+#define REG_HL  regs.HL
+#define REG_SP  regs.SP
+#define REG_PC  regs.PC
+
+extern Regs regs;
+
+extern uint8_t vram[0x2000]; // 0x8000-0x9FFF
+extern uint8_t oam[0xA0];    // 0xFE00-0xFEBF
+//extern uint8_t hram[256];   // 0xFF80-0xFFFE
+
+extern uint32_t  cycles;
+extern uint8_t halted, stopped;
+extern uint8_t IME; // interrupt master enable
+
+extern uint8_t IOP1;   // 0xFF00 P1
+extern uint8_t IODIV;  // 0xFF04 timer divider
+extern uint8_t IOTIMA; // 0xFF05 timer counter
+extern uint8_t IOTMA;  // 0xFF06 timer modulo
+extern uint8_t IOTAC;  // 0xFF07 timer control
+extern uint8_t IOIF;   // 0xFF0F interrupt flag  0|0|0| P1 | Serial | Timer | Lcdc | V-blank |
+extern uint8_t IOLCDC; // 0xFF40 lcd control
+extern uint8_t IOSTAT; // 0xFF41 lcd status      
+extern uint8_t IOSCY;  // 0xFF42 scroll y
+extern uint8_t IOSCX;  // 0xFF43 scroll x
+extern uint8_t IOLY;   // 0xFF0F LY
+extern uint8_t IOLYC;  // 0xFF0F LY Compare
+extern uint8_t IODMA;  // 0xFF0F
+extern uint8_t IOBGP;  // 0xFF0F Background palette
+extern uint8_t IOOBP0; // 0xFF0F object palette 0
+extern uint8_t IOOBP1; // 0xFF0F object palette 1
+extern uint8_t IOWY;   // 0xFF0F window Y
+extern uint8_t IOWX;   // 0xFF0F window x
+extern uint8_t IOIE;   // 0xFFFF Interrupt Enable  0|0|0| P1 | Serial | Timer | Lcdc | V-blank |
+
+
+uint8_t memoryRead(uint16_t address);
+void memoryWrite(uint16_t address, uint8_t data);
+uint16_t memoryRead16(uint16_t address);
+void memoryWrite16(uint16_t address, uint16_t data);
+void initCpu(void);
+void oneFrame(void);
+void interrupts(void);
+void timer(void);
+void runCpu(int nTicks);
+
+#endif
