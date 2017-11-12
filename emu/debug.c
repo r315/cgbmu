@@ -97,10 +97,10 @@ void dumpRegisters(void)
 	printVal(175,36,"sp ",REG_SP,16,4);
 	printVal(175,45,"pc ",REG_PC,16,4);
 	printVal(175,64,"LCDC ",(IOLCDC & 8),16,2);
-//	printVal(175,74,"P1 ",IOP1,16,4);
 	printVal(175,84,"ly ",IOLY,16,4);
 
 	printVal(170,94,"TIMA ",IOTIMA,16,2);
+	printVal(170,104,"DIV ",IODIV,16,2);
 #endif
 	LCD_Pop();
 }
@@ -219,7 +219,6 @@ static uint8_t stepping = 0;
 	interrupts();	        
 }
 
-extern uint16_t machine_cycles;
 void debug(void){	
 	while(key != 255){
 		step();		

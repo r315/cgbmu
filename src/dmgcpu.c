@@ -325,5 +325,6 @@ void initCpu(void)
     IOIE   = 0x00;    
 	IOSTAT = 0x82; //81
 	IOLY   = 0x94; 	 
+	IODIV  = 0xAB; //bgb value
 	halted = 0;
 }

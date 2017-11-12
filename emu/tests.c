@@ -19,6 +19,14 @@
 char filename[100];
 void decode(void);
 
+void testRun(void) {
+	while (readJoyPad() != 255) {		
+		interrupts();
+		decode();
+		timer();			
+		video();
+	}
+}
 
 void testAll(void){    
     testRom(ALL_TESTS_ROM);
@@ -28,7 +36,7 @@ void testRom(char *fn){
     strcpy(filename, ROMS_BINARY_PATH);
     strcat(filename, fn);
     loadRom(filename);
-    run();
+    testRun();
 }
 
 

@@ -153,7 +153,7 @@ extern uint8_t oam[0xA0];    // 0xFE00-0xFEBF
 extern uint8_t  cycles;
 extern uint32_t machine_cycles;
 extern uint8_t halted, stopped;
-extern uint8_t IME; // interrupt master enable
+extern uint8_t IME;    // interrupt master enable
 
 extern uint8_t IOP1;   // 0xFF00 P1
 extern uint8_t IODIV;  // 0xFF04 timer divider

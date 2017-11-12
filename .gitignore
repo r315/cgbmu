@@ -16,3 +16,4 @@ resource.h
 stdafx.cpp
 stdafx.h
 targetver.h
+*.o
