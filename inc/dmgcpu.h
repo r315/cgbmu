@@ -124,8 +124,8 @@ typedef struct _regs{
 }Regs;
 
 #define REGS_BASE (&regs)
-#define REG_ADDR(r)   ((uint8_t*)REGS_BASE + (r ^ 1))   // swap bit0 of r for endian
-#define REG_INDEX(r) *((uint8_t*)REG_ADDR(r))  
+#define REG_ADDR(r)   ((uint8_t*)REGS_BASE + ((r) ^ 1))   // swap bit0 of r for endian
+#define REG_INDEX(r) *((uint8_t*)REG_ADDR((r)))  
 
 #define PSW     regs.F
 #define REG_A   regs.A

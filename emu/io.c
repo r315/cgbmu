@@ -14,7 +14,7 @@
 uint8_t readJoyPad(void)
 {
 #ifdef __EMU__
-static SDL_Event ev;
+SDL_Event ev;
 const Uint8 *keys;
 uint8_t button = 0;
 
@@ -41,8 +41,9 @@ uint8_t button = 0;
 
     button |= keys[SDL_SCANCODE_SPACE ] ? J_A : 0;
 
-    if(ev.type == SDL_KEYDOWN) 
+    if(ev.type == SDL_KEYDOWN){ 
         return button;
+    }
 	return 0;    
 #else
 int	keys = LPC_GPIO1->FIOPIN & KEYSMASK;

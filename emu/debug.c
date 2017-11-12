@@ -215,11 +215,11 @@ static uint8_t stepping = 0;
 	}	
 	decode();	
 	timer();	
-	interrupts();	        
 	if(!video()){
 		frameReady = 0;
 		LCD_Window(0,0,160,144);
 	}	
+	interrupts();	        
 }
 
 extern uint16_t machine_cycles;

@@ -518,7 +518,7 @@ uint16_t aux16;
 			break;
 			
 		case 0x18: // JR n
-			REG_PC += (signed char) memoryRead(REG_PC++);
+			REG_PC = REG_PC + (signed char)memoryRead(REG_PC) + 1;
 			cycles += 12;
 			break;	
 			
@@ -526,7 +526,7 @@ uint16_t aux16;
 		case 0x28: // JR Z,n
 			aux = (opcode<<4) & FZ;			
 			if ((PSW & FZ) == aux) {
-				REG_PC += (signed char)memoryRead(REG_PC++);
+				REG_PC = REG_PC + (signed char)memoryRead(REG_PC) + 1;
 				cycles += 4;
 			}else
 				REG_PC++;				
@@ -537,7 +537,7 @@ uint16_t aux16;
 		case 0x38: // JR C,n
 			aux = (opcode<<1) & FC;
 			if ((PSW & FC) == aux) {
-				REG_PC += (signed char)memoryRead(REG_PC++);
+				REG_PC = REG_PC + (signed char)memoryRead(REG_PC) + 1;
 				cycles += 4;
 			}
 			else	

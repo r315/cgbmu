@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "dmgcpu.h"
 #include "cartridge.h"
 
@@ -7,9 +8,7 @@ char rname[] = {"bcdehlfa"};
 void disassemble(void){
 uint8_t src;
 uint8_t dst;
-uint8_t aux;
 uint8_t opcode;
-uint16_t aux16;
 
     clockcounter += cycles;
     printf("PC: %04X\t", REG_PC);

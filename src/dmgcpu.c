@@ -283,7 +283,7 @@ void memoryWrite(uint16_t address, uint8_t data)
 //-----------------------------------------
 uint16_t memoryRead16(uint16_t address)
 {	
-	return memoryRead(address++) | (memoryRead(address)<<8);
+	return memoryRead(address) | (memoryRead(address+1)<<8);
 }
 //-----------------------------------------
 //

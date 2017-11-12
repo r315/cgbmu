@@ -73,12 +73,13 @@ WORD n;
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 unsigned char ROM0[0x4000];
 unsigned char ROMBANK[0x4000];
 unsigned char cartridgeRam[0x2000];
 unsigned char bankSelect;
 
-unsigned char* romFile;
+char* romFile;
 
 #define LOG_TAG "CARTRIDGE"
 

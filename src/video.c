@@ -2,6 +2,7 @@
 
 #include "dmgcpu.h"
 #include "video.h"
+#include "lcd.h"
 
 
 unsigned int videoTicks;
@@ -38,9 +39,9 @@ void scanline()
 unsigned short tileMapAddress;
 unsigned short tileDataAddress;
 unsigned short windowMapAddress;
-unsigned short spriteDataAddress;
+//unsigned short spriteDataAddress;
 unsigned char msb,lsb,t,pixel,offset;
-unsigned char color,sl,sm, color2;
+unsigned char color;
 
 
 if(IOLCDC & BG_MAP)
