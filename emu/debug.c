@@ -22,7 +22,8 @@ void stepFast(uint8_t key);
 void debug(void){	
 uint8_t key;
 	while((key = readJoyPad()) != 255){
-		stepFast(key);				
+		//step(key);				
+		stepFast(key);
 	}
 }
 //----------------------------------------------------*/
@@ -269,14 +270,14 @@ void runCpu(int nTicks)
 		decode();
 		timer();   
 		nTicks -= cycles; 	
-    }    
-   
+    }  
 }
 //-----------------------------------------
 //
 //-----------------------------------------
 void stepFast(uint8_t key)
 {
+//uint32_t ticks = SDL_GetTicks();	printf("Ticks %u\n", SDL_GetTicks() - ticks);		    	
 	for (IOLY = 0; IOLY < 144; IOLY++)
 	{		
 		IOSTAT |= 2;  // mode 2
@@ -302,9 +303,10 @@ void stepFast(uint8_t key)
 	
 	for (IOLY = 144; IOLY < 154; IOLY++)
 	{
-    	lycIrq();
-	    runCpu(456);			    
+		lycIrq();
+		runCpu(456);	
 	}
 	LCD_Window(0, 0, 160, 144);
+	
 }
 

@@ -43,6 +43,7 @@ uint8_t hram[128];    // 0xFF80-0xFFFE
 uint8_t  cycles;
 uint32_t machine_cycles = 0;
 uint16_t timer_cycles = 0;
+uint16_t timer_prescaler;
 uint8_t halted, stopped;
 uint8_t IME;  
 
@@ -50,6 +51,7 @@ Regs regs;
 
 void push(uint16_t v);
 void decode(void);
+void setTimerPrescaler(void);
 
 //-----------------------------------------
 //
@@ -102,39 +104,39 @@ uint8_t irq;
 		jumpVector(0x0060);
 	}			
 }
+
+void setTimerPrescaler(void){
+	switch(IOTAC & 3)	{
+		case 0: // 4096Hz		
+			timer_prescaler = 256;
+			break;
+		case 1: // 262144Hz
+			timer_prescaler = 4;
+			break;
+		case 2: // 65536Hz
+			timer_prescaler = 16;
+			break;
+		case 3: // 16384Hz
+			timer_prescaler = 64;
+			break;		
+	}
+}
 //-----------------------------------------
 //
 //-----------------------------------------
 void timer(void)
 {
-uint16_t prescaler;
-
 	if(!(IOTAC & TIMER_STOP)) return; // timer stopped
 	
-	timer_cycles += (cycles>>2);
-
-	switch(IOTAC & 3)	{
-		case 0: // 4096Hz		
-			prescaler = 256;
-			break;
-		case 1: // 262144Hz
-			prescaler = 4;
-			break;
-		case 2: // 65536Hz
-			prescaler = 16;
-			break;
-		case 3: // 16384Hz
-			prescaler = 64;
-			break;		
-	}
+	timer_cycles += (cycles>>2);	
 	
-	while(timer_cycles >= prescaler)	{
+	while(timer_cycles >= timer_prescaler)	{
 		IOTIMA++;
 		if(!IOTIMA){			
 			IOTIMA = IOTMA;		// on overflow TIMA is reloaded with TMA
 			IOIF |= TIMER_IF;	// and TIMER_IF is set
 		}
-		timer_cycles -= prescaler;
+		timer_cycles -= timer_prescaler;
 	}
 }
 //-----------------------------------------
@@ -260,7 +262,9 @@ void memoryWrite(uint16_t address, uint8_t data)
 		case 0xFF04: IODIV = data; return;
 		case 0xFF05: IOTIMA = data; return;
 		case 0xFF06: IOTMA = data; return;
-		case 0xFF07: IOTAC = data; return;
+		case 0xFF07: IOTAC = data; 
+					 setTimerPrescaler(); 
+		             return;
 		case 0xFF0F: IOIF = data; return;
 	    case 0xFF40: IOLCDC = data;
 					 if(!(data&0x80)){ IOLY= 0; IOSTAT = 0x00;} // reset LY, mode0
