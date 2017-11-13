@@ -13,16 +13,24 @@
 #define REGISTERS_ROW 11
 
 uint16_t breakpoint = 0x100;
-uint8_t key;
-char _logline = 0;
-int fps;
 
 void decode(void);
-void init_keyboard(void);
 char readLine(char *dst, uint8_t max);
+void step(uint8_t key);
+void stepFast(uint8_t key);
 
+void debug(void){	
+uint8_t key;
+	while((key = readJoyPad()) != 255){
+		stepFast(key);				
+	}
+}
+//----------------------------------------------------*/
+//
+//------------------------------------------------------
 void updateFps(void){
 static uint32_t fpsupdatetick = 0;
+static int fps = 0;
     fps++;
     
 	if(GetTicks() > fpsupdatetick)
@@ -32,8 +40,6 @@ static uint32_t fpsupdatetick = 0;
 		fpsupdatetick = GetTicks() + 1000;
 	}
 }
-
-
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
@@ -146,14 +152,6 @@ setFcolor(PINK);
 	}
 }
 //----------------------------------------------------*/
-//
-//------------------------------------------------------
-void logInfo(char* text)
-{
-	drawString(0,_logline,text);
-	_logline = (_logline+9)%LCD_H;
-}
-//----------------------------------------------------*/
 //avalilable debug commands
 //bp <addr hex>
 //------------------------------------------------------
@@ -187,8 +185,12 @@ void debugCommans(uint8_t *st){
 }
 //----------------------------------------------------*/
 //main cpu run
+// decode(),
+// timer(),
+// video(),
+// interrupts() are processed in each iteration
 //------------------------------------------------------
-void step(){
+void step(uint8_t key){
 static uint8_t stepping = 0;
 	
 	debugCommans(&stepping);
@@ -219,30 +221,62 @@ static uint8_t stepping = 0;
 	interrupts();	        
 }
 
-void debug(void){	
-	while(key != 255){
-		step();		
-		key = readJoyPad();		
+//----------------------------------------------------*/
+//main cpu run
+// decode(),
+// timer(),
+// video(),
+// interrupts() are processed in each iteration
+//------------------------------------------------------
+void _stepFast(uint8_t key){
+static uint8_t stepping = 0;
+	
+	debugCommans(&stepping);
+	
+	if( REG_PC == breakpoint && !stepping){
+		stepping = 2;
 	}
+
+	if(stepping){
+		if(stepping == 2){
+			dumpRegisters();
+			disassemble();	        
+			stepping = 1;
+			return;
+		}
+
+		if(key != J_A && stepping == 1){
+			SDL_Delay(30);			
+			return;
+		}			
+		else{
+			stepping = 2;
+		}
+	}	
+	decode();	
+	timer();	
+	video();
+	interrupts();	        
 }
-
-
-
-
 //-----------------------------------------
 //
 //-----------------------------------------
-void oneFrame(void)
+void runCpu(int nTicks)
 {
-	LCD_Window(160,96,160,144);
-#if 0	
-	do{
-		cycles = 0;
-		interrupts();		     
-    	decode();
-		timer();	
-	}while(!video());	
-#else
+	while (nTicks > 0)
+	{
+		interrupts();
+		decode();
+		timer();   
+		nTicks -= cycles; 	
+    }    
+   
+}
+//-----------------------------------------
+//
+//-----------------------------------------
+void stepFast(uint8_t key)
+{
 	for (IOLY = 0; IOLY < 144; IOLY++)
 	{		
 		IOSTAT |= 2;  // mode 2
@@ -271,19 +305,6 @@ void oneFrame(void)
     	lycIrq();
 	    runCpu(456);			    
 	}
+	LCD_Window(0, 0, 160, 144);
+}
 
-#endif
-}
-//-----------------------------------------
-//
-//-----------------------------------------
-void runCpu(int nTicks)
-{
-	while (cycles < nTicks)
-	{
-		interrupts();
-    	decode();    	
-    } 
-    cycles -= nTicks;
-    timer();
-}
