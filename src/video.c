@@ -17,7 +17,7 @@ void scanOAM()
 	unsigned char i;
 	nsprites = 0;
 
-	for (i = 0; i < 160; i += 4)
+	for (i = 0; i < SCREEN_W; i += 4)
 	{
 		if (oam[i] && (IOLY >= (oam[i] - 16)) && (IOLY < (oam[i] - 8)))
 		{
@@ -114,14 +114,9 @@ void lycIrq(void)
 	else
 		IOSTAT &= ~LYC_LY_FLAG;
 		
-	if(IOIE & STAT_IE)      
-	{
-		if(IOSTAT & OAM_IE)
-			IOIF |= STAT_IF;
-			
-		//if(IOSTAT & LYC_LY_IE)
-			if(IOSTAT & LYC_LY_FLAG)
-				IOIF |= STAT_IF;	
+	if(IOIE & STAT_IE){
+		if(IOSTAT & (OAM_IE | LYC_LY_FLAG))
+			IOIF |= STAT_IF;		
 	}		
 }
 //-----------------------------------------
@@ -131,71 +126,66 @@ void video(void)
 {	
 	if(!(IOLCDC & LCD_DISPLAY)) return; // lcd controller off	
 		
-	video_cycles += (cycles>>2);		
+	video_cycles += GET_CYCLE();		
 		 	
-	switch(IOSTAT & 3)	
+	switch(IOSTAT & V_MODE_MASK)
 	{
-		case 2: // oam access start scanline	
-			if(video_cycles > 83)
+		case V_M2: // oam access start scanline	
+			if(video_cycles > V_M2_CYCLE)
 			{							
-				IOSTAT |= 3;	// next mode 3, oam and vram access				
-				video_cycles -= 83;
+				video_cycles -= V_M2_CYCLE;
+				IOSTAT |= V_M3;		// next mode 3, oam and vram access				
 				scanOAM(); 
 			}
 			break;
 			
-		case 3: // oam and vram access
-			if(video_cycles > 175)
+		case V_M3: // oam and vram access
+			if(video_cycles > V_M3_CYCLE)
 			{
-				 IOSTAT &= 0xFC;     // next mode 0, H-blank				 
+				video_cycles -= V_M3_CYCLE;
+				 IOSTAT &= ~(V_MODE_MASK);     // next mode 0, H-blank				 
 				 if((IOIE & STAT_IE) && (IOSTAT & HB_IE)) // LCD STAT & H-Blank IE
 				 		IOIF |= STAT_IF;
-				video_cycles -= 175;				 		
 			 	scanline();				 		
 			}
 			break;
 			
-		case 0: // H-Blank
-			if(video_cycles > 207)
-			{
+		case V_M0: // H-Blank
+			if(video_cycles > V_M0_CYCLE){
+				video_cycles -= V_M0_CYCLE;
 				IOLY++;
-				video_cycles -= 207;
-				if(IOLY > (SCREEN_H-1))
-				{				
-					IOSTAT |= 1;     //next mode 1, v-blank
+				if(IOLY > (SCREEN_H-1)){				
+					IOSTAT |= V_M1;     // next mode 1, v-blank
 					if(IOIE & V_BLANK_IE)
 						IOIF |= V_BLANK_IF;
 						
 					if((IOIE & STAT_IE) && (IOSTAT & VB_IE))
 						IOIF |= STAT_IF;
 				}
-				else
-				{	
-					IOSTAT |= 2;     //next mode 2, serching oam					
-				 	lycIrq();							
-				}			
+				else{					// Finish processing on line, go to next one
+					IOSTAT |= V_M2;     // next mode 2, serching oam					
+				 	lycIrq();
+				}
 			}
 			break;
 			
-		case 1: // V-blank 10 lines
-			if(video_cycles > 456)
+		case V_M1: // V-blank 10 lines
+			if(video_cycles > V_LINE_CYCLE)
 			{
+				video_cycles -= V_LINE_CYCLE;
 				IOLY++;									
-				video_cycles -= 456;
 				lycIrq();
 				
-				if(IOLY < 154)								 
+				if(IOLY < (SCREEN_H + VBLANK_LINES))
 					return;
 			
-				IOSTAT &= 0xFC; // next mode 2
-				IOSTAT |= 2;
+				IOSTAT &= ~(V_MODE_MASK); // next mode 2
+				IOSTAT |= V_M2;
 				
 				lycIrq();
 				IOLY = 0;					
-					
-				LCD_Window(0, 0, 160, 144);
+				LCD_Window(0, 0, SCREEN_W, SCREEN_H);
 			}
-			break;			
-		
+			break;		
 	}
 }

@@ -22,8 +22,8 @@ void stepFast(uint8_t key);
 void debug(void){	
 uint8_t key;
 	while((key = readJoyPad()) != 255){
-		//step(key);				
-		stepFast(key);
+		step(key);				
+		//stepFast(key);
 	}
 }
 //----------------------------------------------------*/
@@ -156,8 +156,15 @@ setFcolor(PINK);
 //avalilable debug commands
 //bp <addr hex>
 //------------------------------------------------------
+#ifdef WIN32
+#include <string.h>
+#include <stdlib.h>
+#pragma warning(disable : 4996)
+#elif defined(LINUX)
+#include <string.h>
+#endif
 void debugCommans(uint8_t *st){
-#ifdef __EMU__	
+#ifdef __EMU__
 	static char line[10];
 	char *cmd;
 	if(readLine(line, 10)){
@@ -173,7 +180,7 @@ void debugCommans(uint8_t *st){
 		
 		if(!strcmp(cmd, "bp")){
 			cmd = strtok(NULL, " ");
-			breakpoint = strtol(cmd, &cmd, 16);
+			breakpoint = (uint16_t)strtol(cmd, &cmd, 16);
 			*st = 0;	//resume
 		}
 
