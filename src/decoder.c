@@ -20,8 +20,7 @@ uint16_t aux16;
 	src = (opcode & 0x07);	
 	dst = ((opcode >> 3) & 0x07);
 	
-	machine_cycles += (cycles>>2);		// one machine cycle = 4 clock cycles
-	cycles = 0;
+	CLR_CYCLES();
 
 	switch(opcode)
 	{
@@ -36,7 +35,7 @@ uint16_t aux16;
         case 0xF4:
         case 0xFC:
 		case 0xFD:		
-			cycles +=4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;		
 			
 // 8bit loads			
@@ -48,7 +47,7 @@ uint16_t aux16;
 		case 0x2E:
 		case 0x3E: // LD A,#		
 			REG_INDEX(dst) = memoryRead(REG_PC++);
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;	
 			
 		case 0x40: // LD Rn,Rm
@@ -101,7 +100,7 @@ uint16_t aux16;
         case 0x7D:
 		case 0x7F:		
             REG_INDEX(dst) = REG_INDEX(src);
-            cycles += 4;
+            ADD_CYCLE(ONE_CYCLE);
             break;
             
         case 0x46: // LD Rn,(HL)
@@ -112,7 +111,7 @@ uint16_t aux16;
 		case 0x6E:
 		case 0x7E: // LD A,(HL)			
 			REG_INDEX(dst) = memoryRead(REG_HL);
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;			
 			
 		case 0x70: // LD (HL),Rn
@@ -123,69 +122,69 @@ uint16_t aux16;
 		case 0x75:
 		case 0x77: // LD (HL),A			
 			memoryWrite(REG_HL, REG_INDEX(src));
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;	
                 
         case 0x36: // LD (HL),n
 			memoryWrite(REG_HL, memoryRead(REG_PC++));
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;
 			
 		case 0x0A: // LD A,(BC)
 			REG_A = memoryRead(REG_BC);
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;
 			
 		case 0x1A: // LD A,(DE)
 			REG_A = memoryRead(REG_DE);
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;		
 						
 		case 0xFA: // LD A,(nn)
 			aux16 = memoryRead16(REG_PC);
 			REG_A = memoryRead(aux16);
 			REG_PC += 2;
-			cycles += 16;
+			ADD_CYCLE(FOUR_CYCLE);
 			break;		
 			
 		case 0x02: // LD (BC),A
 			memoryWrite(REG_BC,REG_A);
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;
 			
 		case 0x12: // LD (DE),A
 			memoryWrite(REG_DE,REG_A);
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;		
 		
 		case 0xEA: // LD (nn),A
 			memoryWrite(memoryRead16(REG_PC),REG_A);
 			REG_PC += 2;
-			cycles +=16;
+			ADD_CYCLE(FOUR_CYCLE);
 			break;	
 			
 		case 0xF2: // LD A,($FF00+C)
 			aux = REG_C;
 			REG_A = memoryRead(0xFF00 | aux);
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;	
 		
 		case 0xE2: // LD ($FF00+C),A
 			aux = REG_C;
 			memoryWrite(0xFF00 | aux, REG_A);
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;		
 		
 		case 0xE0: // LD ($FF00+n),A
 			aux = memoryRead(REG_PC++);
 			memoryWrite(0xFF00 | aux, REG_A);
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;	
 			
 		case 0xF0: // LD A,($FF00+n)
 			aux = memoryRead(REG_PC++);				
 			REG_A = memoryRead(0xFF00 | aux);
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;			
 			
 		case 0x22: // LD (HLI),A
@@ -193,7 +192,7 @@ uint16_t aux16;
 			memoryWrite(REG_HL, REG_A);
 			if(opcode & 0x10) dec16(&REG_HL);
 			else inc16(&REG_HL);
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;			
 			
 		case 0x2A: // LD A,(HLI)
@@ -201,7 +200,7 @@ uint16_t aux16;
 			REG_A = memoryRead(REG_HL);
 			if(opcode & 0x10) dec16(&REG_HL);
 			else inc16(&REG_HL);
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;
       		
 // 16bit loads	
@@ -210,18 +209,18 @@ uint16_t aux16;
 		case 0x21:			
 			REG_INDEX(dst+1) = memoryRead(REG_PC++); // LSB
 		    REG_INDEX(dst)   = memoryRead(REG_PC++); // MSB
-			cycles +=12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;
 			
 		case 0x31: // LD SP,nn
 			REG_SP = memoryRead16(REG_PC);
 			REG_PC +=2;
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;				
 			
 		case 0xF9: // LD SP,HL
 			REG_SP = REG_HL;
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;	
 			
 		case 0xF8: // LD HL,SP+n
@@ -230,13 +229,13 @@ uint16_t aux16;
 			if( ((REG_SP & 0xff) + aux) > 0xFF) PSW = FC;
 			if( ((REG_SP & 0x0f) + (aux & 0x0f)) > 0x0f) PSW |= FH;				
 			REG_HL = REG_SP + (signed char)aux;			
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;				
 				
 		case 0x08: // LD (nn),SP		
 			memoryWrite16(memoryRead16(REG_PC), REG_SP);
 			REG_PC += 2;
-			cycles += 20;
+			ADD_CYCLE(FIVE_CYCLE);
 			break;			
 			
 		case 0xC5: // PUSH Rnn
@@ -244,13 +243,13 @@ uint16_t aux16;
 		case 0xE5:
 			memoryWrite(--REG_SP, REG_INDEX(dst));   // MSB
 			memoryWrite(--REG_SP, REG_INDEX(dst+1)); // LSB
-			cycles += 16;
+			ADD_CYCLE(FOUR_CYCLE);
 			break;
 			
 		case 0xF5: // PUSH AF
 			memoryWrite(--REG_SP, REG_A); // MSB			
 			memoryWrite(--REG_SP, REG_F & 0xf0); // LSB			
-			cycles += 16;
+			ADD_CYCLE(FOUR_CYCLE);
 			break;		
 		
 		case 0xC1: // POP Rnn
@@ -258,13 +257,13 @@ uint16_t aux16;
 		case 0xE1:
 			REG_INDEX(dst+1) = memoryRead(REG_SP++); // LSB
 			REG_INDEX(dst) = memoryRead(REG_SP++); // MSB
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;
 			
 		case 0xF1: // POP AF
 			PSW = memoryRead(REG_SP++)&0xF0; // LSB
 			REG_A = memoryRead(REG_SP++); // MSB
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;
 			
 // 8bit ALU
@@ -325,7 +324,7 @@ uint16_t aux16;
 		case 0xBD:		
 		case 0xBF:	
 			alu(dst, REG_INDEX(src));
-			cycles += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;
 			
 		case 0x86: // ADD A,(HL)
@@ -337,7 +336,7 @@ uint16_t aux16;
 		case 0xB6: // OR (HL)
 		case 0xBE: // CP (HL)
 			alu(dst, memoryRead(REG_HL));
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;		
 		
 		case 0xC6: // ADD A,#
@@ -349,7 +348,7 @@ uint16_t aux16;
 		case 0xF6: // OR #
 		case 0xFE: // CP #
 			alu(dst,memoryRead(REG_PC++));
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;		
 			
 		case 0x04: // INC rn
@@ -360,7 +359,7 @@ uint16_t aux16;
 		case 0x2C:
 		case 0x3C:
 			inc(REG_ADDR(dst));
-			cycles += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;	
 			
 		case 0x34: // INC (HL)
@@ -371,7 +370,7 @@ uint16_t aux16;
 			else
 				inc(&aux);
 			memoryWrite(REG_HL, aux);
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;
 			
 		case 0x05: // DEC rn
@@ -382,15 +381,15 @@ uint16_t aux16;
 		case 0x2D:
 		case 0x3D:
 			dec(REG_ADDR(dst));
-			cycles += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;		 		
 				
 // 16bit Arithmetic
 		// ADD HL,rnn - flags: -,0,H,C
-		case 0x09: addHL(REG_BC); cycles += 8; break;
-		case 0x19: addHL(REG_DE); cycles += 8; break;
-		case 0x29: addHL(REG_HL); cycles += 8; break;
-		case 0x39: addHL(REG_SP); cycles += 8; break;
+		case 0x09: addHL(REG_BC); ADD_CYCLE(TWO_CYCLE); break;
+		case 0x19: addHL(REG_DE); ADD_CYCLE(TWO_CYCLE); break;
+		case 0x29: addHL(REG_HL); ADD_CYCLE(TWO_CYCLE); break;
+		case 0x39: addHL(REG_SP); ADD_CYCLE(TWO_CYCLE); break;
 			
 		case 0xE8: // ADD SP,#				
 			aux = memoryRead(REG_PC++);
@@ -398,60 +397,60 @@ uint16_t aux16;
 			if( ((REG_SP & 0xff) + aux) > 0xFF) PSW = FC;
 			if( ((REG_SP & 0x0f) + (aux & 0x0f)) > 0x0f) PSW |= FH;	
 			REG_SP += (signed char)aux;
-			cycles += 16;
+			ADD_CYCLE(FOUR_CYCLE);
 			break;	
 			
 		// INC Rnn - no flags affected
-		case 0x03: inc16(&REG_BC); cycles += 8; break;
-		case 0x13: inc16(&REG_DE); cycles += 8; break;
-		case 0x23: inc16(&REG_HL); cycles += 8; break;
-		case 0x33: inc16(&REG_SP); cycles += 8; break;
+		case 0x03: inc16(&REG_BC); ADD_CYCLE(TWO_CYCLE); break;
+		case 0x13: inc16(&REG_DE); ADD_CYCLE(TWO_CYCLE); break;
+		case 0x23: inc16(&REG_HL); ADD_CYCLE(TWO_CYCLE); break;
+		case 0x33: inc16(&REG_SP); ADD_CYCLE(TWO_CYCLE); break;
 			
 		// DEC Rnn
-		case 0x0B: dec16(&REG_BC); cycles += 8; break;
-		case 0x1B: dec16(&REG_DE); cycles += 8; break;
-		case 0x2B: dec16(&REG_HL); cycles += 8; break;
-		case 0x3B: dec16(&REG_SP); cycles += 8; break;
+		case 0x0B: dec16(&REG_BC); ADD_CYCLE(TWO_CYCLE); break;
+		case 0x1B: dec16(&REG_DE); ADD_CYCLE(TWO_CYCLE); break;
+		case 0x2B: dec16(&REG_HL); ADD_CYCLE(TWO_CYCLE); break;
+		case 0x3B: dec16(&REG_SP); ADD_CYCLE(TWO_CYCLE); break;
 			
 // Miscellaneous
 		// SWAP, RLC, RL, RRC, RR, SLA, SRA, SRL, BIT, RST, SET
 		case 0xCB: CBcodes(memoryRead(REG_PC++));break;
 			
 		// DAA
-		case 0x27: daa(); cycles += 4; break;
+		case 0x27: daa(); ADD_CYCLE(ONE_CYCLE); break;
 		
 		case 0x2F: // CPL
 			REG_A = ~REG_A;
 			PSW |= FN | FH;
-			cycles += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;	
 			
 		case 0x3F: // CCF
 			PSW &= ~( FN | FH);
 			PSW ^= FC;
-			cycles  += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;
 			
 		case 0x37: // SCF			
 			PSW &= ~(FN | FH);
 			PSW |= FC;
-			cycles += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;
 			
 		case 0x76: // HALT
 			halted = 1;			
-			cycles += 4;         
+			ADD_CYCLE(ONE_CYCLE);         
 			break;	
 			
 		case 0x10: // STOP
 			stopped	= 1;
-			cycles += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;
 			
 		case 0xF3: // DI
 		case 0xFB: // EI
 			IME = (opcode>>3) & 1 ;
-			cycles += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;	
 			
 // Rotates & shifts		//TODO SET Flag zero??
@@ -459,34 +458,34 @@ uint16_t aux16;
 			aux = REG_A >> 7;		
 			PSW = (aux & (1<<0)) ? FC : 0;	
     		REG_A = (REG_A << 1) | aux;		
-			cycles += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;
 				
 		case 0x17: // RLA
 			aux = (PSW & FC) ? 1 : 0;
 			PSW = (REG_A & (1<<7)) ? FC : 0;
 			REG_A = (REG_A << 1) | aux;
-			cycles += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;	
 			
 		case 0x0F: // RRCA
 			aux = REG_A << 7;    	
 			PSW = (aux & (1<<7)) ? FC : 0;
     		REG_A = aux | (REG_A >> 1);    
-			cycles += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;	
 			
 		case 0x1F: // RRA
 			aux = (PSW & FC) ? (1<<7) : 0;
 			PSW = (REG_A & (1<<0)) ? FC : 0;
 			REG_A = aux | (REG_A >> 1);
-			cycles += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;	
 			
 // Jumps			
 		case 0xC3: // JP nn
 			REG_PC = memoryRead16(REG_PC);
-			cycles += 16;
+			ADD_CYCLE(FOUR_CYCLE);
 			break;	
 			
 		case 0xC2: // JP NZ,nn
@@ -494,11 +493,11 @@ uint16_t aux16;
 			aux = (opcode<<4) & FZ;			
 			if ((PSW & FZ) == aux) {
 				REG_PC = memoryRead16(REG_PC);
-				cycles += 4;
+				ADD_CYCLE(ONE_CYCLE);
 			}
 			else	
 				REG_PC += 2;
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;
 			
 		case 0xD2: // JP NC,nn
@@ -506,21 +505,21 @@ uint16_t aux16;
 			aux = (opcode<<1) & FC;			
 			if ((PSW & FC) == aux) {
 				REG_PC = memoryRead16(REG_PC);
-				cycles += 4;
+				ADD_CYCLE(ONE_CYCLE);
 			}
 			else	
 				REG_PC += 2;
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;
 			
 		case 0xE9: // JP (HL)
 			REG_PC = REG_HL;
-			cycles += 4;
+			ADD_CYCLE(ONE_CYCLE);
 			break;
 			
 		case 0x18: // JR n
 			REG_PC = REG_PC + (signed char)memoryRead(REG_PC) + 1;
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;	
 			
 		case 0x20: // JR NZ,n
@@ -528,10 +527,10 @@ uint16_t aux16;
 			aux = (opcode<<4) & FZ;			
 			if ((PSW & FZ) == aux) {
 				REG_PC = REG_PC + (signed char)memoryRead(REG_PC) + 1;
-				cycles += 4;
+				ADD_CYCLE(ONE_CYCLE);
 			}else
 				REG_PC++;				
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;		
 			
 		case 0x30: // JR NC,n
@@ -539,11 +538,11 @@ uint16_t aux16;
 			aux = (opcode<<1) & FC;
 			if ((PSW & FC) == aux) {
 				REG_PC = REG_PC + (signed char)memoryRead(REG_PC) + 1;
-				cycles += 4;
+				ADD_CYCLE(ONE_CYCLE);
 			}
 			else	
 				REG_PC++;				
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;
 			
 // Calls			
@@ -551,7 +550,7 @@ uint16_t aux16;
 		case 0xCD: // CALL nn
 			push(REG_PC + 2);
 			REG_PC = memoryRead16(REG_PC);
-			cycles += 24;
+			ADD_CYCLE(SIX_CYCLE);
 			break;	
 			
 		case 0xC4: // CALL NZ,nn
@@ -560,11 +559,11 @@ uint16_t aux16;
 			if( (PSW & FZ) == aux )	{
 				push(REG_PC+2);
 				REG_PC = memoryRead16(REG_PC);
-				cycles += 12;
+				ADD_CYCLE(THREE_CYCLE);
 			}
 			else
 				REG_PC += 2;
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;
 			
 		case 0xD4: // CALL NC,nn
@@ -573,11 +572,11 @@ uint16_t aux16;
 			if( (PSW & FC) == aux ) {
 				push(REG_PC+2);
 				REG_PC = memoryRead16(REG_PC);
-				cycles += 12;
+				ADD_CYCLE(THREE_CYCLE);
 			}
 			else
 				REG_PC += 2;
-			cycles += 12;
+			ADD_CYCLE(THREE_CYCLE);
 			break;
 			
 // Restarts
@@ -592,7 +591,7 @@ uint16_t aux16;
 		case 0xFF:
 			push(REG_PC);
 			REG_PC = opcode & 0x38;
-			cycles += 16;
+			ADD_CYCLE(FOUR_CYCLE);
 			break;
 			
 // Returns			
@@ -601,7 +600,7 @@ uint16_t aux16;
 			 IME = 1;				
 		case 0xC9: // RET
 			REG_PC = pop();
-			cycles += 16;
+			ADD_CYCLE(FOUR_CYCLE);
 			break;	
 			
 		case 0xC0: // RET NZ
@@ -609,9 +608,9 @@ uint16_t aux16;
 			aux = (opcode<<4) & FZ;			
 			if ((PSW & FZ) == aux) {
 				REG_PC = pop();
-				cycles += 12;
+				ADD_CYCLE(THREE_CYCLE);
 			}
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;
 			
 		case 0xD0: // RET NC
@@ -619,9 +618,9 @@ uint16_t aux16;
 			aux = (opcode<<1) & FC;			
 			if ((PSW & FC) == aux) {
 				REG_PC = pop();
-				cycles += 12;
+				ADD_CYCLE(THREE_CYCLE);
 			}
-			cycles += 8;		
+			ADD_CYCLE(TWO_CYCLE);		
 			break;			
 		
 			
@@ -649,14 +648,14 @@ uint8_t bit = (op >> 3) & 7;
 		case 0x05:
 		case 0x07:
 			rlc(REG_ADDR(reg));
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;		
 		
 		case 0x06: // RLC (HL)	
 			aux = memoryRead(REG_HL);
 			rlc(&aux);
 			memoryWrite(REG_HL, aux);
-			cycles += 16;	
+			ADD_CYCLE(FOUR_CYCLE);	
 			break;
 						
 		case 0x08: // RRC Rn
@@ -667,14 +666,14 @@ uint8_t bit = (op >> 3) & 7;
 		case 0x0D:
 		case 0x0F:
 			rrc(REG_ADDR(reg));
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;		
 		
 		case 0x0E: // RRC (HL)	
 			aux = memoryRead(REG_HL);
 			rrc(&aux);
 			memoryWrite(REG_HL, aux);
-			cycles += 16;	
+			ADD_CYCLE(FOUR_CYCLE);	
 			break;			
 			
 		case 0x10: // RL Rn
@@ -685,14 +684,14 @@ uint8_t bit = (op >> 3) & 7;
 		case 0x15:
 		case 0x17:
 			rl(REG_ADDR(reg));
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;		
 		
 		case 0x16: // RL (HL)	
 			aux = memoryRead(REG_HL);
 			rl(&aux);
 			memoryWrite(REG_HL, aux);
-			cycles += 16;	
+			ADD_CYCLE(FOUR_CYCLE);	
 			break;	
 		
 		case 0x18: // RR Rn
@@ -703,14 +702,14 @@ uint8_t bit = (op >> 3) & 7;
 		case 0x1D:
 		case 0x1F:
 			rr(REG_ADDR(reg));
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;		
 		
 		case 0x1E: // RR (HL)	
 			aux = memoryRead(REG_HL);
 			rr(&aux);
 			memoryWrite(REG_HL,aux);
-			cycles += 16;	
+			ADD_CYCLE(FOUR_CYCLE);	
 			break;
 			
 		case 0x20: // SLA Rn
@@ -721,14 +720,14 @@ uint8_t bit = (op >> 3) & 7;
 		case 0x25:
 		case 0x27:
 			sla(REG_ADDR(reg));
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;		
 		
 		case 0x26: // SLA (HL)	
 			aux = memoryRead(REG_HL);
 			sla(&aux);
 			memoryWrite(REG_HL, aux);
-			cycles += 16;
+			ADD_CYCLE(FOUR_CYCLE);
 			break;
 			
 		case 0x28: // SRA Rn
@@ -739,14 +738,14 @@ uint8_t bit = (op >> 3) & 7;
 		case 0x2D:
 		case 0x2F:
 			sra(REG_ADDR(reg));
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;		
 		
 		case 0x2E: // SRA (HL)	
 			aux = memoryRead(REG_HL);
 			sra(&aux);
 			memoryWrite(REG_HL, aux);
-			cycles += 16;	
+			ADD_CYCLE(FOUR_CYCLE);	
 			break;			
 		
 		case 0x30: // SWAP Rn		
@@ -757,14 +756,14 @@ uint8_t bit = (op >> 3) & 7;
 		case 0x35:
 		case 0x37:
 			swap(REG_ADDR(reg));
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;	
 			
 		case 0x36: // SWAP (HL)
 			aux = memoryRead(REG_HL);
 			swap(&aux);
 			memoryWrite(REG_HL, aux);
-			cycles += 16;
+			ADD_CYCLE(FOUR_CYCLE);
 			break;
 		
 		case 0x38: // SRL Rn
@@ -775,14 +774,14 @@ uint8_t bit = (op >> 3) & 7;
 		case 0x3D:
 		case 0x3F:
 			srl(REG_ADDR(reg));
-			cycles += 8;
+			ADD_CYCLE(TWO_CYCLE);
 			break;
 			
 		case 0x3E: // SRL (HL)
 			aux = memoryRead(REG_HL);
 			srl(&aux);
 			memoryWrite(REG_HL, aux);
-			cycles += 16;
+			ADD_CYCLE(FOUR_CYCLE);
 			break;	
 			
 		default:

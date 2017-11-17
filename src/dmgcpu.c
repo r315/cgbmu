@@ -128,7 +128,7 @@ void timer(void)
 {
 	if(!(IOTAC & TIMER_STOP)) return; // timer stopped
 	
-	timer_cycles += (cycles>>2);	
+	timer_cycles += GET_CYCLE();	
 	
 	while(timer_cycles >= timer_prescaler)	{
 		IOTIMA++;
@@ -327,8 +327,8 @@ void initCpu(void)
     IOWY   = 0x00;
     IOWX   = 0x00;
     IOIE   = 0x00;    
-	IOSTAT = 0x82; //81
+	IOSTAT = 0x81;
 	IOLY   = 0x94; 	 
-	IODIV  = 0xAB; //bgb value
+	IODIV  = 0xAB;
 	halted = 0;
 }
