@@ -30,6 +30,17 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 
 #include <stdint.h>
 
+#define ONE_CYCLE	1
+#define TWO_CYCLE	2
+#define THREE_CYCLE 3
+#define FOUR_CYCLE	4
+#define FIVE_CYCLE	5
+#define SIX_CYCLE	6
+
+#define CLR_CYCLES() cycles = 0
+#define ADD_CYCLE(x) cycles += x // Note one machine cycle = 4 clock cycles
+#define GET_CYCLE()  cycles
+
 //Flags
 #define FZ (1<<7)
 #define FN (1<<6)
@@ -150,8 +161,7 @@ extern uint8_t vram[0x2000]; // 0x8000-0x9FFF
 extern uint8_t oam[0xA0];    // 0xFE00-0xFEBF
 //extern uint8_t hram[256];   // 0xFF80-0xFFFE
 
-extern uint8_t  cycles;
-extern uint32_t machine_cycles;
+extern uint8_t cycles;
 extern uint8_t halted, stopped;
 extern uint8_t IME;    // interrupt master enable
 
@@ -181,9 +191,7 @@ void memoryWrite(uint16_t address, uint8_t data);
 uint16_t memoryRead16(uint16_t address);
 void memoryWrite16(uint16_t address, uint16_t data);
 void initCpu(void);
-void oneFrame(void);
 void interrupts(void);
 void timer(void);
 void runCpu(int nTicks);
-
 #endif
