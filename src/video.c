@@ -3,7 +3,7 @@
 #include "lcd.h"
 
 
-uint16_t video_cycles = 0;
+static uint16_t video_cycles = 0;
 
 const unsigned short pal[]={0xE7DA,0x8E0E,0x334A,0x08C4};
 //const unsigned short pal[]={0x08C4,0x334A,0x8E0E,0xE7DA};
@@ -14,11 +14,14 @@ unsigned char nsprites;
 //read OBJECT Attribute Memory for one line
 //-----------------------------------------
 void scanOAM(){
-uint8_t i, line = IOLY + SPRITE_H;
+uint8_t i, tile_line = IOLY + (SPRITE_H * 2);	// Y position has a offset of 16
 Sprite *poam = (Sprite*)&oam[0];
 Sprite **ps = spriteline;
+
+	tile_line >>= 3; 							// skip Tile individual lines
+
 	for (i = 0; i < SCREEN_W; i += sizeof(Sprite)){
-        if( line >= poam->y && line < poam->y + 8){
+        if( tile_line == (poam->y >> 3) ){
             if(poam->x >= SPRITE_W && poam->x < SCREEN_W + SPRITE_W){			
                 *ps = (Sprite*)poam;
                 ps += 1;				
@@ -26,7 +29,7 @@ Sprite **ps = spriteline;
 		}
         poam += 1;
 	}
-	*ps = '\0';         //mark end of array
+	*ps = '\0';         						// mark end of array
 }
 
 //-----------------------------------------
@@ -34,13 +37,14 @@ Sprite **ps = spriteline;
 //-----------------------------------------
 void scanline()
 {
-unsigned short tileMapAddress;
-unsigned short tileDataAddress;
-unsigned short windowMapAddress;
+uint16_t tileMapAddress;
+uint16_t tileDataAddress;
+uint16_t windowMapAddress;
 //unsigned short spriteDataAddress;
-unsigned char msb,lsb,t,pixel,offset;
-unsigned char color;
+uint8_t msb,lsb,t,pixel,offset;
+uint8_t color;
 
+//uint32_t ms = SDL_GetTicks();
 
 if(IOLCDC & BG_MAP)
 	tileMapAddress = 0x1C00 ; //BG Tile Map 1 9C00 - 9FFF
@@ -102,7 +106,8 @@ else
 			offset++;
 		}while((offset&0x07)!= 0 && pixel<160);				
 	}	
-}		
+}	
+//printf("ScanLine time: %u\n", SDL_GetTicks() - ms);	
 }
 
 //-----------------------------------------
