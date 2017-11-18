@@ -35,10 +35,10 @@ uint8_t IOWY;   // 0xFF0F window Y
 uint8_t IOWX;   // 0xFF0F window x
 uint8_t IOIE;   // 0xFFFF Interrupt Enable
 
-uint8_t vram[0x2000]; // 0x8000-0x9FFF
-uint8_t iram[0x2000]; // 0xC000-0xBFFF
-uint8_t oam[0xA0];    // 0xFE00-0xFEBF
-uint8_t hram[128];    // 0xFF80-0xFFFE
+uint8_t vram[0x2000];                    // 0x8000-0x9FFF
+uint8_t iram[0x2000];                    // 0xC000-0xBFFF
+uint8_t oam[sizeof(Sprite)*MAX_SPRITES]; // 0xFE00-0xFEBF
+uint8_t hram[128];                       // 0xFF80-0xFFFE
 
 uint8_t  cycles;
 uint32_t machine_cycles = 0;

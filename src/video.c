@@ -7,31 +7,31 @@ uint16_t video_cycles = 0;
 
 const unsigned short pal[]={0xE7DA,0x8E0E,0x334A,0x08C4};
 //const unsigned short pal[]={0x08C4,0x334A,0x8E0E,0xE7DA};
-unsigned char spriteTable[40]; // masx 10 sprites
+Sprite *spriteline[MAX_SPRITES/sizeof(Sprite)]; // max 10 sprites
 unsigned char nsprites;
+
+//-----------------------------------------
+//read OBJECT Attribute Memory for one line
+//-----------------------------------------
+void scanOAM(){
+uint8_t i, line = IOLY + SPRITE_H;
+Sprite *poam = (Sprite*)&oam[0];
+Sprite **ps = spriteline;
+	for (i = 0; i < SCREEN_W; i += sizeof(Sprite)){
+        if( line >= poam->y && line < poam->y + 8){
+            if(poam->x >= SPRITE_W && poam->x < SCREEN_W + SPRITE_W){			
+                *ps = (Sprite*)poam;
+                ps += 1;				
+			}
+		}
+        poam += 1;
+	}
+	*ps = '\0';         //mark end of array
+}
+
 //-----------------------------------------
 //
 //-----------------------------------------
-void scanOAM()
-{
-	unsigned char i;
-	nsprites = 0;
-
-	for (i = 0; i < SCREEN_W; i += 4)
-	{
-		if (oam[i] && (IOLY >= (oam[i] - 16)) && (IOLY < (oam[i] - 8)))
-		{
-			if ((oam[i + 1] > 0) && (oam[i + 1] < 168))
-			{
-				spriteTable[nsprites++] = oam[i] - 16;    // Y position
-				spriteTable[nsprites++] = oam[i + 1] - 8;	// X position
-				spriteTable[nsprites++] = oam[i + 2];     // Pattern number
-				spriteTable[nsprites++] = oam[i + 3];		// Flags				
-			}
-		}
-	}
-	nsprites >>= 2;
-}
 void scanline()
 {
 unsigned short tileMapAddress;
@@ -104,6 +104,7 @@ else
 	}	
 }		
 }
+
 //-----------------------------------------
 //
 //-----------------------------------------
@@ -119,11 +120,11 @@ void lycIrq(void)
 			IOIF |= STAT_IF;		
 	}		
 }
+
 //-----------------------------------------
 //
 //-----------------------------------------
-void video(void)
-{	
+void video(void){	
 	if(!(IOLCDC & LCD_DISPLAY)) return; // lcd controller off	
 		
 	video_cycles += GET_CYCLE();		
