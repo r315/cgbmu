@@ -228,92 +228,55 @@ static uint8_t stepping = 0;
 	video();
 	interrupts();	        
 }
-
-//----------------------------------------------------*/
-//main cpu run
-// decode(),
-// timer(),
-// video(),
-// interrupts() are processed in each iteration
-//------------------------------------------------------
-void _stepFast(uint8_t key){
-static uint8_t stepping = 0;
-	
-	debugCommans(&stepping);
-	
-	if( REG_PC == breakpoint && !stepping){
-		stepping = 2;
-	}
-
-	if(stepping){
-		if(stepping == 2){
-			dumpRegisters();
-			disassemble();	        
-			stepping = 1;
-			return;
-		}
-
-		if(key != J_A && stepping == 1){
-			SDL_Delay(30);			
-			return;
-		}			
-		else{
-			stepping = 2;
-		}
-	}	
-	decode();	
-	timer();	
-	video();
-	interrupts();	        
-}
 //-----------------------------------------
 //
 //-----------------------------------------
-void runCpu(int nTicks)
-{
-	while (nTicks > 0)
-	{
+void runCpu(int nTicks){
+	while (nTicks > 0){
 		interrupts();
 		decode();
 		timer();   
-		nTicks -= cycles; 	
+		nTicks -= GET_CYCLE(); 	
     }  
 }
 //-----------------------------------------
 //
 //-----------------------------------------
-void stepFast(uint8_t key)
-{
-//uint32_t ticks = SDL_GetTicks();	printf("Ticks %u\n", SDL_GetTicks() - ticks);		    	
-	for (IOLY = 0; IOLY < 144; IOLY++)
-	{		
-		IOSTAT |= 2;  // mode 2
-	    lycIrq();
-	    runCpu(80);
+void stepFast(uint8_t key){
 
-	    IOSTAT |= 3;  // mode 3
-	    runCpu(172);
+	LCD_Window(0, 0, SCREEN_W, SCREEN_H);
+
+	for (IOLY = 0; IOLY < SCREEN_H; IOLY++){
+
+		IOSTAT |= V_M2;  	// scan OAM
+		if(IOSTAT & OAM_IE)	// check OAM IE
+			IOIF |= STAT_IF;
+		if(IOLY == IOLYC)	// check coincedence	
+			IOSTAT |= LYC_LY_FLAG; 
+		else
+			IOSTAT &= ~LYC_LY_FLAG;			
+	    runCpu(V_M2_CYCLE);
+		//scanOAM();
+
+	    IOSTAT |= V_M3;  	// scan VRAM
+	    runCpu(V_M3_CYCLE);
 	    scanline();
     
-	    IOSTAT &= 0xFC; // mode 0
-	   	lycIrq();
-	    runCpu(204);
+	    IOSTAT &= ~(V_M3); 	// H-Blank
+	   	if(IOSTAT & HB_IE)	
+			IOIF |= STAT_IF;
+	    runCpu(V_M0_CYCLE);
 	}	
 	
-	IOSTAT |= 1;  // mode 1
-       
-	if(IOIE & V_BLANK_IE)
-		IOIF |= V_BLANK_IF;
+	IOSTAT |= V_M1;  		// V-Blank
+	IOIF |= V_BLANK_IF;		// Always active
+
+	if(IOSTAT & VB_IE)	
+		IOIF |= STAT_IF;	
 						
-	if((IOIE & STAT_IE) && (IOSTAT & VB_IE))
-		IOIF |= STAT_IF;
-	
-	for (IOLY = 144; IOLY < 154; IOLY++)
-	{
+	for (IOLY = SCREEN_H; IOLY < (SCREEN_H + VBLANK_LINES); IOLY++){
 		lycIrq();
-		runCpu(456);	
+		runCpu(V_LINE_CYCLE);	
 	}
-	LCD_Window(0, 0, 160, 144);
-	
 }
 
