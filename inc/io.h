@@ -13,7 +13,7 @@
 #define J_START     (1<<3)
 
 
-#define IOP1_MASK   0x0F
+#define IOP1_MASK   0xCF
 
 
 uint8_t joyPad(void);

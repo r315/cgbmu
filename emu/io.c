@@ -16,10 +16,10 @@ uint8_t readJoyPad(void)
 #ifdef __EMU__
 SDL_Event ev;
 const Uint8 *keys;
-uint8_t button = 0;
+static uint8_t button = 0;
 
 	if(!SDL_PollEvent( &ev )) 
-	    return 0;	    
+	    return button;	    
 	    
 	if(ev.type == SDL_QUIT)
 	    return -1;
@@ -29,10 +29,18 @@ uint8_t button = 0;
 	if(keys[SDL_SCANCODE_ESCAPE]) 
 	    return -1;	
 
+	if (ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP) {		
+		button = 0;
+	}
+	else
+	{
+		return button;
+	}
+
 	button |= keys[SDL_SCANCODE_DOWN] ? J_DOWN : 0;
 	button |= keys[SDL_SCANCODE_UP]  ? J_UP : 0;
 	button |= keys[SDL_SCANCODE_LEFT] ? J_LEFT : 0;
-	button |= keys[SDL_SCANCODE_RIGHT] ? J_RIGHT : 0;		
+	button |= keys[SDL_SCANCODE_RIGHT] ? J_RIGHT : 0;
 		
 	button |= keys[SDL_SCANCODE_RETURN] ? J_START : 0;
 	button |= keys[SDL_SCANCODE_BACKSPACE] ? J_SELECT : 0;
@@ -40,11 +48,8 @@ uint8_t button = 0;
     button |= keys[SDL_SCANCODE_S ] ? J_A : 0;
 
     button |= keys[SDL_SCANCODE_SPACE ] ? J_A : 0;
-
-    if(ev.type == SDL_KEYDOWN){ 
-        return button;
-    }
-	return 0;    
+  
+	return button;    
 #else
 int	keys = LPC_GPIO1->FIOPIN & KEYSMASK;
 	_IOP14 = 0;
@@ -59,10 +64,8 @@ int	keys = LPC_GPIO1->FIOPIN & KEYSMASK;
 //-----------------------------------------
 //
 //-----------------------------------------
-uint8_t joyPad(void)
-{
+uint8_t joyPad(void){
 uint8_t buttons = readJoyPad();
-    IOP1 &= ~(IOP1_MASK);
-    IOP1 |= ~(buttons) & IOP1_MASK;
-    return IOP1;
+	IOP1 = (~buttons);
+	return IOP1;
 }
