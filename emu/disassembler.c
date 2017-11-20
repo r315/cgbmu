@@ -376,6 +376,9 @@ uint8_t opcode;
 // Miscellaneous
 		// SWAP, RLC, RL, RRC, RR, SLA, SRA, SRL, BIT, RST, SET
         case 0xCB:
+			opcode = memoryRead(REG_PC + 1);
+			src = (opcode & 0x07);
+			dst = ((opcode >> 3) & 0x07);
             switch(opcode)
             {
                 case 0x00: // RLC Rn
