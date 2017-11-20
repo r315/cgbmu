@@ -268,15 +268,19 @@ void stepFast(uint8_t key){
 	    runCpu(V_M0_CYCLE);
 	}	
 	
-	IOSTAT |= V_M1;  		// V-Blank
-	IOIF |= V_BLANK_IF;		// Always active
+	IOSTAT |= V_M1;  		// Change to Mode 1
+	IOIF |= V_BLANK_IF;		// V-Blank Flag is Always activated
 
-	if(IOSTAT & VB_IE)	
+	if(IOSTAT & VB_IE)		// LCD Flag is activated if IE is enabled
 		IOIF |= STAT_IF;	
 						
-	for (IOLY = SCREEN_H; IOLY < (SCREEN_H + VBLANK_LINES); IOLY++){
+	while(IOLY < (SCREEN_H + VBLANK_LINES)){
 		lycIrq();
 		runCpu(V_LINE_CYCLE);	
+		IOLY++;
 	}
 }
+
+
+
 

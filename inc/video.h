@@ -52,16 +52,23 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 
 #define VBLANK_LINES  10
 
+#define MAX_LINE_SPRITES 10
 #define MAX_SPRITES   40
 #define SPRITE_W      8
 #define SPRITE_H      8
 
 #define TILE_DATA0_BASE   0x0000      
-#define TILE_DATA1_BASE   0x0800      
+#define TILE_DATA1_BASE   0x0800
+#define TILE_DATA1_SIGNED_BASE 0x1000
 #define TILE_MAP0_BASE    0x1800       
 #define TILE_MAP1_BASE    0x1C00     
 
 #define TILE_LINE_MASK    0xFC 
+#define BG_H_TILES		 32
+#define BG_V_TILES		 32
+#define BG_SIZE_MASK	((BG_H_TILES * BG_V_TILES) - 1)
+
+#define TILE_BYTES_SIZE		16
 
 typedef struct _Sprite{
     uint8_t x;
@@ -69,6 +76,14 @@ typedef struct _Sprite{
     uint8_t p;      //Pattern
     uint8_t f;      //Flags: |priority | Y Flip | X Flip | Palette number | - | - | - | - | 
 }Sprite;
+
+
+typedef struct _Tile {
+	struct {
+		uint8_t lsb;
+		uint8_t msb;
+	}line[8];
+}Tile;
 
 void video(void);
 void lycIrq(void);

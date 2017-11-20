@@ -51,7 +51,7 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 #define LCD_DISPLAY     (1<<7)
 #define W_MAP           (1<<6)
 #define W_DISPLAY       (1<<5)
-#define W_BG_DATA       (1<<4)
+#define BG_W_DATA       (1<<4)
 #define BG_MAP          (1<<3)
 #define L_SPRITES       (1<<2)
 #define S_DISPLAY       (1<<1)
