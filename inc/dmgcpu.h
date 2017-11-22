@@ -157,6 +157,8 @@ typedef struct _regs{
 
 #define VRAM_SIZE       0x2000      // 8k
 #define OAM_SIZE        160         // 40 x 4
+#define DMA_SIZE        0x8C
+#define OAM_BASE        0xFE00
 
 extern Regs regs;
 

@@ -22,8 +22,8 @@ void stepFast(uint8_t key);
 void debug(void){	
 uint8_t key;
 	while((key = readJoyPad()) != 255){
-		step(key);				
-		//stepFast(key);
+		//step(key);				
+		stepFast(key);
 	}
 }
 //----------------------------------------------------*/
