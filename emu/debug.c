@@ -11,6 +11,7 @@
 #define GetTicks() SDL_GetTicks()
 #define FPS_ROW 0
 #define REGISTERS_ROW 11
+#define FRAME_TIME 16
 
 uint16_t breakpoint = 0x100;
 
@@ -21,9 +22,16 @@ void stepFast(uint8_t key);
 
 void debug(void){	
 uint8_t key;
+uint32_t ticks, dticks;
+	setFcolor(YELLOW);
 	while((key = readJoyPad()) != 255){
+		ticks = SDL_GetTicks();
 		//step(key);				
 		stepFast(key);
+		dticks = SDL_GetTicks() - ticks;
+		if(dticks < FRAME_TIME)
+			SDL_Delay(FRAME_TIME - dticks);
+		updateFps();
 	}
 }
 //----------------------------------------------------*/
@@ -36,7 +44,7 @@ static int fps = 0;
     
 	if(GetTicks() > fpsupdatetick)
 	{
-		printVal(175,FPS_ROW,"Fps ",fps,10,4);
+		printVal(SCREEN_W + 8,FPS_ROW,"Fps ",fps,10,4);
 		fps = 0;
 		fpsupdatetick = GetTicks() + 1000;
 	}
@@ -279,6 +287,7 @@ void stepFast(uint8_t key){
 		runCpu(V_LINE_CYCLE);	
 		IOLY++;
 	}
+	// end of frame
 }
 
 
