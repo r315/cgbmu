@@ -256,7 +256,7 @@ void stepFast(uint8_t key){
 		else
 			IOSTAT &= ~LYC_LY_FLAG;			
 	    runCpu(V_M2_CYCLE);
-		//scanOAM();
+		scanOAM();
 
 	    IOSTAT |= V_M3;  	// scan VRAM
 	    runCpu(V_M3_CYCLE);

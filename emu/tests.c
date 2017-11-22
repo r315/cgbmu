@@ -54,5 +54,54 @@ void TEST_BUTTON(uint32_t button){
             case BUTTON_SELECT: b = "[ SELECT ]"; break;        
         }
         printf("Button pressed %s\r",b);
+}
+
+const char f_letter[] = {
+    0x78,0x78,
+    0x40,0x40,
+    0x40,0x40,
+    0x78,0x78,
+    0x40,0x40,
+    0x40,0x40,
+    0x40,0x40,
+    0x00,0x00
+};
+const char sprites[] = {
+    16,8,0,0,
+    16,16,0,SPRITE_FLAG_XFLIP,
+    16+8,8,0,SPRITE_FLAG_YFLIP,
+    16+8,16,0,(SPRITE_FLAG_XFLIP|SPRITE_FLAG_YFLIP)
+};
+extern uint8_t spritedataline[160];
+void dumpLine(uint8_t *buf, uint8_t size){
+uint8_t i;
+    putchar('[');
+    for(i=0;i<size;i++, buf++){
+        if(*buf)
+		    printf("%02X",*buf);
+        else
+            printf("  ");        
     }
+    printf("]\n");    
+}
+
+void testSpriteDataLine(void){
+char i;
+    memcpy(vram,f_letter,sizeof(f_letter));
+    memcpy(oam,sprites,sizeof(sprites));
+    IOOBP0 = IOOBP1 = 0xE4;
+
+for(i=0; i<16; i++){
+    IOLY = i;
+    scanOAM();
+    dumpLine(spritedataline, 16);
+
+}
+
+
+}
+
+int _main (int argc, char *argv[]){
+    testSpriteDataLine();
+}
     

@@ -63,18 +63,22 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 #define TILE_MAP0_BASE    0x1800       
 #define TILE_MAP1_BASE    0x1C00     
 
-#define TILE_LINE_MASK    0xFC 
 #define BG_H_TILES		 32
 #define BG_V_TILES		 32
 #define BG_SIZE_MASK	((BG_H_TILES * BG_V_TILES) - 1)
 
 #define TILE_BYTES_SIZE		16
+#define TILE_LINE_MASK    7
+
+#define SPRITE_FLAG_YFLIP   (1<<6)
+#define SPRITE_FLAG_XFLIP   (1<<5)
+#define SPRITE_FLAG_PAL     (1<<4)
 
 typedef struct _Sprite{
-    uint8_t x;
     uint8_t y;
-    uint8_t p;      //Pattern
-    uint8_t f;      //Flags: |priority | Y Flip | X Flip | Palette number | - | - | - | - | 
+    uint8_t x;
+    uint8_t pattern;
+    uint8_t flags;      // |priority | Y Flip | X Flip | Palette number | - | - | - | - | 
 }Sprite;
 
 
