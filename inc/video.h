@@ -35,8 +35,8 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 #define SCREEN_W 160
 #define SCREEN_H 144
 
-#define TILES_W SCREEN_W/8
-#define TILES_H SCREEN_H/8
+#define SCREEN_H_TILES SCREEN_W/8
+#define SCREEN_V_TILES SCREEN_H/8
 
 #define V_M0          0
 #define V_M1          1
@@ -62,13 +62,16 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 #define TILE_DATA1_SIGNED_BASE 0x1000
 #define TILE_MAP0_BASE    0x1800       
 #define TILE_MAP1_BASE    0x1C00     
+#define TILE_BYTES_SIZE   16
+#define TILE_LINE_MASK    7
+#define TILE_W            8
+#define TILE_H            8
 
 #define BG_H_TILES		 32
 #define BG_V_TILES		 32
-#define BG_SIZE_MASK	((BG_H_TILES * BG_V_TILES) - 1)
-
-#define TILE_BYTES_SIZE		16
-#define TILE_LINE_MASK    7
+#define BG_SIZE_MASK	 0x3FF
+#define BG_V_LINES_MASK	 255
+#define BG_H_LINES_MASK	 255
 
 #define SPRITE_FLAG_YFLIP   (1<<6)
 #define SPRITE_FLAG_XFLIP   (1<<5)
@@ -87,7 +90,7 @@ typedef struct _Tile {
 		uint8_t lsb;
 		uint8_t msb;
 	}line[8];
-}Tile;
+}TileData;
 
 void video(void);
 void lycIrq(void);

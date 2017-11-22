@@ -72,7 +72,7 @@ const char sprites[] = {
     16+8,8,0,SPRITE_FLAG_YFLIP,
     16+8,16,0,(SPRITE_FLAG_XFLIP|SPRITE_FLAG_YFLIP)
 };
-extern uint8_t spritedataline[160];
+extern uint8_t scanlinedata[160];
 void dumpLine(uint8_t *buf, uint8_t size){
 uint8_t i;
     putchar('[');
@@ -94,7 +94,7 @@ char i;
 for(i=0; i<16; i++){
     IOLY = i;
     scanOAM();
-    dumpLine(spritedataline, 16);
+    dumpLine(scanlinedata, 16);
 
 }
 
