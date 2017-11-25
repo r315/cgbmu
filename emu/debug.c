@@ -14,6 +14,7 @@
 #define FRAME_TIME 16
 
 uint16_t breakpoint = 0x100;
+uint8_t stepping = 0;
 
 void decode(void);
 char readLine(char *dst, uint8_t max);
@@ -26,12 +27,12 @@ uint32_t ticks, dticks;
 	setFcolor(YELLOW);
 	while((key = readJoyPad()) != 255){
 		ticks = SDL_GetTicks();
-		//step(key);				
-		stepFast(key);
+		step(key);				
+		//stepFast(key);
 		dticks = SDL_GetTicks() - ticks;
-		if(dticks < FRAME_TIME)
+		if(dticks < FRAME_TIME && stepping)
 			SDL_Delay(FRAME_TIME - dticks);
-		updateFps();
+		//updateFps();
 	}
 }
 //----------------------------------------------------*/
@@ -111,8 +112,8 @@ void dumpRegisters(void)
 	printVal(175,27,"hl ",REG_HL,16,4);
 	printVal(175,36,"sp ",REG_SP,16,4);
 	printVal(175,45,"pc ",REG_PC,16,4);
-	printVal(175,64,"LCDC ",(IOLCDC & 8),16,2);
-	printVal(175,84,"ly ",IOLY,16,4);
+	printVal(175,64,"LCDC ",IOLCDC,16,2);
+	printVal(175,84,"ly ",IOLY,16,2);
 
 	printVal(170,94,"TIMA ",IOTIMA,16,2);
 	printVal(170,104,"DIV ",IODIV,16,2);
@@ -207,8 +208,7 @@ void debugCommans(uint8_t *st){
 // interrupts() are processed in each iteration
 //------------------------------------------------------
 void step(uint8_t key){
-static uint8_t stepping = 0;
-	
+
 	debugCommans(&stepping);
 	
 	if( REG_PC == breakpoint && !stepping){

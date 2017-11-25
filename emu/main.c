@@ -24,11 +24,15 @@ void run(void) {
 		video();
 	}
 }
+
+
 //-----------------------------------------------------------
 //instructions test
 //-----------------------------------------------------------
 int main (int argc, char *argv[])
 {
+	
+
 	LCD_Init();	 
 	initCpu();	
 	switch(argc){
