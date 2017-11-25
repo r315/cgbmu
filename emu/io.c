@@ -66,6 +66,16 @@ int	keys = LPC_GPIO1->FIOPIN & KEYSMASK;
 //-----------------------------------------
 uint8_t joyPad(void){
 uint8_t buttons = readJoyPad();
+
+	if (IOP1 & IOP15) {		
+		buttons &= 0x0f; 
+		buttons |= IOP14;
+	}
+	else {
+		buttons >>= 4;
+		buttons |= IOP15;
+	}	
+
 	IOP1 = (~buttons);
 	return IOP1;
 }

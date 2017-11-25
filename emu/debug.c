@@ -27,8 +27,8 @@ uint32_t ticks, dticks;
 	setFcolor(YELLOW);
 	while((key = readJoyPad()) != 255){
 		ticks = SDL_GetTicks();
-		step(key);				
-		//stepFast(key);
+		//step(key);				
+		stepFast(key);
 		dticks = SDL_GetTicks() - ticks;
 		if(dticks < FRAME_TIME && stepping)
 			SDL_Delay(FRAME_TIME - dticks);

@@ -41,20 +41,34 @@ void testRom(char *fn){
 }
 
 
-void TEST_BUTTON(uint32_t button){
-    char *b = "";
-        
-        switch(button){
-            case BUTTON_UP:     b = "[  UP  ]  "; break;
-            case BUTTON_DOWN:   b = "[ DOWN ]  "; break;
-            case BUTTON_LEFT:   b = "[ LEFT  ] "; break;
-            case BUTTON_RIGHT:  b = "[ RIGHT ] "; break;
-            case BUTTON_A:      b = "  [ A ]   "; break;
-            case BUTTON_B:      b = "  [ B ]   "; break;
-            case BUTTON_START:  b = "[ START ] "; break;        
-            case BUTTON_SELECT: b = "[ SELECT ]"; break;        
-        }
-        printf("Button pressed %s\r",b);
+void testButtons(void){
+	char *b,t;
+	printf("Buttons Test\n");
+	while (readJoyPad() != 255) {
+		b = "";
+		IOP1 = IOP14;
+		t = joyPad() & 0x0f;
+		switch (t) {
+		case 0x0e:  b = "  [ A ]   "; break;
+		case 0x0d:  b = "  [ B ]   "; break;
+		case 0x0b:  b = "[ SELECT ]"; break;
+		case 0x07:  b = "[ START ] "; break;
+		case 15: break;
+		default:
+			printf("%u\n", t);
+			break;
+		}
+		IOP1 = IOP15;
+		switch (joyPad() & 0x0f) {
+		case 0x0e:   b = "[ RIGHT ] "; break;
+		case 0x0d:   b = "[ LEFT  ] "; break;
+		case 0x0b:   b = "[  UP  ]  "; break;
+		case 0x07:   b = "[ DOWN ]  "; break;
+		}
+		if(*b !='\0')
+			printf("%s\n",b);
+		SDL_Delay(20);
+	}
 }
 
 const char f_letter[] = {
@@ -168,8 +182,9 @@ void testBgDataLine(void) {
 }
 
 
-int mainTest (int argc, char *argv[]){
+void testMain (void){
     //testSpriteDataLine();
-	testBgDataLine();
+	//testBgDataLine();
+	testButtons();
 }
     

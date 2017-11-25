@@ -25,15 +25,16 @@ void run(void) {
 	}
 }
 
-
+void testMain(void);
 //-----------------------------------------------------------
 //instructions test
 //-----------------------------------------------------------
 int main (int argc, char *argv[])
 {
-	
-
 	LCD_Init();	 
+	testMain();
+	return 0;
+
 	initCpu();	
 	switch(argc){
 		case 1:
