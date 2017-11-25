@@ -10,16 +10,16 @@
 
 #define GetTicks() SDL_GetTicks()
 #define FPS_ROW 0
-#define REGISTERS_ROW 11
 #define FRAME_TIME 16
 
 uint16_t breakpoint = 0x100;
 uint8_t stepping = 0;
 
+void debugCommans(uint8_t *st);
 void decode(void);
 char readLine(char *dst, uint8_t max);
-void step(uint8_t key);
-void stepFast(uint8_t key);
+void stepInstruction(void);
+void stepFrame(void);
 
 void debug(void){	
 uint8_t key;
@@ -27,12 +27,37 @@ uint32_t ticks, dticks;
 	setFcolor(YELLOW);
 	while((key = readJoyPad()) != 255){
 		ticks = SDL_GetTicks();
-		//step(key);				
-		stepFast(key);
+
+		debugCommans(&stepping);
+
+		if (REG_PC == breakpoint && !stepping) {
+			stepping = 2;
+		}
+
+		if (stepping) {
+			if (stepping == 2) {
+				dumpRegisters();
+				disassemble();
+				stepping = 1;
+				continue;
+			}
+
+			if (key != J_A && stepping == 1) {
+				SDL_Delay(30);
+				continue;
+			}
+			else {
+				stepping = 2;
+			}
+		}
+
+		//stepInstruction();				
+		stepFrame();
+		
 		dticks = SDL_GetTicks() - ticks;
 		if(dticks < FRAME_TIME && stepping)
 			SDL_Delay(FRAME_TIME - dticks);
-		//updateFps();
+		updateFps();
 	}
 }
 //----------------------------------------------------*/
@@ -106,17 +131,17 @@ void dumpRegisters(void)
 	setFcolor(YELLOW);
 	//setAttribute(g_double);
 //	setFont(BOLD);
-	printVal(175,0,"af ",REG_A << 8| REG_F ,16,4);
-	printVal(175,9,"bc ",REG_BC,16,4);
-	printVal(175,18,"de ",REG_DE,16,4);
-	printVal(175,27,"hl ",REG_HL,16,4);
-	printVal(175,36,"sp ",REG_SP,16,4);
-	printVal(175,45,"pc ",REG_PC,16,4);
-	printVal(175,64,"LCDC ",IOLCDC,16,2);
-	printVal(175,84,"ly ",IOLY,16,2);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(0),"af ",REG_A << 8| REG_F ,16,4);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(1),"bc ",REG_BC,16,4);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(2),"de ",REG_DE,16,4);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(3),"hl ",REG_HL,16,4);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(4),"sp ",REG_SP,16,4);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(5),"pc ",REG_PC,16,4);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(7),"LCDC ",IOLCDC,16,2);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(8),"ly ",IOLY,16,2);
 
-	printVal(170,94,"TIMA ",IOTIMA,16,2);
-	printVal(170,104,"DIV ",IODIV,16,2);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(10),"TIMA ",IOTIMA,16,2);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(11),"DIV ",IODIV,16,2);
 #endif
 	LCD_Pop();
 }
@@ -207,34 +232,12 @@ void debugCommans(uint8_t *st){
 // video(),
 // interrupts() are processed in each iteration
 //------------------------------------------------------
-void step(uint8_t key){
-
-	debugCommans(&stepping);
-	
-	if( REG_PC == breakpoint && !stepping){
-		stepping = 2;
-	}
-
-	if(stepping){
-		if(stepping == 2){
-			dumpRegisters();
-			disassemble();	        
-			stepping = 1;
-			return;
-		}
-
-		if(key != J_A && stepping == 1){
-			SDL_Delay(30);			
-			return;
-		}			
-		else{
-			stepping = 2;
-		}
-	}	
+void stepInstruction(void){
 	decode();	
 	timer();	
 	video();
-	interrupts();	        
+	interrupts();	
+	//one instruction
 }
 //-----------------------------------------
 //
@@ -250,7 +253,7 @@ void runCpu(int nTicks){
 //-----------------------------------------
 //
 //-----------------------------------------
-void stepFast(uint8_t key){
+void stepFrame(void){
 
 	LCD_Window(0, 0, SCREEN_W, SCREEN_H);
 

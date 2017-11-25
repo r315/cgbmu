@@ -22,12 +22,12 @@ static uint8_t button = 0;
 	    return button;	    
 	    
 	if(ev.type == SDL_QUIT)
-	    return -1;
+	    return 255;
 	
 	keys  = SDL_GetKeyboardState(NULL);
 
 	if(keys[SDL_SCANCODE_ESCAPE]) 
-	    return -1;	
+	    return 255;	
 
 	if (ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP) {		
 		button = 0;

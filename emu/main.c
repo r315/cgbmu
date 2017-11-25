@@ -32,8 +32,8 @@ void testMain(void);
 int main (int argc, char *argv[])
 {
 	LCD_Init();	 
-	testMain();
-	return 0;
+	//testMain();
+	//return 0;
 
 	initCpu();	
 	switch(argc){
