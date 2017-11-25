@@ -1,6 +1,7 @@
 
 #ifdef WIN32
 #include <SDL.h>
+#include <stdio.h>
 #else
 #include <SDL2/SDL.h>
 #endif
@@ -101,7 +102,74 @@ for(i=0; i<16; i++){
 
 }
 
-int _main (int argc, char *argv[]){
-    testSpriteDataLine();
+const char letters[] = {
+	0x38,0x38,		// A
+	0x44,0x44,
+	0x44,0x44,
+	0x7c,0x7c,
+	0x44,0x44,
+	0x44,0x44,
+	0x44,0x44,
+	0x00,0x00,
+
+
+	0x78,0x78,			// F
+	0x40,0x40,
+	0x40,0x40,
+	0x78,0x78,
+	0x40,0x40,
+	0x40,0x40,
+	0x40,0x40,
+	0x00,0x00,
+
+	0xfe,0xfe,
+	0x02,0xc2,
+	0x82,0x82,
+	0x82,0x82,
+	0x82,0x82,
+	0x82,0x82,
+	0xfe,0xfe,
+	0x00,0x00,
+
+	0xff,0xff,
+	0xff,0xff,
+	0xff,0xff,
+	0xff,0xff,
+	0xff,0xff,
+	0xff,0xff,
+	0xff,0xff,
+	0xff,0xff,
+};
+#define _P2 2
+#define _P0 3
+#define _P1 1
+#define _P3 3
+
+const char bg_map[] = {
+	_P0,_P0,_P0,_P0,_P0,_P0,_P0,_P0,_P1,_P1,_P1,_P1,_P1,_P1,_P1,_P1,_P2,_P2,_P2,_P2,_P2,_P2,_P2,_P2,_P3,_P3,_P3,_P3,_P3,_P3,_P3,_P3,	
+	_P1,_P1,_P1,_P1,_P1,_P1,_P1,_P1,_P2,_P2,_P2,_P2,_P2,_P2,_P2,_P2,_P3,_P3,_P3,_P3,_P3,_P3,_P3,_P3,_P0,_P0,_P0,_P0,_P0,_P0,_P0,_P0
+};
+
+void testBgDataLine(void) {
+	char i;
+	memcpy(vram, letters, sizeof(letters));
+	memcpy((vram + TILE_MAP0_BASE), bg_map, sizeof(bg_map));
+	IOBGP = IOOBP0 = IOOBP1 = 0xE4;
+	IOLCDC |= BG_W_DATA;
+
+	for (i = 0; i<1; i++) {
+		IOLY = i;
+		scanline();
+		dumpLine(scanlinedata, 32);
+
+	}
+
+
+}
+
+
+int mainTest (int argc, char *argv[]){
+    //testSpriteDataLine();
+	testBgDataLine();
 }
     

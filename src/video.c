@@ -51,25 +51,33 @@ uint8_t msb = *p;
 //-----------------------------------------
 //put one line of tile data into scanlinedata
 //-----------------------------------------
-void putTileData(TileData *tl, uint8_t *dst) {
+void putTileData(uint8_t *mapline, uint8_t *pixel, uint8_t *dst) {
 	uint8_t i = TILE_W;
-	uint8_t color, pixel;
+	uint8_t color;
+	TileData *td;	
 
-	pixel = 7 - (IOSCX & TILE_LINE_MASK);
-
-	while (i--) {
-		color = (tl->line[IOLY & TILE_LINE_MASK].msb >> pixel) & 1;
-		color <<= 1;
-		color |= (tl->line[IOLY & TILE_LINE_MASK].lsb >> pixel) & 1;
-		color = (IOBGP >> (color << 1)) & 3;
-		if (!*dst)		// only put if color from sprite is transparent 
-			*dst = color;
-		pixel--;
-		if (pixel == 255) {
-			tl++;
-			pixel = 7;
+	while (i) {
+		if (IOLCDC & BG_W_DATA) {	
+			td = (TileData*)(vram) + *(mapline + TILE_INDEX(*pixel));
+		}else{
+			td = (TileData*)(vram + TILE_DATA1_SIGNED_BASE) + (int8_t)*(mapline + TILE_INDEX(*pixel));
 		}
-		dst += 1;
+		do{
+			color = td->line[TILE_LINE(IOLY)].msb;
+			color >>= (7 - TILE_LINE(*pixel));
+			color <<= 1;
+			color &= 2;
+			uint8_t t = td->line[TILE_LINE(IOLY)].lsb;
+			t >>= (7 - TILE_LINE(*pixel));
+			t &= 1;
+			color |= t;
+			color = (IOBGP >> (color << 1)) & 3;
+			if (!*dst)		// only put if color from sprite is transparent 
+				*dst = color;
+			dst += 1;
+			(*pixel)++;
+			i--;
+		}while( TILE_LINE(*pixel) != 0 && i != 0);
 	}
 }
 //-----------------------------------------
@@ -99,28 +107,25 @@ Sprite **ps = spriteline;
 //
 //-----------------------------------------
 void scanline(){
-	uint8_t *bgtilepattern;
+	uint8_t *bgmapline;
 	uint8_t pixel, tileindex;
+	uint8_t *sld = scanlinedata;
 
 	// Get tile map base
-	bgtilepattern = (uint8_t*)(vram + ((IOLCDC & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
+	bgmapline = (uint8_t*)(vram + ((IOLCDC & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 	// Add line and scroll offset for getting tile pattern
-	bgtilepattern += (((IOLY >> 3) * BG_H_TILES) + ((IOSCY >> 3) * BG_H_TILES)) & BG_SIZE_MASK;
+	bgmapline += (TILE_LINE_INDEX(IOLY) + TILE_LINE_INDEX(IOSCY)) & BG_SIZE_MASK;
 
-	if (IOLCDC & BG_W_DATA) {							 
-		for (tileindex = 0; tileindex < SCREEN_H_TILES; tileindex++, bgtilepattern++ ) {
-			putTileData((TileData*)(vram) + *bgtilepattern, scanlinedata + (tileindex * TILE_W));
-		}
-	}
-	else {
-		for (tileindex = 0; tileindex < SCREEN_H_TILES; tileindex++, bgtilepattern++) {
-			putTileData((TileData*)(vram + TILE_DATA1_SIGNED_BASE) + (int8_t)*bgtilepattern, scanlinedata + (tileindex * TILE_W));
-		}
+	pixel = IOSCX + (1);
+	
+	for (tileindex = 0; tileindex < SCREEN_H_TILES; tileindex++, sld += TILE_W) {
+		putTileData(bgmapline, &pixel, sld);
 	}
 
-	for (pixel= 0; pixel < SCREEN_W; pixel++) {	
-		LCD_Data(lcd_pal[scanlinedata[pixel]]);
-	}	
+	sld = scanlinedata;
+	for (pixel = 0; pixel < SCREEN_W; pixel++, sld++) {
+		LCD_Data(lcd_pal[*sld]);
+	}
 
 }
 //-----------------------------------------

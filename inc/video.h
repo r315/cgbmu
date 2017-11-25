@@ -1,5 +1,22 @@
 /*
 
+VRAM
++-----------------------+ A000
++-----------------------+ 9FFF
+!                       |
++-----------------------+ 9C00 BG & Window Tile Map 1
++-----------------------+ 9BFF
+|                       |
++-----------------------+ 9800 BG & Window Tile Map 0
++-----------------------+ 97FF
+|                       |
++-----------------+ 8FFF|
+|                 |     |
++-----------------+-----+ 8800 BG & Window Data Base 1
+|                 |
++-----------------+ 8000 BG & Window & Obj Data Base 0
+
+
 GBCPUman, page 54
 
 Window Tile Map  (LCDC.6) 0:9800-9BFF, 1:9C00-9FFF
@@ -66,6 +83,9 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 #define TILE_LINE_MASK    7
 #define TILE_W            8
 #define TILE_H            8
+#define TILE_INDEX(x)     (x>>3)
+#define TILE_LINE_INDEX(y)   (TILE_INDEX(y) << 5)  // => ((y/8) * 32)
+#define TILE_LINE(y)      (y & TILE_LINE_MASK)
 
 #define BG_H_TILES		 32
 #define BG_V_TILES		 32

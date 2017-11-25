@@ -1,27 +1,27 @@
 /*
-
-IE Register
---------------- FFFF
-High ram
---------------- FF80
-free
---------------- FF4C
- I/O
---------------- FF00
-FREE
---------------- FEA0
-OAM
---------------- FE00
-Echo ram
---------------- E000
-Ram 8kB
---------------- C000
-cartrigbe Ram
---------------- A000
-VRAM
---------------- 8000
- cartrigbe
---------------- 0000
++---------------
+| IE Register
++--------------- FFFF
+| High ram
++--------------- FF80
+| Free
++--------------- FF4C
+| I/O
++--------------- FF00
+| FREE
++--------------- FEA0
+| OAM
++--------------- FE00
+| Echo Ram
++--------------- E000
+| Ram 8kB
++--------------- C000
+| cartrigbe Ram
++--------------- A000
+| VRAM
++--------------- 8000
+| cartrigbe
++--------------- 0000
 http://verhoeven272.nl/cgi-bin/FSgz?fruttenboel%2FGameboy&Fruttenboel+GameBoy&GBtop&pandocs&GBcontent
 http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 */
