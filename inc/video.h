@@ -67,7 +67,7 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 
 #define V_MODE_MASK   3
 
-#define VBLANK_LINES  10
+#define VBLANK_LINES  8
 
 #define MAX_LINE_SPRITES 10
 #define MAX_SPRITES   40

@@ -60,7 +60,7 @@ uint32_t ticks = 0, dticks;
 
 
 
-#if 1
+#if 0
 		ticks = SDL_GetTicks();
 		stepFrame();
 		dticks = SDL_GetTicks() - ticks;
@@ -270,9 +270,9 @@ void stepInstruction(void){
 //-----------------------------------------
 void runCpu(int nTicks){
 	while (nTicks > 0){
-		interrupts();
-		timer();   
 		decode();
+		timer();   
+		interrupts();
 		nTicks -= GET_CYCLE(); 	
     }  
 }
@@ -285,22 +285,24 @@ void stepFrame(void){
 
 	IOSTAT &= ~(V_MODE_MASK);
 	for (IOLY = 0; IOLY < SCREEN_H; IOLY++){
+	    
 		if(IOLY == IOLYC){	IOSTAT |= LYC_LY_FLAG;}
 		else { IOSTAT &= ~LYC_LY_FLAG; }				
-		IOSTAT |= V_M2;  	// Change to Mode2 scan OAM
-		if(IOSTAT & OAM_IE)	// check OAM IE
+		
+		IOSTAT |= V_M2;  			// Change to Mode2 scan OAM
+		if(IOSTAT & OAM_IE)			// check OAM IE
 			IOIF |= STAT_IF;		
-	    runCpu(V_M2_CYCLE);
+		runCpu(V_M2_CYCLE);
 		scanOAM();
-
-	    IOSTAT |= V_M3;  	// Change to Mode3 scan VRAM
+	    
+		IOSTAT |= V_M3;  			// Change to Mode3 scan VRAM
 	    runCpu(V_M3_CYCLE);
 	    scanline();
-    
+
 	    IOSTAT &= ~(V_MODE_MASK); 	// Change to Mode0 H-Blank
-	   	if(IOSTAT & HB_IE)	
+	   	if(IOSTAT & HB_IE)			// check H-Blank IE
 			IOIF |= STAT_IF;
-	    runCpu(V_M0_CYCLE);
+	    runCpu(V_M0_CYCLE);		
 	}	
 	
 	IOSTAT |= V_M1;  		// Change to Mode 1
@@ -308,12 +310,12 @@ void stepFrame(void){
 	if(IOSTAT & VB_IE)		// LCD Flag is activated if IE is enabled
 		IOIF |= STAT_IF;	
 
-	do{					
+	while(IOLY < (SCREEN_H + VBLANK_LINES)){
 		if(IOLY == IOLYC){	IOSTAT |= LYC_LY_FLAG; }
 		else { IOSTAT &= ~LYC_LY_FLAG; }				
 		runCpu(V_LINE_CYCLE);	
 		IOLY++;		
-	}while(IOLY < (SCREEN_H + VBLANK_LINES));
+	}					
 	 
 	// end of frame
 }

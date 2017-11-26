@@ -6,7 +6,7 @@ VPATH += $(CSRCPATH)
 BIN  = gbemu
 OBJ  =lcdsdl2.o debug.o decoder.o alu.o dmgcpu.o main.o cartridge.o video.o graphics.o io.o tests.o readline.o disassembler.o
 LINKOBJ  = $(OBJ) $(RES)
-LIBS =  -lSDL2main -lSDL2 -g3 
+LIBS =  -lSDL2main -lSDL2
 INCS =  -I"emu" -I"inc"
 
 CFLAGS = $(INCS) -g3
