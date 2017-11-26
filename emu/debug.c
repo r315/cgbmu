@@ -12,8 +12,14 @@
 #define FPS_ROW 0
 #define FRAME_TIME 16
 
+enum {
+	STEP = 1,
+	CONTINUE,
+	PAUSE
+};
+
 uint16_t breakpoint = 0x100;
-uint8_t stepping = 0;
+uint8_t stepping = OFF;
 
 void debugCommans(uint8_t *st);
 void decode(void);
@@ -23,41 +29,57 @@ void stepFrame(void);
 
 void debug(void){	
 uint8_t key;
-uint32_t ticks, dticks;
+uint32_t ticks = 0, dticks;
 	setFcolor(YELLOW);
 	while((key = readJoyPad()) != 255){
-		ticks = SDL_GetTicks();
-
-		debugCommans(&stepping);
-
-		if (REG_PC == breakpoint && !stepping) {
-			stepping = 2;
-		}
-
-		if (stepping) {
-			if (stepping == 2) {
-				dumpRegisters();
-				disassemble();
-				stepping = 1;
-				continue;
-			}
-
-			if (key != J_A && stepping == 1) {
-				SDL_Delay(30);
-				continue;
-			}
-			else {
-				stepping = 2;
-			}
-		}
-
-		//stepInstruction();				
-		stepFrame();
 		
+
+		if (stepping != OFF) {
+			debugCommans(&stepping);
+
+			if (REG_PC == breakpoint && !stepping) {
+				stepping = STEP;
+			}
+			
+			switch (stepping) {
+				case STEP:
+					dumpRegisters();
+					disassemble();
+					stepping = PAUSE;
+					break;
+
+				case PAUSE:
+					if (key != J_A) {
+						SDL_Delay(30);
+						continue;
+					}
+				case CONTINUE:					
+					break;
+			}			
+		}
+
+
+
+#if 1
+		ticks = SDL_GetTicks();
+		stepFrame();
 		dticks = SDL_GetTicks() - ticks;
-		if(dticks < FRAME_TIME && stepping)
+		if (dticks < FRAME_TIME && stepping == OFF) {
 			SDL_Delay(FRAME_TIME - dticks);
+		}
 		updateFps();
+#else
+		stepInstruction();				
+		if (frame == ON) {
+			dticks = SDL_GetTicks() - ticks;
+			if (dticks < FRAME_TIME && stepping == OFF) {
+				SDL_Delay(FRAME_TIME - dticks);
+			}
+			updateFps();
+			ticks = SDL_GetTicks();
+			frame = OFF;
+		}
+#endif	
 	}
 }
 //----------------------------------------------------*/
@@ -65,14 +87,16 @@ uint32_t ticks, dticks;
 //------------------------------------------------------
 void updateFps(void){
 static uint32_t fpsupdatetick = 0;
-static int fps = 0;
+static uint16_t fps = 0;
     fps++;
     
 	if(GetTicks() > fpsupdatetick)
 	{
-		printVal(SCREEN_W + 8,FPS_ROW,"Fps ",fps,10,4);
+		LCD_Push();
+		printVal(SCREEN_W + 8,FPS_ROW,"Fps ",fps,10,5);
 		fps = 0;
 		fpsupdatetick = GetTicks() + 1000;
+		LCD_Pop();
 	}
 }
 //----------------------------------------------------*/
@@ -142,6 +166,7 @@ void dumpRegisters(void)
 
 	printVal(DBG_REG_COL(0), DBG_REG_ROW(10),"TIMA ",IOTIMA,16,2);
 	printVal(DBG_REG_COL(0), DBG_REG_ROW(11),"DIV ",IODIV,16,2);
+	
 #endif
 	LCD_Pop();
 }
@@ -204,7 +229,7 @@ void debugCommans(uint8_t *st){
 	if(readLine(line, 10)){
 		
 		if(*line == '\0' || *line == ' ' ){ //cartridge return pressed
-			*st = 3;	   //step
+			*st = STEP;
 			return;
 		}
 
@@ -215,11 +240,12 @@ void debugCommans(uint8_t *st){
 		if(!strcmp(cmd, "bp")){
 			cmd = strtok(NULL, " ");
 			breakpoint = (uint16_t)strtol(cmd, &cmd, 16);
-			*st = 0;	//resume
+			*st = CONTINUE;
+			return;
 		}
 
 		if(!strcmp(cmd, "run")){
-			*st = 0;	 //resume 
+			*st = CONTINUE; 
 			return;
 		}
 	}
@@ -245,8 +271,8 @@ void stepInstruction(void){
 void runCpu(int nTicks){
 	while (nTicks > 0){
 		interrupts();
-		decode();
 		timer();   
+		decode();
 		nTicks -= GET_CYCLE(); 	
     }  
 }
@@ -257,23 +283,21 @@ void stepFrame(void){
 
 	LCD_Window(0, 0, SCREEN_W, SCREEN_H);
 
+	IOSTAT &= ~(V_MODE_MASK);
 	for (IOLY = 0; IOLY < SCREEN_H; IOLY++){
-
-		IOSTAT |= V_M2;  	// scan OAM
+		if(IOLY == IOLYC){	IOSTAT |= LYC_LY_FLAG;}
+		else { IOSTAT &= ~LYC_LY_FLAG; }				
+		IOSTAT |= V_M2;  	// Change to Mode2 scan OAM
 		if(IOSTAT & OAM_IE)	// check OAM IE
-			IOIF |= STAT_IF;
-		if(IOLY == IOLYC)	// check coincedence	
-			IOSTAT |= LYC_LY_FLAG; 
-		else
-			IOSTAT &= ~LYC_LY_FLAG;			
+			IOIF |= STAT_IF;		
 	    runCpu(V_M2_CYCLE);
 		scanOAM();
 
-	    IOSTAT |= V_M3;  	// scan VRAM
+	    IOSTAT |= V_M3;  	// Change to Mode3 scan VRAM
 	    runCpu(V_M3_CYCLE);
 	    scanline();
     
-	    IOSTAT &= ~(V_M3); 	// H-Blank
+	    IOSTAT &= ~(V_MODE_MASK); 	// Change to Mode0 H-Blank
 	   	if(IOSTAT & HB_IE)	
 			IOIF |= STAT_IF;
 	    runCpu(V_M0_CYCLE);
@@ -281,15 +305,16 @@ void stepFrame(void){
 	
 	IOSTAT |= V_M1;  		// Change to Mode 1
 	IOIF |= V_BLANK_IF;		// V-Blank Flag is Always activated
-
 	if(IOSTAT & VB_IE)		// LCD Flag is activated if IE is enabled
 		IOIF |= STAT_IF;	
-						
-	while(IOLY < (SCREEN_H + VBLANK_LINES)){
-		lycIrq();
+
+	do{					
+		if(IOLY == IOLYC){	IOSTAT |= LYC_LY_FLAG; }
+		else { IOSTAT &= ~LYC_LY_FLAG; }				
 		runCpu(V_LINE_CYCLE);	
-		IOLY++;
-	}
+		IOLY++;		
+	}while(IOLY < (SCREEN_H + VBLANK_LINES));
+	 
 	// end of frame
 }
 

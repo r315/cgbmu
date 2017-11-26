@@ -104,13 +104,14 @@ typedef struct _Sprite{
     uint8_t flags;      // |priority | Y Flip | X Flip | Palette number | - | - | - | - | 
 }Sprite;
 
-
 typedef struct _Tile {
 	struct {
 		uint8_t lsb;
 		uint8_t msb;
 	}line[8];
 }TileData;
+
+extern uint8_t frame;
 
 void video(void);
 void lycIrq(void);
