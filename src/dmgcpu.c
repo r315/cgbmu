@@ -143,7 +143,7 @@ void timer(void)
 //
 //-----------------------------------------
 void dma(uint16_t src){
-uint8_t i, *psrc, *pdst;
+uint8_t i, *pdst;
 	pdst = (uint8_t*)&oam[0];
     for(i = 0; i < DMA_SIZE; i++, pdst++)
 		*pdst = memoryRead(src++);           

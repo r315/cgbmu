@@ -4,13 +4,13 @@
 
 
 static uint16_t video_cycles = 0;
+uint8_t frame;
 
 const unsigned short lcd_pal[]={0xE7DA,0x8E0E,0x334A,0x08C4};
 
 Sprite *spriteline[MAX_SPRITES/sizeof(Sprite)];
 uint8_t bgdataline[40];
 uint8_t scanlinedata[160];		// one line of pixels
-unsigned char nsprites;
 
 
 //-----------------------------------------
@@ -60,7 +60,7 @@ void putTileData(uint8_t *mapline, uint8_t *pixel, uint8_t *dst) {
 		if (IOLCDC & BG_W_DATA) {	
 			td = (TileData*)(vram) + *(mapline + TILE_INDEX(*pixel));
 		}else{
-			td = (TileData*)(vram + TILE_DATA1_SIGNED_BASE) + (int8_t)*(mapline + TILE_INDEX(*pixel));
+			td = (TileData*)(vram + TILE_DATA1_SIGNED_BASE) + *((int8_t*)(mapline + TILE_INDEX(*pixel)));
 		}
 		do{
 			color = td->line[TILE_LINE(IOLY)].msb;
@@ -86,7 +86,6 @@ void putTileData(uint8_t *mapline, uint8_t *pixel, uint8_t *dst) {
 void scanOAM(){
 uint8_t i, n, tileline = (IOLY + 16) >> 3;	// Y position has a offset of 16pixels
 Sprite *poam = (Sprite*)&oam[0];
-Sprite **ps = spriteline;
 
 	memset(scanlinedata, 0, sizeof(scanlinedata));
 	
@@ -116,7 +115,7 @@ void scanline(){
 	// Add line and scroll offset for getting tile pattern
 	bgmapline += (TILE_LINE_INDEX(IOLY) + TILE_LINE_INDEX(IOSCY)) & BG_SIZE_MASK;
 
-	pixel = IOSCX + (1);
+	pixel = IOSCX;
 	
 	for (tileindex = 0; tileindex < SCREEN_H_TILES; tileindex++, sld += TILE_W) {
 		putTileData(bgmapline, &pixel, sld);
@@ -129,11 +128,12 @@ void scanline(){
 
 }
 //-----------------------------------------
-//
+// Clear/set Coincidence flag on STAT
+// activate STAT IF if Coincedence or OAM
 //-----------------------------------------
 void lycIrq(void)
 {
-	if(IOLY == IOLYC)		
+	if(IOLY == IOLYC)
 		IOSTAT |= LYC_LY_FLAG; 
 	else
 		IOSTAT &= ~LYC_LY_FLAG;
@@ -203,7 +203,8 @@ void video(void){
 				IOSTAT |= V_M2;
 				
 				lycIrq();
-				IOLY = 0;					
+				IOLY = 0;
+				frame = ON;
 				LCD_Window(0, 0, SCREEN_W, SCREEN_H);
 			}
 			break;		

@@ -21,7 +21,7 @@ uint8_t opa = REG_A;
 			if( ((opa & 0x0F) + (opb & 0x0f) + ci) > 0x0F) PSW |= FH;
 			sum = opa + opb + ci;
 			if( (sum & 0xFF00) ) PSW |= FC;				
-			opa = sum;
+			opa = (uint8_t)sum;
 			break;
 		
 		case 2: // SUB
@@ -79,7 +79,7 @@ uint8_t opa = REG_A;
 //-----------------------------------------
 void daa(void)
 {
-unsigned short opa = REG_A;
+uint16_t opa = REG_A;
     
     if (!(PSW & FN))
     {
@@ -103,7 +103,7 @@ unsigned short opa = REG_A;
     if ((opa & 0x100) == 0x100)
         PSW |= FC;
     
-    REG_A = opa;
+    REG_A = (uint8_t)opa;
     
     if (!REG_A)
         PSW |= FZ;
