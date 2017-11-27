@@ -3,7 +3,7 @@
 #include "lcd.h"
 
 
-static uint16_t video_cycles = 0;
+uint16_t video_cycles = 0;
 uint8_t frame;
 
 const unsigned short lcd_pal[]={0xE7DA,0x8E0E,0x334A,0x08C4};
@@ -131,17 +131,15 @@ void scanline(){
 // Clear/set Coincidence flag on STAT
 // activate STAT IF if Coincedence or OAM
 //-----------------------------------------
-void lycIrq(void)
-{
+void nextLine(void){
+	IOLY++;
 	if(IOLY == IOLYC)
 		IOSTAT |= LYC_LY_FLAG; 
 	else
-		IOSTAT &= ~LYC_LY_FLAG;
-		
-	if(IOSTAT & (OAM_IE | LYC_LY_FLAG))
-		IOIF |= STAT_IF;			
+		IOSTAT &= ~LYC_LY_FLAG;	
+	if (IOSTAT & LYC_LY_IE)			//BUG: Changing LYC_LY_IE to  LYC_LY_FLAG corrects scroll..
+		IOIF |= STAT_IF;
 }
-
 //-----------------------------------------
 //
 //-----------------------------------------
@@ -174,17 +172,18 @@ void video(void){
 			
 		case V_M0: 							// Mode 0 H-Blank
 			if(video_cycles > V_M0_CYCLE){
-				video_cycles -= V_M0_CYCLE;
-				IOLY++;
-				if(IOLY > (SCREEN_H-1)){				
+				video_cycles -= V_M0_CYCLE;				
+				nextLine();			// Finish processing scanline, go to next one
+				if(IOLY < SCREEN_H){				
+					IOSTAT |= V_M2;     	// Next, Mode 2 searching oam
+					if (IOSTAT & OAM_IE)
+						IOIF |= STAT_IF;
+				}
+				else{						
 					IOSTAT |= V_M1;     	// Next, Mode 1 V-blank
 					IOIF |= V_BLANK_IF;						
 					if(IOSTAT & VB_IE)
 						IOIF |= STAT_IF;
-				}
-				else{						// Finish processing scanline, go to next one
-					IOSTAT |= V_M2;     	// Next, Mode 2 searching oam					
-				 	lycIrq();
 				}
 			}
 			break;
@@ -192,17 +191,14 @@ void video(void){
 		case V_M1: 							// Mode 1 V-blank 10 lines
 			if(video_cycles > V_LINE_CYCLE)
 			{
-				video_cycles -= V_LINE_CYCLE;
-				IOLY++;									
-				lycIrq();
-				
+				video_cycles -= V_LINE_CYCLE;								
+				nextLine();				
 				if(IOLY < (SCREEN_H + VBLANK_LINES))
 					return;
 			
 				IOSTAT &= ~(V_MODE_MASK); 	// Next, Mode 2 searching oam
 				IOSTAT |= V_M2;
 				
-				lycIrq();
 				IOLY = 0;
 				frame = ON;
 				LCD_Window(0, 0, SCREEN_W, SCREEN_H);

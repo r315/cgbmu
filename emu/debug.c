@@ -60,7 +60,7 @@ uint32_t ticks = 0, dticks;
 
 
 
-#if 0
+#if 1
 		ticks = SDL_GetTicks();
 		stepFrame();
 		dticks = SDL_GetTicks() - ticks;
@@ -268,13 +268,15 @@ void stepInstruction(void){
 //-----------------------------------------
 //
 //-----------------------------------------
-void runCpu(int nTicks){
-	while (nTicks > 0){
-		decode();
+extern uint16_t video_cycles;
+void runCpu(uint16_t nTicks){
+	while (nTicks > video_cycles){
 		timer();   
 		interrupts();
-		nTicks -= GET_CYCLE(); 	
-    }  
+		decode();
+		video_cycles += GET_CYCLE(); 	
+    } 
+	video_cycles -= nTicks; 	
 }
 //-----------------------------------------
 //
@@ -286,8 +288,10 @@ void stepFrame(void){
 	IOSTAT &= ~(V_MODE_MASK);
 	for (IOLY = 0; IOLY < SCREEN_H; IOLY++){
 	    
-		if(IOLY == IOLYC){	IOSTAT |= LYC_LY_FLAG;}
-		else { IOSTAT &= ~LYC_LY_FLAG; }				
+		IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT &= ~LYC_LY_FLAG);
+
+		if (IOSTAT & LYC_LY_IE) 
+			IOIF |= STAT_IF;
 		
 		IOSTAT |= V_M2;  			// Change to Mode2 scan OAM
 		if(IOSTAT & OAM_IE)			// check OAM IE
@@ -311,8 +315,7 @@ void stepFrame(void){
 		IOIF |= STAT_IF;	
 
 	while(IOLY < (SCREEN_H + VBLANK_LINES)){
-		if(IOLY == IOLYC){	IOSTAT |= LYC_LY_FLAG; }
-		else { IOSTAT &= ~LYC_LY_FLAG; }				
+		IOSTAT = (IOLY == IOLYC)? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & ~LYC_LY_FLAG); 				
 		runCpu(V_LINE_CYCLE);	
 		IOLY++;		
 	}					

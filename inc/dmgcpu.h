@@ -198,5 +198,5 @@ void memoryWrite16(uint16_t address, uint16_t data);
 void initCpu(void);
 void interrupts(void);
 void timer(void);
-void runCpu(int nTicks);
+void runCpu(uint16_t nTicks);
 #endif
