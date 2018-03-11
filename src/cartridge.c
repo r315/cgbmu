@@ -7,8 +7,8 @@
 #ifndef __EMU__
 #include <pff/pff.h>
 
-unsigned char *ROM0 = (char*)0x2007C000;
-unsigned char *ROMBANK = (char*)0x20080000;
+unsigned char *ROM0 = (unsigned char*)0x2007C000;
+unsigned char *ROMBANK = (unsigned char*)0x20080000;
 //unsigned char cartridgeRam[0x2000];
 unsigned char bankSelect;
 

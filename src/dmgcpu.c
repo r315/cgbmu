@@ -305,8 +305,8 @@ uint16_t memoryRead16(uint16_t address)
 //-----------------------------------------
 void memoryWrite16(uint16_t address, uint16_t data)
 {
-	memoryWrite(address++,data);
-	memoryWrite(address,data>>8);	
+	memoryWrite(address++, (uint8_t)data);
+	memoryWrite(address, (uint8_t)(data>>8));	
 }
 //-----------------------------------------
 //
