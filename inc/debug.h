@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <display.h>
 
 #define DBG_REG_COL_BASE 175
 #define DBG_REG_ROW_BASE 9
@@ -14,6 +15,7 @@ void dumpRegisters(void);
 int printVal(int x, int y,char *name, int v, char radix, char digitos);
 void dumpMemory(unsigned short addr, unsigned short siz);
 
+void DBG_Info(char* text);
 
 /**
  * run cpu in debug mode

@@ -41,7 +41,7 @@ char* f_error(FRESULT res)
 //-----------------------------------------------------------
 void fsInit(void)
 {
-	logInfo(f_error(pf_mount(&drive0)));
+	DBG_Info(f_error(pf_mount(&drive0)));
 }
 //--------------------------------------------------
 //
@@ -61,8 +61,11 @@ WORD n;
 void loadRom(char *fn)
 {
 WORD n;
-	logInfo(f_error(pf_open(fn)));	
-	logInfo(f_error(pf_read(ROM0,0x4000,&n)));	
+	if(!drive0.fs_type){
+		fsInit();
+	}
+	DBG_Info(f_error(pf_open(fn)));	
+	DBG_Info(f_error(pf_read(ROM0,0x4000,&n)));	
 	bankSelect = 1;
 	loadRombank();		
 }
