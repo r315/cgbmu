@@ -8,7 +8,6 @@
 #ifndef _ili9328_h_
 #define _ili9328_h_
 
-//#include <lpc1768.h>
 #include <stdint.h>
 
 //-------------------------------------------------------------------
@@ -191,22 +190,24 @@
 #define  DATAPORT    GPIO0->FIOPIN0
 #define  DATAPORTDIR GPIO0->FIODIR0
 
-#define  LCDCS0    CTRLPORT->FIOCLR = LCD_CS;
-#define  LCDCS1    CTRLPORT->FIOSET = LCD_CS; 
-#define  LCDRS0    CTRLPORT->FIOCLR = LCD_RS;
-#define  LCDRS1    CTRLPORT->FIOSET = LCD_RS;
-#define  LCDWR0    CTRLPORT->FIOCLR = LCD_WR; //asm("nop");
-#define  LCDWR1    CTRLPORT->FIOSET = LCD_WR;  
-#define  LCDRD0    CTRLPORT->FIOCLR = LCD_RD;
-#define  LCDRD1    CTRLPORT->FIOSET = LCD_RD; 
-#define  LCDRST0   CTRLPORT->FIOCLR = LCD_RST;
-#define  LCDRST1   CTRLPORT->FIOSET = LCD_RST; 
+#define  LCDCS0      CTRLPORT->FIOCLR = LCD_CS;
+#define  LCDCS1      CTRLPORT->FIOSET = LCD_CS; 
+#define  LCDRS0      CTRLPORT->FIOCLR = LCD_RS;
+#define  LCDRS1      CTRLPORT->FIOSET = LCD_RS;
+#define  LCDWR0      CTRLPORT->FIOCLR = LCD_WR; //asm("nop");
+#define  LCDWR1      CTRLPORT->FIOSET = LCD_WR;  
+#define  LCDRD0      CTRLPORT->FIOCLR = LCD_RD;
+#define  LCDRD1      CTRLPORT->FIOSET = LCD_RD; 
+#define  LCDRST0     CTRLPORT->FIOCLR = LCD_RST;
+#define  LCDRST1     CTRLPORT->FIOSET = LCD_RST; 
 #define  LCD_BKL_OFF CTRLPORT->FIOCLR = LCD_LED;
 #define  LCD_BKL_ON  CTRLPORT->FIOSET = LCD_LED;
 
-#define LCD_IO_INIT                                                \
+#define LCD_IO_INIT                                                   \
 	CTRLPORT->FIODIR |= LCD_CS|LCD_RS|LCD_WR|LCD_RD|LCD_LED|LCD_RST;  \
 	DATAPORTDIR |= 0xFF;
+
+void DelayMs(uint32_t dl);
 
 /**
  @brief Deprecated read data/reg from lcd

@@ -6,7 +6,12 @@
 #elif defined(__LPCXpresso__)
     #include "ili9341.h"
 #else
+    #include <LPC17xx.h>
+    #define GPIO0 LPC_GPIO0
+    #define GPIO1 LPC_GPIO1
     #include "ili9328.h"
+    #include <string.h>
+    #include <stdio.h>
 #endif
 
 #ifndef ON
