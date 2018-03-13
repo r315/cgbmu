@@ -1,8 +1,12 @@
 
 #ifdef WIN32
-#include <SDL.h>
-#else
-#include <SDL2/SDL.h>
+	#include <SDL.h>
+#elif defined(LINUX)
+	#include <SDL2/SDL.h>
+#endif
+
+#if defined(__BB__)
+	#include <blueboard.h>
 #endif
 
 #include "graphics.h"
@@ -25,15 +29,25 @@ void run(void) {
 	}
 }
 
-void testMain(void);
 //-----------------------------------------------------------
 //instructions test
 //-----------------------------------------------------------
 int main (int argc, char *argv[])
 {
+	#if defined(__BB__)
+	BB_Init();
+	BB_ConfigPLL(PLL100);	
+
+	DISPLAY_puts("Hello\n");
+
+	initCpu();	
+	loadRom("mario.gb");
+	run();	
+	
+	#elif defined(__EMU__)	
+	
 	LCD_Init();	 
-	//testMain();
-	//return 0;
+	//testMain();	
 
 	initCpu();	
 	switch(argc){
@@ -65,6 +79,7 @@ int main (int argc, char *argv[])
 	
 
 	LCD_Close();
+	#endif
 	return 0;
 }
 

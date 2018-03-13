@@ -5,7 +5,6 @@
 #define _WRITE_FUNC	1
 
 #include <blueboard.h>
-#include <lpc17xx.h>
 #include <spi.h>
 #include "diskio.h"
 

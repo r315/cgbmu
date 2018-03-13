@@ -10,10 +10,7 @@
 extern "C" {
 #endif
 
-#ifndef WIN32
-    #include <LPC17xx.h>
-#endif
-
+#include <LPC17xx.h>
 #include <stdint.h>
 
 /* valores dados por NXP lpc17xx.pll.calculator.xls */	 

@@ -186,5 +186,6 @@ void testMain (void){
     //testSpriteDataLine();
 	//testBgDataLine();
 	testButtons();
+	exit(0);
 }
     

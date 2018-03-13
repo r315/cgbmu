@@ -15,7 +15,7 @@ char *p = src;
 return p - src;
 }
 
-void memset(char *ptr, char value, size_t num)
+void memset(char *ptr, char value, uint32_t num)
 {
   while(num--)
   {

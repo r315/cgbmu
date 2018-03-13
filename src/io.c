@@ -1,23 +1,22 @@
 
 #include "dmgcpu.h"
 #include "io.h"
-#ifdef __EMU__
-#ifdef WIN32
-#include <SDL.h>
-#else
-#include <SDL2/SDL.h>
-#endif
-#else
 
-#include <blueboard.h>
-
+#if defined(__EMU__)
+	#ifdef WIN32
+		#include <SDL.h>
+	#else
+		#include <SDL2/SDL.h>
+	#endif
+#elif defined(__BB__)
+	#include <blueboard.h>
 #endif
 //-----------------------------------------
 //
 //-----------------------------------------
 uint8_t readJoyPad(void)
 {
-#ifdef __EMU__
+#if defined(__EMU__)
 SDL_Event ev;
 const Uint8 *keys;
 static uint8_t button = 0;
@@ -54,7 +53,7 @@ static uint8_t button = 0;
     button |= keys[SDL_SCANCODE_SPACE ] ? J_A : 0;
   
 	return button;    
-#else
+#elif defined(__BB__)
 int	keys = LPC_GPIO1->FIOPIN & KEYSMASK;
 static uint8_t button = 0;	
 

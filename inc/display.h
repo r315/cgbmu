@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <lcd.h>
 
-#ifndef __ctype_h
+#ifndef __EMU__
 	#define toupper(c) ( (c)-'a'+'A' )  // so funciona para tipo unsigned char
 	#define abs(x) ((x) < 0 ? -x : x)
 #endif 

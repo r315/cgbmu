@@ -1,7 +1,7 @@
 #ifndef _spi_h_
 #define _spi_h_
 
-#include <lpc17xx.h> 
+#include <LPC17xx.h> 
 
 /* SSPxSR - bit definitions. */
 #define TFE     0x01
