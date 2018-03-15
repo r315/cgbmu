@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <conio.h>
 
 char readLine(char *dst, uint8_t max){
@@ -25,8 +25,8 @@ int c;
 }
 
 #else
-#include <SDL2/SDL.h>
 
+#include <common.h>
 #include <termios.h>
 #include <unistd.h>    
 #include <sys/time.h>

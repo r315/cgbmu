@@ -2,7 +2,11 @@
 #define _lcd_h_
 
 #if defined(__EMU__)
+	#if defined(__LCDFB__)
+	#include <lcdfb.h>
+	#else
 	#include "lcdsdl.h"
+	#endif
 #elif defined(__LPCXpresso__)
     #include "ili9341.h"
 #else

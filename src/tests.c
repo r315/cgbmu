@@ -1,11 +1,6 @@
 
-#ifdef WIN32
-#include <SDL.h>
-#include <stdio.h>
-#else
-#include <SDL2/SDL.h>
-#endif
 
+#include <common.h>
 #include "graphics.h"
 #include "dmgcpu.h"
 #include "video.h"

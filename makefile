@@ -11,6 +11,8 @@ clean:
 emu: 
 	@$(MAKE) -C bsp/emu OBJSPATH=../../$(OBJSPATH)
 
+rpi: 
+	@$(MAKE) -C bsp/emu OBJSPATH=../../$(OBJSPATH) rpi
 
 bb:
 	@$(MAKE) -C bsp/Blueboard OBJSPATH=../../$(OBJSPATH)

@@ -1,15 +1,5 @@
 
-#if defined(__BB__)
-	#include <blueboard.h>
-	#define REGISTERS_ROW 11
-	#define LCD_Push()
-	#define LCD_Pop()
-#elif defined(__EMU__)
-	#include "disassembler.h"
-	#define GetTicks() SDL_GetTicks()
-	#define FRAME_TIME 16
-#endif
-
+#include <common.h>
 #include "lcd.h"
 #include "debug.h"
 #include "dmgcpu.h"

@@ -1,14 +1,5 @@
 
-#ifdef WIN32
-	#include <SDL.h>
-#elif defined(LINUX)
-	#include <SDL2/SDL.h>
-#endif
-
-#if defined(__BB__)
-	#include <blueboard.h>
-#endif
-
+#include <common.h>
 #include "graphics.h"
 #include "dmgcpu.h"
 #include "video.h"
@@ -21,11 +12,18 @@
 #include "tests.h"
 
 void run(void) {
+	int wait = 0;
 	while (readJoyPad() != 255) {		
 		interrupts();
 		decode();
 		timer();			
-		video();
+		if (video() == ON) {
+			DBG_Fps();
+			wait = wait - GetTicks();
+			if (wait > 0)
+			DelayMs(wait);
+			wait = GetTicks() + 16;
+		}
 	}
 }
 

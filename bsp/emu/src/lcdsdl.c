@@ -1,4 +1,5 @@
 
+#include <common.h>
 #include "lcdsdl.h"
 
 SDL_Surface* screen ;
@@ -12,45 +13,44 @@ uint16_t _offset = 0; // offset de janela para sso
 //-------------------------------------------------------------
 //
 //-------------------------------------------------------------
-void lcdInit(void)
+void LCD_Init(void)
 {
     screen = NULL;
     SDL_Init( SDL_INIT_EVERYTHING );    
     screen = SDL_SetVideoMode(LCD_W,LCD_H,32, SDL_SWSURFACE );
 	//SDL_WM_SetCaption("Blueboard Emulator",NULL);    
 }
+void LCD_Close(void){
+	SDL_Quit(); 
+}
+
 //-------------------------------------------------------------
 //
 //-------------------------------------------------------------
-void solidfill(int count, int c)
+void LCD_Fill( uint32_t n, uint16_t color)
 {
-   while(count--)   
-      lcddata(c);
+   while(n--)   
+      LCD_Data(color);
 }
 //-------------------------------------------------------------
 //
 //-------------------------------------------------------------
-void setgram(int x, int y)
+void LCD_Window(int x, int y, int width, int height)
 {
-    _grx = x+_offset;
-    _gry = y+_offset;    
-}
-//-------------------------------------------------------------
-//
-//-------------------------------------------------------------
-void setwrap(int x, int y, int width, int height)
-{
-    _sx = x+_offset;
-    _ex = x + (width-1)+_offset;
-    _sy = y+_offset;
-    _ey = y + (height-1)+_offset;
+    _sx = x + _offset;
+    _ex = x + (width - 1) + _offset;
+    _sy = y + _offset;
+    _ey = y + (height - 1) + _offset;
+
+    _grx = x + _offset;
+    _gry = y + _offset;
 }
 //-------------------------------------------------------------
 //        RRRRRGGGGGGBBBBB 
 //        BBBBBGGGGGGRRRRR
 //RRRRRRRRGGGGGGGGBBBBBBBB
 //-------------------------------------------------------------
-void lcddata(unsigned int color)
+void LCD_Data(uint16_t color)
 {
    Uint32 *pixels = (Uint32 *)screen->pixels;    
    
@@ -76,7 +76,7 @@ void lcddata(unsigned int color)
 //-------------------------------------------------------------
 //
 //-------------------------------------------------------------
-int lcdreaddata(void)
+int LCD_Data_Read(void)
 {
    Uint32 tmp, *pixels = (Uint32 *)screen->pixels;   
    tmp = pixels[ (_gry*LCD_W)+_grx ];
@@ -87,11 +87,26 @@ int lcdreaddata(void)
 //	 
 //	 
 //-------------------------------------------------------------------
-void putpixel(int x, int y, int c)
+void LCD_Pixel(uint16_t x, uint16_t y, uint16_t color)
 {
-	setgram(x,y);
-	lcddata(c);
+	LCD_Window(x,y,1,1);
+	LCD_Data(color);
 }
-void hwscroll(int y){    
+uint16_t LCD_GetWidth(void){
+    return LCD_W;
 }
+uint16_t LCD_GetHeight(void){
+    return LCD_H;
+}
+
+void LCD_Scroll(uint16_t y){
+}
+void LCD_Bkl(uint8_t state){
+}
+
+void LCD_Push(void){
+}
+void LCD_Pop(void){
+}
+
 

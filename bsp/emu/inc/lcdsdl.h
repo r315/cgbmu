@@ -2,11 +2,6 @@
 #define _lcdsdl_h_
 
 #include <stdint.h>
-#ifdef WIN32
-#include <SDL.h>
-#else
-#include <SDL2/SDL.h>
-#endif
 
 #define COSTUM_LCD
 
