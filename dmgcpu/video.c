@@ -2,16 +2,12 @@
 #include "video.h"
 #include "lcd.h"
 
-
-uint16_t video_cycles = 0;
-uint8_t frame;
-
 const unsigned short lcd_pal[]={0xE7DA,0x8E0E,0x334A,0x08C4};
 
+uint16_t video_cycles = 0;
 Sprite *spriteline[MAX_SPRITES/sizeof(Sprite)];
 uint8_t bgdataline[40];
 uint8_t scanlinedata[160];		// one line of pixels
-
 
 //-----------------------------------------
 //put one line of Sprite data into scanlinedata
@@ -187,11 +183,13 @@ void nextLine(void){
 //-----------------------------------------
 //
 //-----------------------------------------
-void video(void){	
+uint8_t video(void){	
+	uint8_t frame;
 	if(!(IOLCDC & LCD_DISPLAY)) return; 	// Lcd controller off	
 		
 	video_cycles += GET_CYCLE();		
-		 	
+	frame = OFF;
+
 	switch(IOSTAT & V_MODE_MASK)
 	{
 		case V_M2: 							// Mode 2 oam access start scanline	
@@ -245,8 +243,9 @@ void video(void){
 				
 				IOLY = 0;
 				frame = ON;
-				LCD_Window(0, 0, SCREEN_W, SCREEN_H);
+				LCD_Window(0, 0, SCREEN_W, SCREEN_H);				
 			}
 			break;		
 	}
+	return frame;
 }

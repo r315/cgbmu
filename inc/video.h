@@ -113,7 +113,7 @@ typedef struct _Tile {
 
 extern uint8_t frame;
 
-void video(void);
+uint8_t video(void);
 void nextLine(void);
 void scanline(void);
 void scanOAM(void);
