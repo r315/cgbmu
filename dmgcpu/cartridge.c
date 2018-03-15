@@ -88,8 +88,14 @@ char* romFile;
 
 void loadRom(char *fn)
 {
+	char cwd[1024];
 	FILE *fp;
 	romFile = fn;
+	
+	if (getcwd(cwd, sizeof(cwd)) != NULL)
+		fprintf(stdout, "Current working dir: %s\n", cwd);
+	else
+		perror("getcwd() error");
 
 	fprintf(stdout,"%s: Loading File \"%s\"\n", LOG_TAG, fn);
 	fp = fopen(romFile, "rb");

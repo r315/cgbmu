@@ -42,7 +42,7 @@ uint32_t ticks = 0, dticks;
 			
 			switch (stepping) {
 				case STEP:
-					dumpRegisters();
+					DBG_Reg();
 					disassemble();
 					stepping = PAUSE;
 					break;
@@ -66,7 +66,7 @@ uint32_t ticks = 0, dticks;
 		if (dticks < FRAME_TIME && stepping == OFF) {
 			SDL_Delay(FRAME_TIME - dticks);
 		}
-		updateFps();
+		DBG_Fps();
 #else
 		stepInstruction();				
 		if (frame == ON) {
@@ -74,7 +74,7 @@ uint32_t ticks = 0, dticks;
 			if (dticks < FRAME_TIME && stepping == OFF) {
 				SDL_Delay(FRAME_TIME - dticks);
 			}
-			updateFps();
+			DBG_Fps();
 			ticks = SDL_GetTicks();
 			frame = OFF;
 		}
@@ -85,7 +85,7 @@ uint32_t ticks = 0, dticks;
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
-void updateFps(void){
+void DBG_Fps(void){
 static uint32_t fpsupdatetick = 0;
 static uint16_t fps = 0;
     fps++;
@@ -132,7 +132,7 @@ int printVal(int x, int y,char *name, int v, char radix, char digitos)
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
-void dumpRegisters(void)
+void DBG_Reg(void)
 {
 	LCD_Push();
 #if 0
@@ -173,7 +173,7 @@ void dumpRegisters(void)
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
-void dumpMemory(unsigned short addr, unsigned short siz)
+void DBG_Mem(unsigned short addr, unsigned short siz)
 {
 unsigned short i,j,x;
 unsigned char p = 160;
