@@ -14,7 +14,6 @@
 #include "io.h"
 
 char filename[100];
-void decode(void);
 extern const char bg_map[32 * 32];
 extern const char tilesData[0x1000];
 
@@ -132,7 +131,7 @@ void Test_DBG_BGmap(void) {
 	IOBGP = IOOBP0 = IOOBP1 = 0xE4;
 	IOLCDC |= BG_W_DATA;
 	IOSCX = 0;
-	IOSCY = 1;
+	IOSCY = 4;
 
 	while (1) {
 		//DBG_BGmap();
@@ -144,12 +143,13 @@ void Test_DBG_BGmap(void) {
 
 		switch (readJoyPad()) {
 		case 255: return;
-		case J_UP: IOSCY--; printf("SCY: %X\n", IOSCY); break;
-		case J_DOWN: IOSCY++; printf("SCY: %X\n", IOSCY); break;
-		case J_LEFT: IOSCX--; printf("SCX: %X\n", IOSCX); break;
-		case J_RIGHT: IOSCX++; printf("SCX: %X\n", IOSCX); break;
+		case J_UP: IOSCY--; DBG_Reg(); break;
+		case J_DOWN: IOSCY++; DBG_Reg(); break;
+		case J_LEFT: IOSCX--; DBG_Reg(); break;
+		case J_RIGHT: IOSCX++; DBG_Reg(); break;
+			
 		}
-		DelayMs(50);
+		DelayMs(16);
 	}
 }
 

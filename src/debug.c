@@ -58,9 +58,6 @@ uint32_t ticks = 0, dticks;
 					break;
 			}			
 		}
-
-
-
 #if 1
 		ticks = SDL_GetTicks();
 		stepFrame();
@@ -168,6 +165,9 @@ void DBG_Reg(void)
 
 	printVal(DBG_REG_COL(0), DBG_REG_ROW(10),"TIMA ",IOTIMA,16,2);
 	printVal(DBG_REG_COL(0), DBG_REG_ROW(11),"DIV ",IODIV,16,2);
+	
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(13), "SCX ", IOSCX, 16, 2);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(14), "SCY ", IOSCY, 16, 2);
 	
 #endif
 	LCD_Pop();
