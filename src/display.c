@@ -1,4 +1,6 @@
 #include <stdarg.h>
+#include <string.h>
+#include <math.h>
 #include "display.h"
 
 int drawCharSimple(int x, int y, unsigned char *d_char);

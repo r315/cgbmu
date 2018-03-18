@@ -1,6 +1,7 @@
 
 
-
+#include <stdio.h>
+#include <common.h>
 #include "cartridge.h"
 #include "debug.h"
 
@@ -70,11 +71,6 @@ WORD n;
 	loadRombank();		
 }
 #else
-
-#ifdef WIN32
-#pragma warning(disable:4996)
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 unsigned char ROM0[0x4000];
@@ -92,7 +88,7 @@ void loadRom(char *fn)
 	FILE *fp;
 	romFile = fn;
 	
-	if (getcwd(cwd, sizeof(cwd)) != NULL)
+	if (getcwd(cwd, sizeof(cwd)))
 		fprintf(stdout, "Current working dir: %s\n", cwd);
 	else
 		perror("getcwd() error");

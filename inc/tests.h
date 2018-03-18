@@ -3,7 +3,7 @@
 
 #if defined(__EMU__)
 #ifdef _WIN32
-#define ROMS_BINARY_PATH ROM_PATH
+#define ROMS_BINARY_PATH ROM_PATH // defined on build time
 #else
 #define ROMS_BINARY_PATH "../../../roms/tests/"
 #endif

@@ -1,5 +1,6 @@
 
 #include <common.h>
+#include <string.h>
 #include "graphics.h"
 #include "dmgcpu.h"
 #include "video.h"
@@ -48,12 +49,19 @@ int main (int argc, char *argv[])
 	//testMain();	
 
 	initCpu();	
+
+	testMain();
+
 	switch(argc){
 		case 1:
 			testAll();
 			break;
 		
 		case 2:
+			if (!strcmp(argv[1], "test")) {
+				testMain();
+				break;
+			}
 			loadRom(argv[1]);
 			run();
 			break;

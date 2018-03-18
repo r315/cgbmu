@@ -6,6 +6,7 @@
 #endif
 
 #include <stdio.h> 
+#include <string.h>
 #include "lcd.h"
 #include "lcdsdl.h"
 

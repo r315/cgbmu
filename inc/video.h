@@ -83,9 +83,10 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 #define TILE_LINE_MASK    7
 #define TILE_W            8
 #define TILE_H            8
-#define TILE_INDEX(x)     (x>>3)
-#define TILE_LINE_INDEX(y)   (TILE_INDEX(y) << 5)  // => ((y/8) * 32)
-#define TILE_LINE(y)      (y & TILE_LINE_MASK)
+#define TILE_INDEX(x)       (x>>3)
+#define TILE_LINE_INDEX(y)  (TILE_INDEX(y) << 5)  // => ((y/8) * 32)
+#define TILE_LINE(y)        (y & TILE_LINE_MASK)
+#define TILE_PIXEL(x)       (x & 7)
 
 #define BG_H_TILES		 32
 #define BG_V_TILES		 32
@@ -110,8 +111,6 @@ typedef struct _Tile {
 		uint8_t msb;
 	}line[8];
 }TileData;
-
-extern uint8_t frame;
 
 uint8_t video(void);
 void nextLine(void);

@@ -1,5 +1,7 @@
 
 #include <common.h>
+#include <string.h>
+#include <stdlib.h>
 #include "lcd.h"
 #include "debug.h"
 #include "dmgcpu.h"
@@ -233,12 +235,12 @@ void debugCommans(uint8_t *st){
 			return;
 		}
 
-		cmd = strtok(line, " ");
+		cmd = (char*)strtok(line, " ");
 		if(cmd == NULL) 
 			return;		//empty line
 		
 		if(!strcmp(cmd, "bp")){
-			cmd = strtok(NULL, " ");
+			cmd = (char*)strtok(NULL, " ");
 			breakpoint = (uint16_t)strtol(cmd, &cmd, 16);
 			*st = CONTINUE;
 			return;
@@ -304,7 +306,7 @@ void stepFrame(void){
 	    
 		IOSTAT |= V_M3;  			// Change to Mode3 scan VRAM
 	    runCpu(V_M3_CYCLE);
-	    scanline();
+		scanline();
 
 	    IOSTAT &= ~(V_MODE_MASK); 	// Change to Mode0 H-Blank
 	   	if(IOSTAT & HB_IE)			// check H-Blank IE
@@ -322,7 +324,7 @@ void stepFrame(void){
 		runCpu(V_LINE_CYCLE);	
 		IOLY++;		
 	}					
-	 
+	//DBG_BGmap();
 	// end of frame
 }
 
@@ -335,6 +337,48 @@ void DBG_Info(char* text)
 	DISPLAY_putc('\n');
 }
 
+extern const unsigned short lcd_pal[];
+void DBG_DrawTileLine(uint8_t msb, uint8_t lsb) {
+	uint8_t i, color;
+	for (i = 0; i < 8; i++) {
+		color = (msb & 0x80) ? 2 : 0;
+		color |= (lsb & 0x80) ? 1 : 0;
+		color = (IOBGP >> (color << 1));
+		LCD_Data(lcd_pal[color & 3]);
+		msb <<= 1;
+		lsb <<= 1;
+	}
+}
 
+void DBG_DrawTile(uint8_t x, uint8_t y, TileData *td) {
+	uint8_t i;
+	LCD_Window(x * 8, y * 8, 8, 8);
+	for(i = 0; i < 8; i++) {
+		DBG_DrawTileLine(td->line[i].msb, td->line[i].lsb);
+	} 
+}
+
+void DBG_BGmap(void) {
+	uint8_t w, h;
+	uint8_t *bgmapbase;
+	TileData *td;
+	uint8_t offset;
+
+	bgmapbase = (uint8_t*)(vram + ((IOLCDC & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
+
+	for (h = 0; h < 32; h++) {
+		for (w = 0; w < 32; w++) {
+			offset = *(bgmapbase + w + (h * 32));
+
+			if (IOLCDC & BG_W_DATA) {
+				td = (TileData*)(vram) + offset;
+			}
+			else {
+				td = (TileData*)(vram + TILE_DATA1_SIGNED_BASE) + (int8_t)(offset);
+			}
+			DBG_DrawTile(w,h,td);
+		}
+	}
+}
 
 
