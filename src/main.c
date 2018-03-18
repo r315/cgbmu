@@ -39,7 +39,8 @@ int main (int argc, char *argv[])
 
 	DISPLAY_puts("Hello\n");
 
-	initCpu();	
+	initCpu();		
+
 	loadRom("mario.gb");
 	run();	
 	
@@ -50,7 +51,7 @@ int main (int argc, char *argv[])
 
 	initCpu();	
 
-	testMain();
+	//testMain();
 
 	switch(argc){
 		case 1:

@@ -53,30 +53,22 @@ void putSpriteData(Sprite *sp, uint8_t *dst) {
 * @pixeloffset start pixel for current scanline
 * @dst pointer for current scanline data
 *---------------------------------------------------------*/
-void putBgTileData(uint8_t *tilemapidx, uint8_t *dst, uint8_t *pixeloffset, uint8_t lineoffset) {
-	uint8_t i = TILE_W;
+void putBgTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line) {
+	uint8_t i = SCREEN_W;
 	uint8_t color;
 	TileData *td;
 	uint8_t tileoffset, msb, lsb;
+	line = TILE_LINE(line);
 
 	while (i) {
-		tileoffset = *(tilemapidx + TILE_INDEX(*pixeloffset));  // add pixel offset with wraparround
+		tileoffset = *(tilemapline + TILE_INDEX(pixeloffset));  // add pixel offset with wraparround
 		td = (IOLCDC & BG_W_DATA) ? (TileData*)(vram)+tileoffset : (TileData*)(vram + TILE_DATA1_SIGNED_BASE) + (int8_t)tileoffset;
-		msb = td->line[lineoffset].msb;
-		lsb = td->line[lineoffset].lsb;
-		msb <<= TILE_LINE(*pixeloffset);
-		lsb <<= TILE_LINE(*pixeloffset);
+		msb = td->line[line].msb;
+		lsb = td->line[line].lsb;
+		msb <<= TILE_LINE(pixeloffset);
+		lsb <<= TILE_LINE(pixeloffset);
 
 		do {
-			//color = td->line[TILE_LINE(IOLY)].msb;
-			//color >>= (7 - TILE_LINE(*pixeloffset));
-			//color <<= 1;
-			//color &= 2;
-			//t = td->line[TILE_LINE(IOLY)].lsb;
-			//t >>= (7 - TILE_LINE(*pixeloffset));
-			//t &= 1;
-			//color |= t;			
-
 			color = (msb & 0x80) ? 2 : 0;
 			color |= (lsb & 0x80) ? 1 : 0;
 			msb <<= 1;
@@ -86,9 +78,9 @@ void putBgTileData(uint8_t *tilemapidx, uint8_t *dst, uint8_t *pixeloffset, uint
 			if (!*dst)		// only put if color from sprite is transparent 
 				*dst = color;
 			dst += 1;
-			(*pixeloffset)++;
+			(pixeloffset)++;
 			i--;
-		} while (TILE_PIXEL(*pixeloffset) != 0 && i != 0);
+		} while (TILE_PIXEL(pixeloffset) != 0 && i != 0);
 	}
 }
 
@@ -154,15 +146,13 @@ void scanline() {
 	// Get tile map base
 	bgmapline = (uint8_t*)(vram + ((IOLCDC & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 	// Add line and scroll-y offset for getting tile pattern	
-	bgmapline += (TILE_LINE_INDEX(IOLY) + TILE_LINE_INDEX(IOSCY)) & BG_SIZE_MASK;
+	//bgmapline += (TILE_LINE_INDEX(IOLY) + TILE_LINE_INDEX(IOSCY)) & BG_SIZE_MASK;
+	line = (IOLY + IOSCY) & 255;
+	bgmapline += TILE_LINE_INDEX(line);
 
-	pixel = IOSCX;
-	line = TILE_LINE(IOLY) + TILE_LINE(IOSCY);
-
-	for (tileindex = 0; tileindex < SCREEN_H_TILES; tileindex++, sld += TILE_W) {
-		putBgTileData(bgmapline, sld, &pixel, line);
-	}
-
+	putBgTileData(bgmapline, sld, IOSCX, line);
+	
+	// TODO: Chg window putline as BG putline 
 	if (IOLCDC & W_DISPLAY && IOLY >= IOWY) {
 		line = IOLY - IOWY;
 		pixel = 0;									//window allways start at pixel 0
