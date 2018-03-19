@@ -22,7 +22,7 @@ void run(void) {
 			DBG_Fps();
 			wait = wait - GetTicks();
 			if (wait > 0)
-			DelayMs(wait);
+				DelayMs(wait);
 			wait = GetTicks() + 16;
 		}
 	}

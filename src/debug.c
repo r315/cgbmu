@@ -32,8 +32,7 @@ void debug(void){
 uint8_t key;
 uint32_t ticks = 0, dticks;
 	DISPLAY_SetFcolor(YELLOW);
-	while((key = readJoyPad()) != 255){
-		
+	while((key = readJoyPad()) != 255){		
 
 		if (stepping != OFF) {
 			debugCommans(&stepping);

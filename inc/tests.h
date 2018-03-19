@@ -8,7 +8,7 @@
 #define ROMS_BINARY_PATH "../../../roms/tests/"
 #endif
 
-#define ALL_TESTS_ROM "cpu_instrs.gb"
+#define ALL_TESTS_ROM "tests/cpu_instrs.gb"
 
 void testAll(void);
 void testRom(char *fn);

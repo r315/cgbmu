@@ -53,16 +53,16 @@ void putSpriteData(Sprite *sp, uint8_t *dst) {
 * @pixeloffset start pixel for current scanline
 * @dst pointer for current scanline data
 *---------------------------------------------------------*/
-void putBgTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line) {
-	uint8_t i = SCREEN_W;
+void putBgTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint8_t size) {
 	uint8_t color;
 	TileData *td;
-	uint8_t tileoffset, msb, lsb;
-	line = TILE_LINE(line);
+	uint8_t tileindex, msb, lsb;
 
-	while (i) {
-		tileoffset = *(tilemapline + TILE_INDEX(pixeloffset));  // add pixel offset with wraparround
-		td = (IOLCDC & BG_W_DATA) ? (TileData*)(vram)+tileoffset : (TileData*)(vram + TILE_DATA1_SIGNED_BASE) + (int8_t)tileoffset;
+	line = TILE_LINE(line);				// Mask line in tile 
+
+	while (size) {
+		tileindex = *(tilemapline + TILE_INDEX(pixeloffset));  // add pixel offset with wraparround
+		td = (IOLCDC & BG_W_DATA) ? (TileData*)(vram) + tileindex : (TileData*)(vram + TILE_DATA1_SIGNED_BASE) + (int8_t)tileindex;		
 		msb = td->line[line].msb;
 		lsb = td->line[line].lsb;
 		msb <<= TILE_LINE(pixeloffset);
@@ -73,44 +73,44 @@ void putBgTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint
 			color |= (lsb & 0x80) ? 1 : 0;
 			msb <<= 1;
 			lsb <<= 1;
-
 			color = (IOBGP >> (color << 1)) & 3;
-			if (!*dst)		// only put if color from sprite is transparent 
+			if (!*dst)		// Background tiles are transparent to sprites
 				*dst = color;
 			dst += 1;
-			(pixeloffset)++;
-			i--;
-		} while (TILE_PIXEL(pixeloffset) != 0 && i != 0);
+			pixeloffset++;
+			size--;
+		} while (TILE_PIXEL(pixeloffset) != 0 && size != 0);
 	}
 }
 
-void putWindowTileData(uint8_t *mapline, uint8_t *pixeloffset, uint8_t *tileline, uint8_t *dst) {
-	uint8_t i = TILE_W;
-	uint8_t color, t;
+/**
+@brief same as putBgTileData the only diference is that the window has no transparency
+ **/
+void putWindowTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t line, uint8_t size) {
+	uint8_t color, tileindex, msb, lsb, pixel = 0; // windows always start at pixel 0
 	TileData *td;
+	
+	line = TILE_LINE(line);
 
-	while (i) {
-		if (IOLCDC & BG_W_DATA) {
-			td = (TileData*)(vram)+*(mapline + TILE_INDEX(*pixeloffset));
-		}
-		else {
-			td = (TileData*)(vram + TILE_DATA1_SIGNED_BASE) + *((int8_t*)(mapline + TILE_INDEX(*pixeloffset)));
-		}
+	while (size) {
+		tileindex = *(tilemapline + TILE_INDEX(pixel));
+		td = (IOLCDC & BG_W_DATA) ? (TileData*)(vram) + tileindex : (TileData*)(vram + TILE_DATA1_SIGNED_BASE) + (int8_t)tileindex;
+		msb = td->line[line].msb;
+		lsb = td->line[line].lsb;
+		msb <<= TILE_LINE(pixel);
+		lsb <<= TILE_LINE(pixel);
+
 		do {
-			color = td->line[TILE_LINE(*tileline)].msb;
-			color >>= (7 - TILE_LINE(*pixeloffset));
-			color <<= 1;
-			color &= 2;
-			t = td->line[TILE_LINE(*tileline)].lsb;
-			t >>= (7 - TILE_LINE(*pixeloffset));
-			t &= 1;
-			color |= t;
+			color = (msb & 0x80) ? 2 : 0;
+			color |= (lsb & 0x80) ? 1 : 0;
+			msb <<= 1;
+			lsb <<= 1;
 			color = (IOBGP >> (color << 1)) & 3;
-			*dst = color;
+			*dst = color;			// Window has no transparency
 			dst += 1;
-			(*pixeloffset)++;
-			i--;
-		} while (TILE_LINE(*pixeloffset) != 0 && i != 0);
+			pixel++;
+			size--;
+		} while (TILE_LINE(pixel) != 0 && size != 0);
 	}
 }
 //-----------------------------------------
@@ -139,36 +139,32 @@ void scanOAM() {
 //
 //-----------------------------------------
 void scanline() {
-	uint8_t *bgmapline;
-	uint8_t pixel, tileindex, line;
+	uint8_t *tilemapline;
+	uint8_t pixel, line;
 	uint8_t *sld = scanlinedata;
 
 	// Get tile map base
-	bgmapline = (uint8_t*)(vram + ((IOLCDC & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
+	tilemapline = (uint8_t*)(vram + ((IOLCDC & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 	// Add line and scroll-y offset for getting tile pattern	
 	//bgmapline += (TILE_LINE_INDEX(IOLY) + TILE_LINE_INDEX(IOSCY)) & BG_SIZE_MASK;
 	line = (IOLY + IOSCY) & 255;
-	bgmapline += TILE_LINE_INDEX(line);
+	tilemapline += TILE_LINE_INDEX(line);
 
-	putBgTileData(bgmapline, sld, IOSCX, line);
-	
-	// TODO: Chg window putline as BG putline 
-	if (IOLCDC & W_DISPLAY && IOLY >= IOWY) {
-		line = IOLY - IOWY;
-		pixel = 0;									//window allways start at pixel 0
+	putBgTileData(tilemapline, sld, IOSCX, line, SCREEN_W);
+
+	if (IOLCDC & W_DISPLAY && IOLY >= IOWY && IOWX < SCREEN_W + 7) 
+	{
+		line = IOLY - IOWY;					
 		sld = scanlinedata + IOWX - 7;				//destination offset given by IOWX, WX has an offset of 7
-		bgmapline = (uint8_t*)(vram + ((IOLCDC & W_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
-		bgmapline += (TILE_LINE_INDEX(line)) & BG_SIZE_MASK;
-		for (tileindex = TILE_INDEX(IOWX); tileindex < SCREEN_H_TILES + 7; tileindex++, sld += TILE_W) {
-			putWindowTileData(bgmapline, &pixel, &line, sld);
-		}
+		tilemapline = (uint8_t*)(vram + ((IOLCDC & W_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
+		tilemapline += TILE_LINE_INDEX(line);
+		putWindowTileData(tilemapline, sld, line, SCREEN_W - IOWX + 7);
 	}
 
 	sld = scanlinedata;
 	for (pixel = 0; pixel < SCREEN_W; pixel++, sld++) {
 		LCD_Data(lcd_pal[*sld]);
 	}
-
 }
 //-----------------------------------------
 // Clear/set Coincidence flag on STAT
