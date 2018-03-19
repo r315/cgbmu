@@ -75,7 +75,7 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 #define JOYPAD_IF       (1<<4)
 #define SERIAL_IF       (1<<3)
 #define TIMER_IF        (1<<2)
-#define STAT_IF         (1<<1)
+#define LCDC_IF         (1<<1)
 #define V_BLANK_IF      (1<<0)
 
 // TAC bits
@@ -168,7 +168,8 @@ extern uint8_t oam[OAM_SIZE];       // 0xFE00-0xFEBF
 
 extern uint8_t cycles;
 extern uint8_t halted, stopped;
-extern uint8_t IME;                 // interrupt master enable
+extern uint8_t IME;                 // interrupt master enable  Set and reset by DI,EI instructions
+
 
 extern uint8_t IOP1;                // 0xFF00 P1
 extern uint8_t IODIV;               // 0xFF04 timer divider

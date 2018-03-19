@@ -291,15 +291,14 @@ void stepFrame(void){
 	
 	for (IOLY = 0; IOLY < SCREEN_H; IOLY++){
 	    
-		if (IOLY == IOLYC) IOSTAT |= LYC_LY_FLAG;
-		else IOSTAT &= ~LYC_LY_FLAG;
+		IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & (~LYC_LY_FLAG));
 
-		if (IOSTAT & LYC_LY_IE) 
-			IOIF |= STAT_IF;
+		if (IOSTAT & (LYC_LY_IE | LYC_LY_FLAG)) 
+			IOIF |= LCDC_IF;
 		
 		IOSTAT |= V_M2;  			// Change to Mode2 scan OAM
 		if(IOSTAT & OAM_IE)			// check OAM IE
-			IOIF |= STAT_IF;		
+			IOIF |= LCDC_IF;		
 		runCpu(V_M2_CYCLE);
 		scanOAM();
 	    
@@ -309,14 +308,14 @@ void stepFrame(void){
 
 	    IOSTAT &= ~(V_MODE_MASK); 	// Change to Mode0 H-Blank
 	   	if(IOSTAT & HB_IE)			// check H-Blank IE
-			IOIF |= STAT_IF;
+			IOIF |= LCDC_IF;
 	    runCpu(V_M0_CYCLE);		
 	}	
 	
 	IOSTAT |= V_M1;  		// Change to Mode 1
 	IOIF |= V_BLANK_IF;		// V-Blank Flag is Always activated
 	if(IOSTAT & VB_IE)		// LCD Flag is activated if IE is enabled
-		IOIF |= STAT_IF;	
+		IOIF |= LCDC_IF;	
 
 	while(IOLY < (SCREEN_H + VBLANK_LINES)){
 		IOSTAT = (IOLY == IOLYC)? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & ~LYC_LY_FLAG); 				

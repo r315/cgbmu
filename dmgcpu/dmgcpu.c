@@ -45,7 +45,7 @@ uint32_t machine_cycles = 0;
 uint16_t timer_cycles = 0;
 uint16_t timer_prescaler;
 uint8_t halted, stopped;
-uint8_t IME;  
+uint8_t IME;  	// Reset by DI and set by EI instructions
 
 Regs regs;
 
@@ -72,35 +72,35 @@ uint8_t irq;
 	
 	if(!IME) 
 	{
-		if(IOIF & 0x1F)
+		if(IOIF & (JOYPAD_IF|SERIAL_IF|TIMER_IF|LCDC_IF|V_BLANK_IF))
 			halted = 0;
 		return;
 	}
 
 	irq = IOIE & IOIF;
 	
-	if(irq & 1){ // V-Blank		
-		IOIF &= ~(1<<0);
+	if(irq & V_BLANK_IF){
+		IOIF &= ~(V_BLANK_IF);
 		jumpVector(0x0040);
 	}
 	
-	if(irq & 2){ // LCDC		
-		IOIF &= ~(1<<1);
+	if(irq & LCDC_IF){ 	
+		IOIF &= ~(LCDC_IF);
 		jumpVector(0x0048);
 	}	
 		
-	if(irq & TIMER_IE){		
+	if(irq & TIMER_IF){		
 		IOIF &= ~TIMER_IF;
 		jumpVector(0x0050);
 	}	
 		
-	if(irq & 8){ // serial		
-		IOIF &= ~(1<<3);
+	if(irq & SERIAL_IF){ 		
+		IOIF &= ~(SERIAL_IF);
 		jumpVector(0x0058);
 	}	
 		
-	if(irq & 16){ // buttons		
-		IOIF &= ~(1<<4);
+	if(irq & JOYPAD_IF){
+		IOIF &= ~(JOYPAD_IF);
 		jumpVector(0x0060);
 	}			
 }
