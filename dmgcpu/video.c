@@ -48,15 +48,17 @@ void putSpriteData(Sprite *sp, uint8_t *dst) {
 	}
 }
 /**-------------------------------------------------------
-* @brief put one line of tile data into scanlinedata
-* @mapline pointer to first tile for the current scanline
-* @pixeloffset start pixel for current scanline
-* @dst pointer for current scanline data
+* @brief put one line from screen buffer (256x256px) into scanlinedata
+*        
+* @param mapline		pointer to first tile for the current scanline
+* @param dst			pointer for current scanline data
+* @param pixeloffset	start pixel for current scanline
+* @param line           the line to put
+* @param size			SCREEN_W for background, WX for window (not implemented yet)
 *---------------------------------------------------------*/
-void putBgTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint8_t size) {
-	uint8_t color;
+void putTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint8_t size, uint8_t transparent) {
+	uint8_t tileindex, msb, lsb, color;
 	TileData *td;
-	uint8_t tileindex, msb, lsb;
 
 	line = TILE_LINE(line);				// Mask line in tile 
 
@@ -69,13 +71,19 @@ void putBgTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint
 		lsb <<= TILE_LINE(pixeloffset);
 
 		do {
-			color = (msb & 0x80) ? 2 : 0;
-			color |= (lsb & 0x80) ? 1 : 0;
-			msb <<= 1;
-			lsb <<= 1;
-			color = (IOBGP >> (color << 1)) & 3;
-			if (!*dst)		// Background tiles are transparent to sprites
+			if (transparent == ON) {
+				if (!*dst)
+					goto putpixel;
+			}
+			else {
+			putpixel:
+				color = (msb & 0x80) ? 2 : 0;
+				color |= (lsb & 0x80) ? 1 : 0;
+				msb <<= 1;
+				lsb <<= 1;
+				color = (IOBGP >> (color << 1)) & 3;
 				*dst = color;
+			}				
 			dst += 1;
 			pixeloffset++;
 			size--;
@@ -83,36 +91,6 @@ void putBgTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint
 	}
 }
 
-/**
-@brief same as putBgTileData the only diference is that the window has no transparency
- **/
-void putWindowTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t line, uint8_t size) {
-	uint8_t color, tileindex, msb, lsb, pixel = 0; // windows always start at pixel 0
-	TileData *td;
-	
-	line = TILE_LINE(line);
-
-	while (size) {
-		tileindex = *(tilemapline + TILE_INDEX(pixel));
-		td = (IOLCDC & BG_W_DATA) ? (TileData*)(vram) + tileindex : (TileData*)(vram + TILE_DATA1_SIGNED_BASE) + (int8_t)tileindex;
-		msb = td->line[line].msb;
-		lsb = td->line[line].lsb;
-		msb <<= TILE_LINE(pixel);
-		lsb <<= TILE_LINE(pixel);
-
-		do {
-			color = (msb & 0x80) ? 2 : 0;
-			color |= (lsb & 0x80) ? 1 : 0;
-			msb <<= 1;
-			lsb <<= 1;
-			color = (IOBGP >> (color << 1)) & 3;
-			*dst = color;			// Window has no transparency
-			dst += 1;
-			pixel++;
-			size--;
-		} while (TILE_LINE(pixel) != 0 && size != 0);
-	}
-}
 //-----------------------------------------
 // read OBJECT Attribute Memory for one line
 //-----------------------------------------
@@ -147,10 +125,10 @@ void scanline() {
 	tilemapline = (uint8_t*)(vram + ((IOLCDC & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 	// Add line and scroll-y offset for getting tile pattern	
 	//bgmapline += (TILE_LINE_INDEX(IOLY) + TILE_LINE_INDEX(IOSCY)) & BG_SIZE_MASK;
-	line = (IOLY + IOSCY) & 255;
+	line = (uint8_t)(IOLY + IOSCY);
 	tilemapline += TILE_LINE_INDEX(line);
 
-	putBgTileData(tilemapline, sld, IOSCX, line, SCREEN_W);
+	putTileData(tilemapline, sld, IOSCX, line, SCREEN_W, ON);
 
 	if (IOLCDC & W_DISPLAY && IOLY >= IOWY && IOWX < SCREEN_W + 7) 
 	{
@@ -158,7 +136,7 @@ void scanline() {
 		sld = scanlinedata + IOWX - 7;				//destination offset given by IOWX, WX has an offset of 7
 		tilemapline = (uint8_t*)(vram + ((IOLCDC & W_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 		tilemapline += TILE_LINE_INDEX(line);
-		putWindowTileData(tilemapline, sld, line, SCREEN_W - IOWX + 7);
+		putTileData(tilemapline, sld, 0, line, SCREEN_W - IOWX + 7, OFF);
 	}
 
 	sld = scanlinedata;
@@ -172,12 +150,9 @@ void scanline() {
 //-----------------------------------------
 void nextLine(void) {
 	IOLY++;
-	if (IOLY == IOLYC)
-		IOSTAT |= LYC_LY_FLAG;
-	else
-		IOSTAT &= ~LYC_LY_FLAG;
-	if (IOSTAT & LYC_LY_IE)			//BUG: Changing LYC_LY_IE to  LYC_LY_FLAG corrects scroll..
-		IOIF |= STAT_IF;
+	IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & (~LYC_LY_FLAG));	
+	if (IOSTAT & (LYC_LY_IE | LYC_LY_FLAG))
+		IOIF |= LCDC_IF;
 }
 //-----------------------------------------
 //
@@ -187,7 +162,6 @@ uint8_t video(void) {
 	if (!(IOLCDC & LCD_DISPLAY)) return frame; 	// Lcd controller off	
 
 	video_cycles += GET_CYCLE();
-
 
 	switch (IOSTAT & V_MODE_MASK)
 	{
@@ -206,7 +180,7 @@ uint8_t video(void) {
 			video_cycles -= V_M3_CYCLE;
 			IOSTAT &= ~(V_MODE_MASK);  // Next, Mode 0 H-blank				 
 			if (IOSTAT & HB_IE) 		// LCD STAT & H-Blank IE
-				IOIF |= STAT_IF;
+				IOIF |= LCDC_IF;
 			scanline();
 		}
 		break;
@@ -218,13 +192,13 @@ uint8_t video(void) {
 			if (IOLY < SCREEN_H) {
 				IOSTAT |= V_M2;     	// Next, Mode 2 searching oam
 				if (IOSTAT & OAM_IE)
-					IOIF |= STAT_IF;
+					IOIF |= LCDC_IF;
 			}
 			else {
 				IOSTAT |= V_M1;     	// Next, Mode 1 V-blank
 				IOIF |= V_BLANK_IF;
 				if (IOSTAT & VB_IE)
-					IOIF |= STAT_IF;
+					IOIF |= LCDC_IF;
 			}
 		}
 		break;
