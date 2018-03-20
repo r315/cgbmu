@@ -69,8 +69,8 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 
 #define VBLANK_LINES  8
 
-#define MAX_LINE_SPRITES 10
-#define MAX_SPRITES   40
+#define MAX_LINE_OBJECTS 10
+#define MAX_OBJECTS   40
 #define SPRITE_W      8
 #define SPRITE_H      8
 
@@ -94,16 +94,17 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 #define BG_V_LINES_MASK	 255
 #define BG_H_LINES_MASK	 255
 
-#define SPRITE_FLAG_YFLIP   (1<<6)
-#define SPRITE_FLAG_XFLIP   (1<<5)
-#define SPRITE_FLAG_PAL     (1<<4)
+#define OBJECT_FLAG_PRIO    (1<<7)
+#define OBJECT_FLAG_YFLIP   (1<<6)
+#define OBJECT_FLAG_XFLIP   (1<<5)
+#define OBJECT_FLAG_PAL     (1<<4)
 
-typedef struct _Sprite{
+typedef struct {
     uint8_t y;
     uint8_t x;
     uint8_t pattern;
     uint8_t flags;      // |priority | Y Flip | X Flip | Palette number | - | - | - | - | 
-}Sprite;
+}Object;
 
 typedef struct _Tile {
 	struct {

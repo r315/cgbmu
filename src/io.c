@@ -49,13 +49,13 @@ const Uint8 *keys;
     button |= keys[SDL_SCANCODE_SPACE ] ? J_A : 0;  
 #endif /* __arm__ */
 #elif defined(__BB__)
-int	keys = LPC_GPIO1->FIOPIN & KEYSMASK;
+int	keys = ~LPC_GPIO1->FIOPIN & KEYSMASK;
 
-	button |= (keys&INPUT_DOWN) ? J_DOWN : 0;
-	button |= (keys&INPUT_UP)  ? J_UP : 0;
-	button |= (keys&INPUT_LEFT) ? J_LEFT : 0;
-	button |= (keys&INPUT_RIGHT) ? J_RIGHT : 0;		
-	button |= (keys&INPUT_A) ? J_A : 0;
+	button |= ( keys & INPUT_DOWN) ? J_DOWN : 0;
+	button |= ( keys & INPUT_UP)  ? J_UP : 0;
+	button |= ( keys & INPUT_LEFT) ? J_LEFT : 0;
+	button |= ( keys & INPUT_RIGHT) ? J_RIGHT : 0;		
+	button |= ( keys & INPUT_A) ? J_START : 0;
 #endif /* __EMU__ */
 	return button;	
 }

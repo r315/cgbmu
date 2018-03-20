@@ -53,8 +53,8 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 #define W_DISPLAY       (1<<5)	// Enable window
 #define BG_W_DATA       (1<<4)	// BG & Window Tile data 0:8800, 1:8000
 #define BG_MAP          (1<<3)  // Backgound Tile map 0:9800, 1:9C00
-#define L_SPRITES       (1<<2)	// Enable 8x16 Sprites
-#define S_DISPLAY       (1<<1)  // Enable Sprites
+#define OBJ_SIZE        (1<<2)	// Enable 8x16 Sprites
+#define OBJ_DISPLAY     (1<<1)  // Enable Sprites
 #define W_BG_DISPLAY    (1<<0)  // Enable BG and Window
 
 // STAT bits

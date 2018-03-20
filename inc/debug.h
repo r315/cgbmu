@@ -24,4 +24,9 @@ int printVal(int x, int y,char *name, int v, char radix, char digitos);
  * run cpu in debug mode
  * */
 void debug(void);
+
+/**
+
+ **/
+void DBG_PrintValue(uint8_t line, char *label, uint8_t val);
 #endif
