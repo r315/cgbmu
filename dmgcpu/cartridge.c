@@ -8,8 +8,8 @@
 #ifndef __EMU__
 #include <pff/pff.h>
 
-unsigned char *ROM0 = (unsigned char*)0x2007C000;
-unsigned char *ROMBANK = (unsigned char*)0x20080000;
+unsigned char *ROM0 = (unsigned char*)ROM0_START;
+unsigned char *ROMBANK = (unsigned char*)ROMBANK_START;
 //unsigned char cartridgeRam[0x2000];
 unsigned char bankSelect;
 
@@ -52,8 +52,8 @@ void loadRombank(void)
 WORD n;	
 	//drawNumber(232,0,bankSelect,10);
 	pf_lseek(bankSelect << 14);
-	pf_read(ROMBANK,0x4000,&n);
-	//xprintf("Rom Bank %u bytes\n",n);
+	pf_read(ROMBANK, ROM_SIZE, &n);
+	//DISPLAY_printf("Loaded %u bytes into Rom Bank %u\n",n, bankSelect);
 	//drawChar(232,0,' ');
 }
 //--------------------------------------------------
@@ -65,17 +65,18 @@ WORD n;
 	if(!drive0.fs_type){
 		fsInit();
 	}
-	DBG_Info(f_error(pf_open(fn)));	
-	DBG_Info(f_error(pf_read(ROM0,0x4000,&n)));	
+	DBG_Info(f_error(pf_open(fn)));
+	DBG_Info("Loading ROM0");
+	DBG_Info(f_error(pf_read(ROM0, ROM_SIZE, &n)));
 	bankSelect = 1;
 	loadRombank();		
 }
 #else
 #include <stdio.h>
 #include <stdlib.h>
-unsigned char ROM0[0x4000];
-unsigned char ROMBANK[0x4000];
-unsigned char cartridgeRam[0x2000];
+unsigned char ROM0[ROM_SIZE];
+unsigned char ROMBANK[ROM_SIZE];
+unsigned char cartridgeRam[ROM_SIZE/2];
 unsigned char bankSelect;
 
 char* romFile;
@@ -115,10 +116,12 @@ void loadRom(char *fn)
 void loadRombank(void)
 {
 FILE *fp;
+size_t n;
 	fp = fopen(romFile,"rb");	
 	fseek(fp,bankSelect << 14,SEEK_SET);
-	fread(ROMBANK,1,0x4000,fp);
+	n = fread(ROMBANK,1,0x4000,fp);
 	fclose(fp);	
+	printf("Loaded %u bytes into Rom Bank %u\n", n, bankSelect);
 }
 #endif
 /***************************************************
