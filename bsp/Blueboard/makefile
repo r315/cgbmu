@@ -7,7 +7,7 @@ CSRCS   += alu.c cartridge.c dmgcpu.c video.c decoder.c
 CSRCS   += pff.c mmc.c
 
 INCDIRS  = . ../../inc inc
-SYMBOLS  = __NEWLIB__ __BB__
+SYMBOLS  = __NEWLIB__ __BB__ NO_LCD_HW_SCROLL
 #########################################################################
 #  List of the objects files to be compiled/assembled
 # system sources and common includes and directories

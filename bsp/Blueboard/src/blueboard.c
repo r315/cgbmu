@@ -119,7 +119,7 @@ char keyDown(unsigned int key)
 //---------------------------------------------------
 char scanKeys(void)
 {
-	_KEYS.Key = LPC_GPIO1->FIOPIN & KEYSMASK;
+	_KEYS.Key = ~LPC_GPIO1->FIOPIN & KEYSMASK;
 
 	if(_KEYS.Key == KEYSMASK) // any key pressed?
 	{

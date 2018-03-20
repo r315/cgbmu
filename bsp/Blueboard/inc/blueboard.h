@@ -27,7 +27,7 @@ extern "C" {
 //-----------------------------------------------------
 // Joy pins P1.14, p1.15, p1.16, p1.17, p1.28
 //-----------------------------------------------------
-#define KEYSMASK        0x1003C000
+#define KEYSMASK        (INPUT_A | INPUT_UP | INPUT_DOWN | INPUT_LEFT | INPUT_RIGHT) //0x1003C000
 #define INPUT_A         (1<<14) //0x10038000
 #if defined(ORIENTATION90)
     #define INPUT_UP    (1<<15) //0x10034000
