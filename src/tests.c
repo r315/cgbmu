@@ -79,9 +79,9 @@ const char f_letter[] = {
 };
 const char sprites[] = {
 	16,8,0,0,
-	16,16,0,SPRITE_FLAG_XFLIP,
-	16 + 8,8,0,SPRITE_FLAG_YFLIP,
-	16 + 8,16,0,(SPRITE_FLAG_XFLIP | SPRITE_FLAG_YFLIP)
+	16,16,0,OBJECT_FLAG_XFLIP,
+	16 + 8,8,0,OBJECT_FLAG_YFLIP,
+	16 + 8,16,0,(OBJECT_FLAG_XFLIP | OBJECT_FLAG_YFLIP)
 };
 extern uint8_t scanlinedata[160];
 void dumpLine(uint8_t *buf, uint8_t size) {
@@ -125,14 +125,17 @@ void testBgDataLine(void) {
 	}
 }
 
-void Test_DBG_BGmap(void) {
+void loadTileMapAndData(void) {
 	memcpy(vram, tilesData, sizeof(tilesData));
 	memcpy((vram + TILE_MAP0_BASE), bg_map, sizeof(bg_map));
 	IOBGP = IOOBP0 = IOOBP1 = 0xE4;
 	IOLCDC |= BG_W_DATA;
 	IOSCX = 0;
-	IOSCY = 4;
+	IOSCY = 0;
+}
 
+void Test_DBG_BGmap(void) {
+	loadTileMapAndData();
 	while (1) {
 		//DBG_BGmap();
 		LCD_Window(0, 0, SCREEN_W, SCREEN_H);
@@ -153,12 +156,42 @@ void Test_DBG_BGmap(void) {
 	}
 }
 
+void Test_DBG_Sprites(void) {
+	loadTileMapAndData();
+
+	Object *sp = (Object*)&oam[0];
+
+	sp->x = 8;
+	sp->y = 16;
+	sp->pattern = 1;
+
+
+	while (1) {
+		//DBG_BGmap();
+		LCD_Window(0, 0, SCREEN_W, SCREEN_H);
+		for (IOLY = 0; IOLY < SCREEN_H; IOLY++) {
+			scanOAM();
+			scanline();
+		}
+
+		switch (readJoyPad()) {
+		case 255: return;
+		case J_UP: sp->y--; DBG_PrintValue(0,"sp.y ", sp->y); break;
+		case J_DOWN: sp->y++; DBG_PrintValue(0,"sp.y ", sp->y); break;
+		case J_LEFT: sp->x--; DBG_PrintValue(1,"sp.x ", sp->x); break;
+		case J_RIGHT: sp->x++; DBG_PrintValue(1,"sp.x ", sp->x); break;
+
+		}
+		DelayMs(30);
+	}
+}
 
 
 void testMain(void) {
 	//testSpriteDataLine();
 	//testBgDataLine();
 	//testButtons();
-	Test_DBG_BGmap();
+	//Test_DBG_BGmap();
+	Test_DBG_Sprites();
 	exit(0);
 }

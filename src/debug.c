@@ -35,7 +35,7 @@ uint32_t ticks = 0, dticks;
 	while((key = readJoyPad()) != 255){		
 
 		if (stepping != OFF) {
-			debugCommans(&stepping);
+			//debugCommans(&stepping);
 
 			if (REG_PC == breakpoint && !stepping) {
 				stepping = STEP;
@@ -380,3 +380,9 @@ void DBG_BGmap(void) {
 }
 
 
+void DBG_PrintValue(uint8_t line, char *label, uint8_t val) {
+	LCD_Push();
+	DISPLAY_SetFcolor(YELLOW);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(line), label, val, 16, 2);
+	LCD_Pop();
+}
