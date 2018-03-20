@@ -51,8 +51,10 @@ void DISPLAY_putc(char c)
 			if(!_display.sc)
 				_display.sc = _display.font_h;
 		}
-		if(_display.sc){			
-			LCD_Scroll(_display.sc);			
+		if(_display.sc){
+			#ifndef NO_LCD_HW_SCROLL
+			LCD_Scroll(_display.sc);
+			#endif			
 			_display.sc += _display.font_h;
 
 			_display.cx = LCD_GetWidth();

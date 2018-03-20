@@ -17,9 +17,9 @@ void run(void) {
 	while (readJoyPad() != 255) {		
 		interrupts();
 		decode();
-		timer();			
+		timer();
 		if (video() == ON) {
-			DBG_Fps();
+			//DBG_Fps();
 			wait = wait - GetTicks();
 			if (wait > 0)
 				DelayMs(wait);
@@ -27,7 +27,6 @@ void run(void) {
 		}
 	}
 }
-
 //-----------------------------------------------------------
 //instructions test
 //-----------------------------------------------------------
@@ -36,6 +35,8 @@ int main (int argc, char *argv[])
 	#if defined(__BB__)
 	BB_Init();
 	BB_ConfigPLL(PLL100);	
+
+	LCD_Rotation(LCD_LANDSCAPE);
 
 	DISPLAY_puts("Hello\n");
 
