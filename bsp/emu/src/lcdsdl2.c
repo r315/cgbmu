@@ -7,7 +7,7 @@
 
 #include <stdio.h> 
 #include <string.h>
-#include "lcd.h"
+//#include "lcd.h"
 #include "lcdsdl.h"
 
 #define UPDATE_TIME 30 //30ms => 33fps

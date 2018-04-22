@@ -20,14 +20,39 @@
 
 #define LCD_SIZE (LCD_W * LCD_H)
 
-void LCD_Close(void);
-void LCD_Data(uint16_t color);
-void LCD_Fill( uint32_t n, uint16_t color);
-void LCD_IndexedColor(uint16_t *colors, uint8_t *index, uint32_t size);
-void LCD_Rotation(uint8_t m);
-//void LCD_Goto(uint16_t x, uint16_t y);
 
+/**
+ @brief 
+ **/
+void LCD_Close(void);
+
+/**
+ @brief 
+ **/
+void LCD_Data(uint16_t color);
+
+/**
+ @brief 
+ **/
+void LCD_Fill( uint32_t n, uint16_t color);
+
+/**
+ @brief 
+ **/
+void LCD_IndexedColor(uint16_t *colors, uint8_t *index, uint32_t size);
+
+/**
+ @brief 
+ **/
+void LCD_Rotation(uint8_t m);
+
+/**
+ @brief 
+ **/
 uint16_t LCD_GetWidth(void);
+/**
+ @brief 
+ **/
 uint16_t LCD_GetHeight(void);
 
 /**

@@ -1,6 +1,6 @@
 
 TARGET   =gbemu
-SRCSPATH =. ../../src ../../dmgcpu src 
+SRCSPATH =. ../../src ../../dmgcpu ../../libemb/drv/tft ../../libemb/display src 
 OBJSPATH =.
 INCSPATH =. ../../inc inc
 
