@@ -1,5 +1,6 @@
 OBJSPATH  =obj
 
+-include libemb/libemb.mk
 
 all: emu
 	
@@ -7,8 +8,9 @@ clean:
 	@${RM} $(OBJSPATH)/*.o $(TARGET)
 	@$(MAKE) -C bsp/emu clean
 	@$(MAKE) -C bsp/Blueboard clean
+	@$(MAKE) -C bsp/ESP03 clean
 	
-emu: 
+emu:
 	@$(MAKE) -C bsp/emu OBJSPATH=../../$(OBJSPATH)
 
 rpi: 
@@ -16,7 +18,10 @@ rpi:
 
 bb:
 	@$(MAKE) -C bsp/Blueboard OBJSPATH=../../$(OBJSPATH)
-	
+
+
+esp: 
+	@$(MAKE) -C bsp/ESP03 OBJSPATH=../../$(OBJSPATH)	
 
 
 

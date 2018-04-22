@@ -788,7 +788,7 @@ uint8_t bit = (op >> 3) & 7;
 			switch(op & 0xC0)
 			{
 				case 0x40:
-					BIT(bit, REG_ADDR(reg));
+					BiT(bit, REG_ADDR(reg));
 					break;
 					
 				case 0x80:

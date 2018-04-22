@@ -163,7 +163,8 @@ void scanline() {
 void nextLine(void) {
 	IOLY++;
 	IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & (~LYC_LY_FLAG));	
-	if (IOSTAT & (LYC_LY_IE | LYC_LY_FLAG))
+	//if ((IOSTAT & LYC_LY_IE) && (IOSTAT & LYC_LY_FLAG))
+	if (IOSTAT & LYC_LY_FLAG)
 		IOIF |= LCDC_IF;
 }
 //-----------------------------------------

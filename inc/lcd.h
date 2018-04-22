@@ -5,10 +5,10 @@
 	#if defined(__LCDFB__)
 	#include <lcdfb.h>
 	#else
-	#include "lcdsdl.h"
+	#include <lcdsdl.h>
 	#endif
 #elif defined(__LPCXpresso__)
-    #include "ili9341.h"
+    #include <ili9341.h>
 #else
     #include <LPC17xx.h>
     #define GPIO0 LPC_GPIO0

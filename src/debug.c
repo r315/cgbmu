@@ -293,7 +293,8 @@ void stepFrame(void){
 	    
 		IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & (~LYC_LY_FLAG));
 
-		if (IOSTAT & (LYC_LY_IE | LYC_LY_FLAG)) 
+		//if ((IOSTAT & LYC_LY_IE) && (IOSTAT & LYC_LY_FLAG))
+		if (IOSTAT & LYC_LY_FLAG)
 			IOIF |= LCDC_IF;
 		
 		IOSTAT |= V_M2;  			// Change to Mode2 scan OAM

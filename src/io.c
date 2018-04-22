@@ -56,7 +56,9 @@ int	keys = ~LPC_GPIO1->FIOPIN & KEYSMASK;
 	button |= ( keys & INPUT_LEFT) ? J_LEFT : 0;
 	button |= ( keys & INPUT_RIGHT) ? J_RIGHT : 0;		
 	button |= ( keys & INPUT_A) ? J_START : 0;
-#endif /* __EMU__ */
+#elif defined(__ESP03__) /* __EMU__ */
+
+#endif
 	return button;	
 }
 //-----------------------------------------

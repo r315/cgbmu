@@ -15,7 +15,7 @@ void sla(uint8_t *r);
 void sra(uint8_t *r);
 void srl(uint8_t *r);
 void swap(uint8_t *r);
-void BIT(uint8_t b, uint8_t *r);
+void BiT(uint8_t b, uint8_t *r);
 void res(uint8_t b, uint8_t *r);
 void set(uint8_t b, uint8_t *r);
 void addHL(uint16_t v);

@@ -224,7 +224,7 @@ void swap(uint8_t *r)
 // bit test
 // flags: Z,0,1,-
 //-----------------------------------------
-void BIT(uint8_t b, uint8_t *r)
+void BiT(uint8_t b, uint8_t *r)
 {
 uint8_t aux;
 	PSW &= ~(FN | FZ);

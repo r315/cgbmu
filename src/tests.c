@@ -2,7 +2,7 @@
 
 #include <common.h>
 #include <string.h>
-#include "graphics.h"
+#include "display.h"
 #include "dmgcpu.h"
 #include "video.h"
 #include "lcd.h"
@@ -27,13 +27,16 @@ void testRun(void) {
 }
 
 void testAll(void) {
-	testRom(ALL_TESTS_ROM);
+	//testRom(ALL_TESTS_ROM);
+	DISPLAY_Text(0,0,"Testing Buttons");
+	testButtons();
 }
 
 void testRom(char *fn) {
-	strcpy(filename, ROMS_BINARY_PATH);
-	strcat(filename, fn);
-	loadRom(filename);
+	//strcpy(filename, ROMS_BINARY_PATH);
+	//strcat(filename, fn);
+	//loadRom(filename);
+	loadRom(fn);
 	testRun();
 }
 

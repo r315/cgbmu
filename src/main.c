@@ -1,7 +1,7 @@
 
 #include <common.h>
 #include <string.h>
-#include "graphics.h"
+#include "display.h"
 #include "dmgcpu.h"
 #include "video.h"
 #include "lcd.h"
@@ -15,8 +15,8 @@
 void run(void) {
 	int wait = 0;
 	while (readJoyPad() != 255) {		
-		interrupts();
 		decode();
+		interrupts();
 		timer();
 		if (video() == ON) {
 			//DBG_Fps();
@@ -44,7 +44,41 @@ int main (int argc, char *argv[])
 
 	loadRom("mario.gb");
 	run();	
+
+	#elif defined(__ESP03__)
+	#define HSPI_DIVIDER 1
 	
+	int i = 0;
+	nosdk8266_init();
+
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U,FUNC_GPIO2);
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U,FUNC_GPIO5);
+
+	Cache_Read_Disable();	
+	Cache_Read_Enable(0,0,1);	
+
+    	//printf( "Starting Display %p\n", &LCD_Init);
+
+    	HSPI_Init(HSPI_DIVIDER, HSPI_MODE_TX);
+	//HSPI_Configure_CS(LCD_CS);
+	LCD_Init();
+	LCD_Clear(RED);
+	LCD_Bkl(ON);
+
+	LCD_Rect(0,0,120,120,BLUE);
+
+	GPIO_OUTPUT_SET(0,0);
+
+	float val = 3.141592;
+	DISPLAY_printf("Float Test\nPI: %f\n", val);
+
+	LCD_Rotation(LCD_LANDSCAPE);
+
+	initCpu();
+	
+	//testAll();		
+
+
 	#elif defined(__EMU__)	
 	
 	LCD_Init();	 

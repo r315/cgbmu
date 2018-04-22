@@ -5,13 +5,26 @@
 #include "cartridge.h"
 #include "debug.h"
 
-#ifndef __EMU__
+unsigned char bankSelect;
+
+#if defined(__ESP03__)
+unsigned char *ROM0 = (unsigned char*)0;
+unsigned char *ROMBANK = (unsigned char*)0;
+
+void loadRombank(void)
+{
+}
+
+void loadRom(char *fn){
+}
+
+#elif defined(__BB__)
 #include <pff/pff.h>
 
 unsigned char *ROM0 = (unsigned char*)ROM0_START;
 unsigned char *ROMBANK = (unsigned char*)ROMBANK_START;
 //unsigned char cartridgeRam[0x2000];
-unsigned char bankSelect;
+
 
 FATFS drive0;
 char* f_error(FRESULT res)
@@ -71,13 +84,13 @@ WORD n;
 	bankSelect = 1;
 	loadRombank();		
 }
-#else
+#elif defined(__EMU__)
 #include <stdio.h>
 #include <stdlib.h>
 unsigned char ROM0[ROM_SIZE];
 unsigned char ROMBANK[ROM_SIZE];
 unsigned char cartridgeRam[ROM_SIZE/2];
-unsigned char bankSelect;
+
 
 char* romFile;
 
@@ -119,9 +132,9 @@ FILE *fp;
 size_t n;
 	fp = fopen(romFile,"rb");	
 	fseek(fp,bankSelect << 14,SEEK_SET);
-	n = fread(ROMBANK,1,0x4000,fp);
+	n = fread(ROMBANK, 1, ROM_SIZE, fp);
 	fclose(fp);	
-	printf("Loaded %u bytes into Rom Bank %u\n", n, bankSelect);
+	//printf("Loaded %u bytes into Rom Bank %u\n", n, bankSelect);
 }
 #endif
 /***************************************************
