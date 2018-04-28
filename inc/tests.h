@@ -7,5 +7,6 @@ void testRom(char *fn);
 void testMain(void);
 #endif
 
+void testButtons(void);
 void runTest(void);
 #endif
