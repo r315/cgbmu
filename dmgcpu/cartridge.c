@@ -8,14 +8,17 @@
 unsigned char bankSelect;
 
 #if defined(__ESP03__)
+#include <spiffs.h>
 unsigned char *ROM0 = (unsigned char*)0;
 unsigned char *ROMBANK = (unsigned char*)0;
+//unsigned char ROM0[ROM_SIZE];
+//unsigned char ROMBANK[ROM_SIZE];
 
-void loadRombank(void)
+int loadRombank(void)
 {
 }
 
-void loadRom(char *fn){
+int loadRom(char *fn){
 }
 
 #elif defined(__BB__)
@@ -60,7 +63,7 @@ void fsInit(void)
 //--------------------------------------------------
 //
 //--------------------------------------------------
-void loadRombank(void)
+int loadRombank(void)
 {
 WORD n;	
 	//drawNumber(232,0,bankSelect,10);
@@ -68,11 +71,12 @@ WORD n;
 	pf_read(ROMBANK, ROM_SIZE, &n);
 	//DISPLAY_printf("Loaded %u bytes into Rom Bank %u\n",n, bankSelect);
 	//drawChar(232,0,' ');
+	return n;
 }
 //--------------------------------------------------
 //
 //--------------------------------------------------
-void loadRom(char *fn)
+int loadRom(char *fn)
 {
 WORD n;
 	if(!drive0.fs_type){
@@ -82,25 +86,29 @@ WORD n;
 	DBG_Info("Loading ROM0");
 	DBG_Info(f_error(pf_read(ROM0, ROM_SIZE, &n)));
 	bankSelect = 1;
-	loadRombank();		
+	loadRombank();	
+	return n;
 }
 #elif defined(__EMU__)
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+
 unsigned char ROM0[ROM_SIZE];
 unsigned char ROMBANK[ROM_SIZE];
 unsigned char cartridgeRam[ROM_SIZE/2];
 
 
-char* romFile;
+char* romfile;
 
 #define LOG_TAG "CARTRIDGE"
 
-void loadRom(char *fn)
+int loadRom(char *fn)
 {
 	char cwd[1024];
 	FILE *fp;
-	romFile = fn;
+	romfile = fn;
+	int n;
 	
 	if (getcwd(cwd, sizeof(cwd)))
 		fprintf(stdout, "Current working dir: %s\n", cwd);
@@ -108,33 +116,35 @@ void loadRom(char *fn)
 		perror("getcwd() error");
 
 	fprintf(stdout,"%s: Loading File \"%s\"\n", LOG_TAG, fn);
-	fp = fopen(romFile, "rb");
+	fp = fopen(romfile, "rb");
 
 	if (fp == NULL)
 	{
 		printf("%s: File not found\n", LOG_TAG);
-		exit(1);
+		return 0;
 	}
 
-	fread(ROM0, 1, ROM_SIZE, fp);
-	fread(ROMBANK, 1, ROM_SIZE, fp);
+	n = fread(ROM0, 1, ROM_SIZE, fp);
+	n += fread(ROMBANK, 1, ROM_SIZE, fp);
 
 	fclose(fp);
 	bankSelect = 1;
 	printf("%s: Rom file loaded!\n", LOG_TAG);
+	return n;
 }
 //--------------------------------------------------
 //
 //--------------------------------------------------
-void loadRombank(void)
+int loadRombank(void)
 {
 FILE *fp;
 size_t n;
-	fp = fopen(romFile,"rb");	
+	fp = fopen(romfile,"rb");	
 	fseek(fp,bankSelect << 14,SEEK_SET);
 	n = fread(ROMBANK, 1, ROM_SIZE, fp);
 	fclose(fp);	
 	//printf("Loaded %u bytes into Rom Bank %u\n", n, bankSelect);
+	return n;
 }
 #endif
 /***************************************************
