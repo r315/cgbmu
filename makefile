@@ -1,6 +1,5 @@
 OBJSPATH  =obj
 
--include libemb/libemb.mk
 
 all: emu
 	
@@ -21,7 +20,10 @@ bb:
 
 
 esp: 
-	@$(MAKE) -C bsp/ESP03 OBJSPATH=../../$(OBJSPATH)	
+	@$(MAKE) -C bsp/ESP03 OBJSPATH=../../$(OBJSPATH)
+
+esp-burn: 
+	@$(MAKE) -C bsp/ESP03 OBJSPATH=../../$(OBJSPATH) burn	
 
 
 
