@@ -46,7 +46,7 @@ const Uint8 *keys;
 	button |= keys[SDL_SCANCODE_A] ? J_B : 0;
     button |= keys[SDL_SCANCODE_S ] ? J_A : 0;
 
-    button |= keys[SDL_SCANCODE_SPACE ] ? J_A : 0;  
+    button |= keys[SDL_SCANCODE_SPACE ] ? J_A : 0;
 #endif /* __arm__ */
 #elif defined(__BB__)
 int	keys = ~LPC_GPIO1->FIOPIN & KEYSMASK;
@@ -65,17 +65,18 @@ int	keys = ~LPC_GPIO1->FIOPIN & KEYSMASK;
 //
 //-----------------------------------------
 uint8_t joyPad(void){
-uint8_t buttons = readJoyPad();
+uint8_t buttons = ~readJoyPad();
 
-	if (IOP1 & IOP15) {		
-		buttons &= 0x0f; 
-		buttons |= IOP14;
+	IOP1 &= 0xF0;				// Clr lower 4 bits
+
+
+	if (!(IOP1 & IOP14)) {		// Check wich row was selected
+		buttons &= 0x0F;
 	}
 	else {
 		buttons >>= 4;
-		buttons |= IOP15;
 	}	
 
-	IOP1 = (~buttons);
+	IOP1 |= buttons;
 	return IOP1;
 }
