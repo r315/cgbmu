@@ -71,13 +71,16 @@ int nread;
 
 int getch(void){
 char ch;
+int n;
     if(peek_character != -1)
     {
         ch = peek_character;
         peek_character = -1;
         return ch;
     }
-    read(0,&ch,1);
+    n = read(0,&ch,1);
+    if(!n)
+        ch = 0;
     return ch;
 }
 

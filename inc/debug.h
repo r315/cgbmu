@@ -6,7 +6,7 @@
 #include <display.h>
 
 #define DBG_REG_COL_BASE 175
-#define DBG_REG_ROW_BASE 9
+#define DBG_REG_ROW_BASE 12
 #define DBG_REG_COL(x) (DBG_REG_COL_BASE + (x*8))
 #define DBG_REG_ROW(y) (DBG_REG_ROW_BASE + (y*9))
 

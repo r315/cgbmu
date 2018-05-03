@@ -7,7 +7,7 @@
 		#include <SDL.h>
 		#pragma warning(disable:4996)
 		#include <direct.h>
-	#elif defined(__x86_64__)
+	#elif defined(__linux__)
 		#include <SDL2/SDL.h>
 	#endif
 	

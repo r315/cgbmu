@@ -2,7 +2,7 @@
 TARGET   =gbemu
 SRCSPATH =. ../../src ../../dmgcpu ../../libemb/drv/tft ../../libemb/display src 
 OBJSPATH =.
-INCSPATH =. ../../inc inc
+INCSPATH =. ../../inc inc ../../libemb/include
 
 CSRCS    =debug.c disassembler.c tests.c testdata.c io.c main.c readline.c lcd.c display.c fonts.c
 CSRCS   +=decoder.c alu.c dmgcpu.c cartridge.c video.c

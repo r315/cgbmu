@@ -1,12 +1,14 @@
 
-TARGET   = bbgb
-SRCPATH  = ../../src ../../dmgcpu pff src
-OBJSPATH = .
-CSRCS    = startup.c blueboard.c ili9328.c spi.c main.c display.c fonts.c debug.c io.c #mystdlib.c
-CSRCS   += alu.c cartridge.c dmgcpu.c video.c decoder.c
-CSRCS   += pff.c mmc.c
 
-INCDIRS  = . ../../inc inc
+TARGET    = bbgb
+LIBEMBPATH =../../libemb
+SRCSPATH  += ../../src ../../dmgcpu pff src $(LIBEMBPATH)/display $(LIBEMBPATH)/drv/tft
+#OBJSPATH += .
+CSRCS      = startup.c blueboard.c ili9328.c spi.c main.c lcd.c display.c fonts.c debug.c io.c #mystdlib.c
+CSRCS     += alu.c cartridge.c dmgcpu.c video.c decoder.c
+CSRCS     += pff.c mmc.c
+
+INCDIRS  = . ../../inc inc $(LIBEMBPATH)/include
 SYMBOLS  = __NEWLIB__ __BB__ NO_LCD_HW_SCROLL
 #########################################################################
 #  List of the objects files to be compiled/assembled
@@ -29,16 +31,9 @@ ASFLAGS = $(LISTING) -mcpu=cortex-m3 -mthumb
 #########################################################################
 #  Compiler/Assembler/Linker Paths
 
-VPATH +=$(SRCPATH)
+VPATH +=$(SRCSPATH)
 
-UNAME := $(shell uname)
-
-#ifeq ($(UNAME), Linux)
-#GCC_EXEC_PREFIX = arm-linux-gnueabi
-#else
 GCC_EXEC_PREFIX = arm-none-eabi
-#endif
-
 
 GCC = $(GCC_EXEC_PREFIX)-gcc
 GPP = $(GCC_EXEC_PREFIX)-g++
@@ -51,6 +46,7 @@ REMOVE = rm -f
 #########################################################################
 
 all: $(TARGET).elf stats
+#@echo $(VPATH)
 
 $(TARGET).elf: $(OBJECTS)
 	@echo "---- Linking ----> $@"
