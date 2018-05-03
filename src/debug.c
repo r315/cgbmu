@@ -11,7 +11,6 @@
 
 #define FPS_ROW 0
 
-
 enum {
 	STEP = 1,
 	CONTINUE,
@@ -31,7 +30,7 @@ void stepFrame(void);
 void debug(void){	
 uint8_t key;
 uint32_t ticks = 0, dticks;
-	DISPLAY_SetFcolor(YELLOW);
+	DISPLAY_SetFcolor(YELLOW); DBG_Reg();
 	while((key = readJoyPad()) != 255){		
 
 		if (stepping != OFF) {
@@ -123,7 +122,9 @@ unsigned char i=0,c,dig[16];
 //------------------------------------------------------
 int printVal(int x, int y,char *name, int v, char radix, char digitos)
 {	
+	DISPLAY_SetFcolor(RED);
 	x = DISPLAY_Text(x,y,name);
+	DISPLAY_SetFcolor(YELLOW);
 	x = printInt(x,y,v,radix,digitos);	 
 	return x;
 }
@@ -150,23 +151,24 @@ void DBG_Reg(void)
 		(REG_F & FC) ? 1 : 0
 	);
 #else	
-	DISPLAY_SetFcolor(YELLOW);
+	
 	//setAttribute(g_double);
 //	setFont(BOLD);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(0),"af ",REG_A << 8| REG_F ,16,4);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(1),"bc ",REG_BC,16,4);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(2),"de ",REG_DE,16,4);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(3),"hl ",REG_HL,16,4);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(4),"sp ",REG_SP,16,4);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(5),"pc ",REG_PC,16,4);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(7),"LCDC ",IOLCDC,16,2);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(8),"ly ",IOLY,16,2);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(0),"af: ",REG_A << 8| REG_F ,16,4);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(1),"bc: ",REG_BC,16,4);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(2),"de: ",REG_DE,16,4);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(3),"hl: ",REG_HL,16,4);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(4),"sp: ",REG_SP,16,4);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(5),"pc: ",REG_PC,16,4);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(7),"LCDC: ",IOLCDC,16,2);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(8),"STAT: ", IOSTAT, 16, 2);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(9),"ly:   ",IOLY,16,2);
 
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(10),"TIMA ",IOTIMA,16,2);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(11),"DIV ",IODIV,16,2);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(11),"TIMA: ",IOTIMA,16,2);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(12),"DIV:  ",IODIV,16,2);
 	
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(13), "SCX ", IOSCX, 16, 2);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(14), "SCY ", IOSCY, 16, 2);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(15),"SCX:  ", IOSCX, 16, 2);
+	printVal(DBG_REG_COL(0), DBG_REG_ROW(16),"SCY:  ", IOSCY, 16, 2);
 	
 #endif
 	LCD_Pop();
