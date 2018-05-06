@@ -1,6 +1,6 @@
 
 
-#include <common.h>
+#include <cgbmu.h>
 #include <string.h>
 #include "display.h"
 #include "dmgcpu.h"
