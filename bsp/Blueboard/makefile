@@ -4,8 +4,8 @@ TARGET    = bbgb
 LIBEMBPATH =../../libemb
 SRCSPATH  += ../../src ../../dmgcpu pff src $(LIBEMBPATH)/display $(LIBEMBPATH)/drv/tft
 #OBJSPATH += .
-CSRCS      = startup.c blueboard.c ili9328.c spi.c main.c lcd.c display.c fonts.c debug.c io.c #mystdlib.c
-CSRCS     += alu.c cartridge.c dmgcpu.c video.c decoder.c
+CSRCS      = startup.c blueboard.c ili9328.c spi.c main.c lcd.c display.c fonts.c debug.c #mystdlib.c
+CSRCS     += alu.c cartridge.c dmgcpu.c video.c decoder.c cgbmu.c
 CSRCS     += pff.c mmc.c
 
 INCDIRS  = . ../../inc inc $(LIBEMBPATH)/include

@@ -47,6 +47,10 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 #define FH              (1<<5)
 #define FC              (1<<4)
 
+//P1 bits
+#define IOP14		    (1<<4)
+#define IOP15		    (1<<5)
+
 // LCDC bits
 #define LCD_DISPLAY     (1<<7)	// Enable/Disable lcd controller
 #define W_MAP           (1<<6)	// Window Tile map 0:9800, 1:9C00
@@ -80,6 +84,19 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 
 // TAC bits
 #define TIMER_STOP      (1<<2)
+
+// Butons bits
+#define J_RIGHT     (1<<0)
+#define J_LEFT      (1<<1)
+#define J_UP        (1<<2)
+#define J_DOWN      (1<<3)
+
+#define J_A         (1<<4)
+#define J_B         (1<<5)
+#define J_SELECT    (1<<6)
+#define J_START     (1<<7)
+
+#define IOP1_MASK   0xCF
 
 /*
  15..8  7..0

@@ -11,7 +11,7 @@
 #include "button.h"
 #include "decoder.h"
 #include "tests.h"
-#include "io.h"
+
 
 char filename[100];
 extern const char bg_map[32 * 32];
@@ -65,8 +65,8 @@ void testButtons(void) {
 		case 0x07:   b = "[ DOWN ]  "; break;
 		}
 		if (*b != '\0')
-			printf("%s\n", b);
-		SDL_Delay(20);
+			DISPLAY_printf("%s\n", b);
+		//SDL_Delay(20);
 	}
 }
 

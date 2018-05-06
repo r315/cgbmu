@@ -8,7 +8,6 @@ http://meatfighter.com/gameboy
 #include "dmgcpu.h"
 #include "video.h"
 #include "cartridge.h"
-#include "io.h"
 
 #if defined(WIN32)
 #pragma warning(disable:4996)
@@ -52,6 +51,8 @@ Regs regs;
 void push(uint16_t v);
 void decode(void);
 void setTimerPrescaler(void);
+
+uint8_t readJoyPad(void); // this function must be implemented by the target arch
 
 //-----------------------------------------
 //
@@ -148,6 +149,37 @@ uint8_t i, *pdst;
     for(i = 0; i < DMA_SIZE; i++, pdst++)
 		*pdst = memoryRead(src++);           
 }
+
+/**----------------------------------------s
+*           P14           P15
+*            |            |
+* P10 -------+-[Right]----+-[A]
+*            |            |
+* P11 -------+-[Left]-----+-[B]
+*            |            |
+* P12 -------+-[Up]-------+-[Select]
+*            |            |
+* P13 -------+-[Down]-----+-[Start]
+*            |            |
+//----------------------------------------- */
+uint8_t joyPad(void) {
+	uint8_t buttons;
+
+	buttons = ~readJoyPad();    // read buttons, 0 means button pressed
+
+	IOP1 &= 0xF0;				// Clr lower 4 bits
+
+	if (!(IOP1 & IOP14)) {		// Check wich row was selected
+		buttons &= 0x0F;		// joy pad
+	}
+	else {
+		buttons >>= 4;          // select, start, A, B
+	}
+
+	IOP1 |= buttons;		    // save buttons
+	return IOP1;
+}
+
 //-----------------------------------------
 //
 //-----------------------------------------

@@ -1,5 +1,5 @@
 
-#include <common.h>
+#include <cgbmu.h>
 #include <string.h>
 #include <stdlib.h>
 #include "lcd.h"
@@ -7,7 +7,6 @@
 #include "dmgcpu.h"
 #include "display.h"
 #include "video.h"
-#include "io.h"
 
 #define FPS_ROW 0
 
@@ -24,7 +23,9 @@ void debugCommans(uint8_t *st);
 void decode(void);
 char readLine(char *dst, uint8_t max);
 void stepInstruction(void);
-void stepFrame(void);
+void runOneFrame(void);
+uint8_t readJoyPad(void);
+void disassemble(void);
 
 #if defined(__EMU__)
 void debug(void){	
@@ -58,7 +59,7 @@ uint32_t ticks = 0, dticks;
 		}
 #if 1
 		ticks = SDL_GetTicks();
-		stepFrame();
+		runOneFrame();
 		dticks = SDL_GetTicks() - ticks;
 		if (dticks < FRAME_TIME && stepping == OFF) {
 			SDL_Delay(FRAME_TIME - dticks);
@@ -269,72 +270,12 @@ void stepInstruction(void){
 	interrupts();	
 	//one instruction
 }
-//-----------------------------------------
-//
-//-----------------------------------------
-extern uint16_t video_cycles;
-void runCpu(uint16_t nTicks){
-	while (nTicks > video_cycles){
-		timer();   
-		interrupts();
-		decode();
-		video_cycles += GET_CYCLE(); 	
-    } 
-	video_cycles -= nTicks; 	
-}
-//-----------------------------------------
-//
-//-----------------------------------------
-void stepFrame(void){
-
-	LCD_Window(0, 0, SCREEN_W, SCREEN_H);
-
-	IOSTAT &= ~(V_MODE_MASK);
-	
-	for (IOLY = 0; IOLY < SCREEN_H; IOLY++){
-	    
-		IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & (~LYC_LY_FLAG));
-
-		//if ((IOSTAT & LYC_LY_IE) && (IOSTAT & LYC_LY_FLAG))
-		if (IOSTAT & LYC_LY_FLAG)
-			IOIF |= LCDC_IF;
-		
-		IOSTAT |= V_M2;  			// Change to Mode2 scan OAM
-		if(IOSTAT & OAM_IE)			// check OAM IE
-			IOIF |= LCDC_IF;		
-		runCpu(V_M2_CYCLE);
-		scanOAM();
-	    
-		IOSTAT |= V_M3;  			// Change to Mode3 scan VRAM
-	    runCpu(V_M3_CYCLE);
-		scanline();
-
-	    IOSTAT &= ~(V_MODE_MASK); 	// Change to Mode0 H-Blank
-	   	if(IOSTAT & HB_IE)			// check H-Blank IE
-			IOIF |= LCDC_IF;
-	    runCpu(V_M0_CYCLE);		
-	}	
-	
-	IOSTAT |= V_M1;  		// Change to Mode 1
-	IOIF |= V_BLANK_IF;		// V-Blank Flag is Always activated
-	if(IOSTAT & VB_IE)		// LCD Flag is activated if IE is enabled
-		IOIF |= LCDC_IF;	
-
-	while(IOLY < (SCREEN_H + VBLANK_LINES)){
-		IOSTAT = (IOLY == IOLYC)? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & ~LYC_LY_FLAG); 				
-		runCpu(V_LINE_CYCLE);	
-		IOLY++;		
-	}					
-	//DBG_BGmap();
-	// end of frame
-}
-
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
 void DBG_Info(char* text)
 {
-	DISPLAY_puts(text);
+	DISPLAY_printf(text);
 	DISPLAY_putc('\n');
 }
 

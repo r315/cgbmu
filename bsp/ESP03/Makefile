@@ -49,21 +49,14 @@ $(SRCPREFIX)startup/nosdk8266.c\
 ../../libemb/display/lcd.c     \
 ../../libemb/display/display.c \
 ../../libemb/display/fonts.c   \
-../../src/io.c                 \
 ../../dmgcpu/video.c           \
 ../../dmgcpu/dmgcpu.c          \
 ../../dmgcpu/decoder.c         \
 ../../dmgcpu/cartridge.c       \
 ../../dmgcpu/alu.c             \
+../../src/cgbmu.c              \
+../../src/debug.c              \
 main.c                         \
-spiffs/esp_spiffs.c            \
-spiffs/spiffs_hydrogen.c       \
-spiffs/spiffs_gc.c             \
-spiffs/spiffs_check.c          \
-spiffs/spiffs_cache.c          \
-spiffs/spiffs_nucleus.c        \
-#../../src/main.c               \
-
 
 all : $(TARGET_OUT).elf
 

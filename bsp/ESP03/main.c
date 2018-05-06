@@ -9,19 +9,48 @@
 #include <lcd.h>
 #include <display.h>
 
+#include <cgbmu.h>
+#include <cartridge.h>
+
 #define HSPI_DIVIDER 1
 
-#define call_delay_us( time ) { asm volatile( "mov.n a2, %0\n_call0 delay4clk" : : "r"(time*13) : "a2" ); }
-
-#define Delay_Ms(x)                 \
-	{                          \
-         while(x--){               \
-	    call_delay_us(500000); \
-	    call_delay_us(500000); \
-         }                         \
-        }
+#define FLASH_BASE 0x40200000UL
+#define DISK_START (FLASH_BASE + 0x80000)
 
 
+//-----------------------------------------------------------
+//
+//-----------------------------------------------------------
+void fsInit(void)
+{
+	
+}
+//-----------------------------------------------------------
+//
+//-----------------------------------------------------------
+uint8_t readJoyPad(void){
+	return 0;
+}
+//-----------------------------------------------------------
+//
+//-----------------------------------------------------------
+int loadRom(char *fn){
+	ROM0 = (unsigned char*)DISK_START;
+	loadRombank(1);
+	return ROM_SIZE;
+}
+//-----------------------------------------------------------
+//
+//-----------------------------------------------------------
+int loadRombank(uint8_t bank){	
+	bank = (bank != 0) ? bank : 1;
+	ROMBANK = (unsigned char*)(DISK_START + (bank << 14));
+	bankselect = bank;		// save current
+	return ROM_SIZE;
+}
+//-----------------------------------------------------------
+//
+//-----------------------------------------------------------
 int main()
 {
 	int i = 0;
@@ -61,13 +90,22 @@ int main()
 
 	float val = 3.141592;
 	DISPLAY_printf("Float Test\nPI: %f\n", val);
-
+/*
 	while(1)
 	{	
 		DISPLAY_printf( "Count: %d\n", i);
 		call_delay_us( 300000 );
 		i++;
 	}
+*/
+	LCD_Rotation(LCD_LANDSCAPE);
+
+	initCpu();		
+
+	if(loadRom("mario.gb"))
+		cgbmu(1);
+
+return 0;
 }
 
 	

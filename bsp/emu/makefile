@@ -4,8 +4,8 @@ SRCSPATH =. ../../src ../../dmgcpu ../../libemb/drv/tft ../../libemb/display src
 OBJSPATH =.
 INCSPATH =. ../../inc inc ../../libemb/include
 
-CSRCS    =debug.c disassembler.c tests.c testdata.c io.c main.c readline.c lcd.c display.c fonts.c
-CSRCS   +=decoder.c alu.c dmgcpu.c cartridge.c video.c
+CSRCS    =debug.c disassembler.c tests.c testdata.c main.c readline.c lcd.c display.c fonts.c
+CSRCS   +=decoder.c alu.c dmgcpu.c cartridge.c video.c cgbmu.c
 LIBS     =-lSDL2main -lSDL2
 SYMBOLS  =-D__DEBUG__ -D__EMU__ -D__LCDFB__
 

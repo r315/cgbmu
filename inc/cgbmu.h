@@ -1,6 +1,9 @@
-#ifndef _common_h_
-#define _common_h_
+#ifndef _cgbmu_h_
+#define _cgbmu_h_
 
+#include <stdint.h> 
+
+#define FRAME_TIME 16
 
 #if defined(__EMU__)
 	#ifdef _WIN32
@@ -16,11 +19,15 @@
 	#define DelayMs(x) SDL_Delay(x)
 	#define FRAME_TIME 16
 	
-#elif defined(__BB__)
-	#include <blueboard.h>
+#else
 	#define REGISTERS_ROW 11
 	#define LCD_Push()
 	#define LCD_Pop()
 #endif
+
+// these functions must be implemented by the target arch
+uint8_t readJoyPad(void);
+int loadRom(char *fn);
+int loadRombank(uint8_t bank);
 
 #endif /* _common_h_ */

@@ -1,5 +1,5 @@
 
-#include <common.h>
+#include <cgbmu.h>
 #include <string.h>
 #include "display.h"
 #include "dmgcpu.h"
@@ -9,10 +9,11 @@
 #include "debug.h"
 #include "button.h"
 #include "decoder.h"
-#include "io.h"
 #include "tests.h"
 
-#if defined(__EMU__)
+
+void cgbmu(uint8_t mode);
+
 
 typedef struct {
 	char *romfile;
@@ -77,40 +78,121 @@ void processArgs(int argc, char *argv[], Param_Type *param) {
 	}
 }
 
+#include <stdio.h>
+#include <stdlib.h>
+#ifdef _WIN32
+#pragma warning(disable : 4996)
+#include <direct.h>
+#else
+#include <unistd.h>
 #endif
 
-void run(void) {
-	int wait = 0;
-	while (readJoyPad() != 255) {		
-		decode();
-		interrupts();
-		timer();
-		if (video() == ON) {
-			//DBG_Fps();
-			wait = wait - GetTicks();
-			if (wait > 0)
-				DelayMs(wait);
-			wait = GetTicks() + 16;
-		}
+unsigned char _ROM0[ROM_SIZE];
+unsigned char _ROMBANK[ROM_SIZE];
+char* romfile;
+
+#define LOG_TAG "CARTRIDGE"
+
+int loadRom(char *fn)
+{
+	char cwd[1024];
+	FILE *fp;
+	romfile = fn;
+	int n;
+
+	ROM0 = _ROM0;
+	ROMBANK = _ROMBANK;
+
+	if (getcwd(cwd, sizeof(cwd)))
+		fprintf(stdout, "Current working dir: %s\n", cwd);
+	else
+		perror("getcwd() error");
+
+	fprintf(stdout, "%s: Loading File \"%s\"\n", LOG_TAG, fn);
+	fp = fopen(romfile, "rb");
+
+	if (fp == NULL)
+	{
+		printf("%s: File not found\n", LOG_TAG);
+		return 0;
 	}
+
+	n = fread(ROM0, 1, ROM_SIZE, fp);
+	n += fread(ROMBANK, 1, ROM_SIZE, fp);
+
+	fclose(fp);
+	bankselect = 1;
+	printf("%s: Rom file loaded!\n", LOG_TAG);
+	return n;
 }
+//--------------------------------------------------
+//
+//--------------------------------------------------
+int loadRombank(uint8_t bank)
+{
+	FILE *fp;
+	size_t n;
+	bankselect = bank;
+	fp = fopen(romfile, "rb");
+	fseek(fp, bankselect << 14, SEEK_SET);
+	n = fread(ROMBANK, 1, ROM_SIZE, fp);
+	fclose(fp);
+	//printf("Loaded %u bytes into Rom Bank %u\n", n, bankSelect);
+	return n;
+}
+//-----------------------------------------
+//
+//-----------------------------------------
+uint8_t readJoyPad(void)
+{
+static uint8_t button = 0;	
+SDL_Event ev;
+const Uint8 *keys;
+
+	if(!SDL_PollEvent( &ev )) 
+	    return button;	    
+	    
+	if(ev.type == SDL_QUIT){
+		button = 255;
+	    return button;
+	}
+	
+	keys  = SDL_GetKeyboardState(NULL);
+
+	if(keys[SDL_SCANCODE_ESCAPE]){
+		button = 255;
+	    return button;
+	} 
+
+	if (ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP) {		
+		button = 0;
+	}
+	else
+	{
+		return button;
+	}
+
+	button |= keys[SDL_SCANCODE_DOWN] ? J_DOWN : 0;
+	button |= keys[SDL_SCANCODE_UP]  ? J_UP : 0;
+	button |= keys[SDL_SCANCODE_LEFT] ? J_LEFT : 0;
+	button |= keys[SDL_SCANCODE_RIGHT] ? J_RIGHT : 0;
+		
+	button |= keys[SDL_SCANCODE_RETURN] ? J_START : 0;
+	button |= keys[SDL_SCANCODE_BACKSPACE] ? J_SELECT : 0;
+	button |= keys[SDL_SCANCODE_A] ? J_B : 0;
+    button |= keys[SDL_SCANCODE_S ] ? J_A : 0;
+
+    button |= keys[SDL_SCANCODE_SPACE ] ? J_A : 0;
+return button;
+}
+
 //-----------------------------------------------------------
 //instructions test
 //-----------------------------------------------------------
 int main (int argc, char *argv[])
 {
 	#if defined(__BB__)
-	BB_Init();
-	BB_ConfigPLL(PLL100);	
-
-	LCD_Rotation(LCD_LANDSCAPE);
-
-	DISPLAY_puts("Hello\n");
-
-	initCpu();		
-
-	loadRom("mario.gb");
-	run();	
+	
 
 	#elif defined(__ESP03__)	
 
@@ -149,8 +231,6 @@ int main (int argc, char *argv[])
 	
 	LCD_Init();	 
 	
-	initCpu();	
-
 	if(argc == 1) // no arguments
 		testAll();
 	else {
@@ -162,10 +242,11 @@ int main (int argc, char *argv[])
 			testMain();
 		}else
 			if (param.debug) {
-				debug();
+				printf("Starting frame loop\n");
+				cgbmu(1);
 			}
 			else {
-				run();
+				cgbmu(0);
 			}
 	}	
 
