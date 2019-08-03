@@ -26,7 +26,6 @@ int c;
 
 #else
 
-#include <common.h>
 #include <termios.h>
 #include <unistd.h>    
 #include <sys/time.h>

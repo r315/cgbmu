@@ -1,7 +1,7 @@
+#include "board.h"
 #include <cgbmu.h>
 #include <video.h>
 #include <dmgcpu.h>
-#include <lcd.h>
 #include <debug.h>
 
 extern uint16_t video_cycles;
@@ -25,7 +25,7 @@ void runCpu(uint16_t nTicks) {
 //-----------------------------------------
 void runOneFrame(void) {
 
-	LCD_Window(0, 0, SCREEN_W, SCREEN_H);
+	LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y, SCREEN_W, SCREEN_H);
 
 	IOSTAT &= ~(V_MODE_MASK);
 
@@ -89,11 +89,13 @@ void cgbmu(uint8_t mode) {
 		while (readJoyPad() != 255) {
 			ticks = GetTicks();
 			runOneFrame();
+			#if 0
 			ticks = GetTicks() - ticks;
 			if (ticks < FRAME_TIME) {
 				DelayMs(FRAME_TIME - ticks);
 			}
 			DBG_Fps();
+			#endif
 		}
 	}	
 }

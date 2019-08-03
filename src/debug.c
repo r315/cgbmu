@@ -2,7 +2,7 @@
 #include <cgbmu.h>
 #include <string.h>
 #include <stdlib.h>
-#include "lcd.h"
+#include "board.h"
 #include "debug.h"
 #include "dmgcpu.h"
 #include "display.h"
@@ -31,7 +31,8 @@ void disassemble(void);
 void debug(void){	
 uint8_t key;
 uint32_t ticks = 0, dticks;
-	DISPLAY_SetFcolor(YELLOW); DBG_Reg();
+	DISPLAY_SetFcolor(YELLOW); 
+	DBG_Reg();
 	while((key = readJoyPad()) != 255){		
 
 		if (stepping != OFF) {

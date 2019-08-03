@@ -217,4 +217,5 @@ void initCpu(void);
 void interrupts(void);
 void timer(void);
 void runCpu(uint16_t nTicks);
+uint8_t joyPad(void);
 #endif

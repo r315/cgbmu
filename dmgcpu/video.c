@@ -2,7 +2,7 @@
 #include <string.h>
 #include "dmgcpu.h"
 #include "video.h"
-#include "lcd.h"
+#include "board.h"
 
 const unsigned short lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
 
@@ -229,7 +229,10 @@ uint8_t video(void) {
 
 			IOLY = 0;
 			frame = ON;
-			LCD_Window(0, 0, SCREEN_W, SCREEN_H);
+			#if defined(__EMU__)			
+			SDL_Delay(20);
+			#endif
+			LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y, SCREEN_W, SCREEN_H);
 		}
 		break;
 	}

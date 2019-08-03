@@ -1,13 +1,11 @@
 
 #include <cgbmu.h>
 #include <string.h>
-#include "display.h"
+#include "board.h"
 #include "dmgcpu.h"
 #include "video.h"
-#include "lcd.h"
 #include "cartridge.h"
 #include "debug.h"
-#include "button.h"
 #include "decoder.h"
 #include "tests.h"
 
@@ -19,6 +17,7 @@ typedef struct {
 	char *romfile;
 	char debug;
 	char test;
+	char mode;
 }Param_Type;
 
 typedef struct {
@@ -39,10 +38,15 @@ void enableTest(char *params, Param_Type *param) {
 	param->test = 1;
 }
 
+void mode(char *params, Param_Type *param) {
+	param->mode = 1;
+}
+
 ARG_Type builtinargs[] = {
 	{"-d", enableDebug},
 	{"-r", romFile},
-	{"-t", enableTest}
+	{"-t", enableTest},
+	{"-i", mode}
 };
 
 void argFound(char **args, Param_Type *param) {
@@ -73,7 +77,7 @@ void processArgs(int argc, char *argv[], Param_Type *param) {
 				argFound(&argv[i], param);
 				break;
 			}
-			*arg++;
+			arg++;
 		}
 	}
 }
@@ -229,25 +233,40 @@ int main (int argc, char *argv[])
 	static Param_Type param;
 	memset(&param, 0, sizeof(Param_Type));
 	
-	LCD_Init();	 
 	
 	if(argc == 1) // no arguments
-		testAll();
-	else {
-		processArgs(argc - 1, &argv[1], &param);
-		if (!loadRom(param.romfile))
-			exit(1);
+	{
+		printf("Available options:\n\n"
+				"\t -d   Debug on\n"
+				"\t -r   <romfile>\n"
+				"\t -t   tests\n"
+				"\t -i   Instruction mode loop");
+		return 0;
+	}
 
-		if (param.test) {
-			testMain();
-		}else
-			if (param.debug) {
-				printf("Starting frame loop\n");
-				cgbmu(1);
-			}
-			else {
-				cgbmu(0);
-			}
+	LCD_Init();	 
+
+	//testAll();
+	
+	processArgs(argc - 1, &argv[1], &param);
+	if (!loadRom(param.romfile))
+		exit(1);
+
+	if (param.test) {
+		testMain();
+	}else if (param.debug) {
+		printf("Starting frame loop\n");
+		debug();
+	}
+	else {
+		if (param.mode) {
+			printf("Instruction mode\n");
+			cgbmu(1);
+		}
+		else {
+			cgbmu(0);
+		}
+		
 	}	
 
 	LCD_Close();

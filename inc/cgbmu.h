@@ -8,7 +8,7 @@
 #if defined(__EMU__)
 	#ifdef _WIN32
 		#include <SDL.h>
-		#pragma warning(disable:4996)
+		//#pragma warning(disable:4996)
 		#include <direct.h>
 	#elif defined(__linux__)
 		#include <SDL2/SDL.h>

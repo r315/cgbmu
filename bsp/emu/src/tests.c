@@ -2,13 +2,11 @@
 
 #include <cgbmu.h>
 #include <string.h>
-#include "display.h"
+#include "board.h"
 #include "dmgcpu.h"
 #include "video.h"
-#include "lcd.h"
 #include "cartridge.h"
 #include "debug.h"
-#include "button.h"
 #include "decoder.h"
 #include "tests.h"
 
@@ -28,6 +26,8 @@ void testRun(void) {
 
 void testAll(void) {
 	//testRom(ALL_TESTS_ROM);
+	LCD_Window(0, 0, LCD_W, LCD_H);
+	LCD_Fill(LCD_SIZE, RED);
 	DISPLAY_Text(0,0,"Testing Buttons");
 	testButtons();
 }
@@ -66,7 +66,9 @@ void testButtons(void) {
 		}
 		if (*b != '\0')
 			DISPLAY_printf("%s\n", b);
-		//SDL_Delay(20);
+		#if defined(__EMU__)		
+		SDL_Delay(20);
+		#endif
 	}
 }
 

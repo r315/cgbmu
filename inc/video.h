@@ -55,6 +55,9 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 #define SCREEN_H_TILES SCREEN_W/8		// Horizontal Tiles
 #define SCREEN_V_TILES SCREEN_H/8		// Vertical Tiles
 
+#define SCREEN_OFFSET_X 0 //160
+#define SCREEN_OFFSET_Y 0
+
 #define V_M0          0
 #define V_M1          1
 #define V_M2          2
