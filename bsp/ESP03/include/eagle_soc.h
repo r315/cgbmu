@@ -75,75 +75,82 @@
 //}}
 
 //GPIO reg {{
-#define GPIO_REG_READ(reg)                         READ_PERI_REG(PERIPHS_GPIO_BASEADDR + reg)
-#define GPIO_REG_WRITE(reg, val)                 WRITE_PERI_REG(PERIPHS_GPIO_BASEADDR + reg, val)
-#define GPIO_OUT_ADDRESS                         0x00
+#define GPIO_REG_READ(reg)                READ_PERI_REG(PERIPHS_GPIO_BASEADDR + reg)
+#define GPIO_REG_WRITE(reg, val)          WRITE_PERI_REG(PERIPHS_GPIO_BASEADDR + reg, val)
+#define GPIO_OUT_ADDRESS                  0x00
 #define GPIO_OUT_W1TS_ADDRESS             0x04
 #define GPIO_OUT_W1TC_ADDRESS             0x08
 
-#define GPIO_ENABLE_ADDRESS                  0x0c
-#define GPIO_ENABLE_W1TS_ADDRESS      0x10
-#define GPIO_ENABLE_W1TC_ADDRESS      0x14
-#define GPIO_OUT_W1TC_DATA_MASK      0x0000ffff
+#define GPIO_ENABLE_ADDRESS               0x0c
+#define GPIO_ENABLE_W1TS_ADDRESS          0x10
+#define GPIO_ENABLE_W1TC_ADDRESS          0x14
+#define GPIO_OUT_W1TC_DATA_MASK           0x0000ffff
 
-#define GPIO_IN_ADDRESS                            0x18
+#define GPIO_IN_ADDRESS                   0x18
 
-#define GPIO_STATUS_ADDRESS                  0x1c
-#define GPIO_STATUS_W1TS_ADDRESS       0x20
-#define GPIO_STATUS_W1TC_ADDRESS      0x24
-#define GPIO_STATUS_INTERRUPT_MASK 0x0000ffff
+#define GPIO_STATUS_ADDRESS               0x1c
+#define GPIO_STATUS_W1TS_ADDRESS          0x20
+#define GPIO_STATUS_W1TC_ADDRESS          0x24
+#define GPIO_STATUS_INTERRUPT_MASK        0x0000ffff
 
-#define GPIO_RTC_CALIB_SYNC                  PERIPHS_GPIO_BASEADDR+0x6c
-#define RTC_CALIB_START                           BIT31  //first write to zero, then to one to start
-#define RTC_PERIOD_NUM_MASK              0x3ff   //max 8ms
-#define GPIO_RTC_CALIB_VALUE               PERIPHS_GPIO_BASEADDR+0x70
-#define RTC_CALIB_RDY_S                           31  //after measure, flag to one, when start from zero to one, turn to zero
-#define RTC_CALIB_VALUE_MASK             0xfffff
+#define GPIO_RTC_CALIB_SYNC               PERIPHS_GPIO_BASEADDR+0x6c
+#define RTC_CALIB_START                   BIT31  //first write to zero, then to one to start
+#define RTC_PERIOD_NUM_MASK               0x3ff   //max 8ms
+#define GPIO_RTC_CALIB_VALUE              PERIPHS_GPIO_BASEADDR+0x70
+#define RTC_CALIB_RDY_S                   31  //after measure, flag to one, when start from zero to one, turn to zero
+#define RTC_CALIB_VALUE_MASK              0xfffff
 
-#define GPIO_PIN0_ADDRESS                        0x28
+#define GPIO_PIN0_ADDRESS                 0x28
 
-#define GPIO_ID_PIN0                                     0
-#define GPIO_ID_PIN(n)                                   (GPIO_ID_PIN0+(n))
-#define GPIO_LAST_REGISTER_ID                GPIO_ID_PIN(15)
-#define GPIO_ID_NONE                                  0xffffffff
+#define GPIO_ID_PIN0                      0
+#define GPIO_ID_PIN(n)                    (GPIO_ID_PIN0+(n))
+#define GPIO_LAST_REGISTER_ID             GPIO_ID_PIN(15)
+#define GPIO_ID_NONE                      0xffffffff
 
-#define GPIO_PIN_COUNT                              16
+#define GPIO_PIN_COUNT                    16
 
-#define GPIO_PIN_CONFIG_MSB                    12
-#define GPIO_PIN_CONFIG_LSB                     11
-#define GPIO_PIN_CONFIG_MASK                 0x00001800
-#define GPIO_PIN_CONFIG_GET(x)                 (((x) & GPIO_PIN_CONFIG_MASK) >> GPIO_PIN_CONFIG_LSB)
-#define GPIO_PIN_CONFIG_SET(x)                  (((x) << GPIO_PIN_CONFIG_LSB) & GPIO_PIN_CONFIG_MASK)
+#define GPIO_PIN_CONFIG_MSB               12
+#define GPIO_PIN_CONFIG_LSB               11
+#define GPIO_PIN_CONFIG_MASK              0x00001800
+#define GPIO_PIN_CONFIG_GET(x)            (((x) & GPIO_PIN_CONFIG_MASK) >> GPIO_PIN_CONFIG_LSB)
+#define GPIO_PIN_CONFIG_SET(x)            (((x) << GPIO_PIN_CONFIG_LSB) & GPIO_PIN_CONFIG_MASK)
 
-#define GPIO_WAKEUP_ENABLE                               1
-#define GPIO_WAKEUP_DISABLE                              (~GPIO_WAKEUP_ENABLE)
-#define GPIO_PIN_WAKEUP_ENABLE_MSB             10
-#define GPIO_PIN_WAKEUP_ENABLE_LSB              10
-#define GPIO_PIN_WAKEUP_ENABLE_MASK          0x00000400
-#define GPIO_PIN_WAKEUP_ENABLE_GET(x)          (((x) & GPIO_PIN_WAKEUP_ENABLE_MASK) >> GPIO_PIN_WAKEUP_ENABLE_LSB)
-#define GPIO_PIN_WAKEUP_ENABLE_SET(x)           (((x) << GPIO_PIN_WAKEUP_ENABLE_LSB) & GPIO_PIN_WAKEUP_ENABLE_MASK)
+#define GPIO_WAKEUP_ENABLE                1
+#define GPIO_WAKEUP_DISABLE               (~GPIO_WAKEUP_ENABLE)
+#define GPIO_PIN_WAKEUP_ENABLE_MSB        10
+#define GPIO_PIN_WAKEUP_ENABLE_LSB        10
+#define GPIO_PIN_WAKEUP_ENABLE_MASK       0x00000400
+#define GPIO_PIN_WAKEUP_ENABLE_GET(x)     (((x) & GPIO_PIN_WAKEUP_ENABLE_MASK) >> GPIO_PIN_WAKEUP_ENABLE_LSB)
+#define GPIO_PIN_WAKEUP_ENABLE_SET(x)     (((x) << GPIO_PIN_WAKEUP_ENABLE_LSB) & GPIO_PIN_WAKEUP_ENABLE_MASK)
 
-#define GPIO_PIN_INT_TYPE_MASK             0x380
-#define GPIO_PIN_INT_TYPE_MSB                9
-#define GPIO_PIN_INT_TYPE_LSB                 7
-#define GPIO_PIN_INT_TYPE_GET(x)             (((x) & GPIO_PIN_INT_TYPE_MASK) >> GPIO_PIN_INT_TYPE_LSB)
-#define GPIO_PIN_INT_TYPE_SET(x)             (((x) << GPIO_PIN_INT_TYPE_LSB) & GPIO_PIN_INT_TYPE_MASK)
+#define GPIO_PIN_INT_TYPE_MASK            0x380
+#define GPIO_PIN_INT_TYPE_MSB             9
+#define GPIO_PIN_INT_TYPE_LSB             7
+#define GPIO_PIN_INT_TYPE_GET(x)          (((x) & GPIO_PIN_INT_TYPE_MASK) >> GPIO_PIN_INT_TYPE_LSB)
+#define GPIO_PIN_INT_TYPE_SET(x)          (((x) << GPIO_PIN_INT_TYPE_LSB) & GPIO_PIN_INT_TYPE_MASK)
 
-#define GPIO_PAD_DRIVER_ENABLE             1
-#define GPIO_PAD_DRIVER_DISABLE            (~GPIO_PAD_DRIVER_ENABLE)
-#define GPIO_PIN_PAD_DRIVER_MSB            2
-#define GPIO_PIN_PAD_DRIVER_LSB             2
-#define GPIO_PIN_PAD_DRIVER_MASK         0x00000004
-#define GPIO_PIN_PAD_DRIVER_GET(x)         (((x) & GPIO_PIN_PAD_DRIVER_MASK) >> GPIO_PIN_PAD_DRIVER_LSB)
-#define GPIO_PIN_PAD_DRIVER_SET(x)          (((x) << GPIO_PIN_PAD_DRIVER_LSB) & GPIO_PIN_PAD_DRIVER_MASK)
+#define GPIO_PAD_DRIVER_ENABLE            1
+#define GPIO_PAD_DRIVER_DISABLE           (~GPIO_PAD_DRIVER_ENABLE)
+#define GPIO_PIN_PAD_DRIVER_MSB           2
+#define GPIO_PIN_PAD_DRIVER_LSB           2
+#define GPIO_PIN_PAD_DRIVER_MASK          0x00000004
+#define GPIO_PIN_PAD_DRIVER_GET(x)        (((x) & GPIO_PIN_PAD_DRIVER_MASK) >> GPIO_PIN_PAD_DRIVER_LSB)
+#define GPIO_PIN_PAD_DRIVER_SET(x)        (((x) << GPIO_PIN_PAD_DRIVER_LSB) & GPIO_PIN_PAD_DRIVER_MASK)
 
-#define GPIO_AS_PIN_SOURCE                        0
-#define SIGMA_AS_PIN_SOURCE                     (~GPIO_AS_PIN_SOURCE)
-#define GPIO_PIN_SOURCE_MSB                     0
-#define GPIO_PIN_SOURCE_LSB                      0
-#define GPIO_PIN_SOURCE_MASK                  0x00000001
-#define GPIO_PIN_SOURCE_GET(x)                 (((x) & GPIO_PIN_SOURCE_MASK) >> GPIO_PIN_SOURCE_LSB)
-#define GPIO_PIN_SOURCE_SET(x)                  (((x) << GPIO_PIN_SOURCE_LSB) & GPIO_PIN_SOURCE_MASK)
+#define GPIO_AS_PIN_SOURCE                0
+#define SIGMA_AS_PIN_SOURCE               (~GPIO_AS_PIN_SOURCE)
+#define GPIO_PIN_SOURCE_MSB               0
+#define GPIO_PIN_SOURCE_LSB               0
+#define GPIO_PIN_SOURCE_MASK              0x00000001
+#define GPIO_PIN_SOURCE_GET(x)            (((x) & GPIO_PIN_SOURCE_MASK) >> GPIO_PIN_SOURCE_LSB)
+#define GPIO_PIN_SOURCE_SET(x)            (((x) << GPIO_PIN_SOURCE_LSB) & GPIO_PIN_SOURCE_MASK)
+
+#define GPIO_AS_INPUT(gpio_n)             WRITE_PERI_REG(PERIPHS_GPIO_BASEADDR + GPIO_ENABLE_W1TC_ADDRESS, (1<<gpio_n))
+#define GPIO_AS_OUTPUT(gpio_n)            WRITE_PERI_REG(PERIPHS_GPIO_BASEADDR + GPIO_ENABLE_W1TS_ADDRESS, (1<<gpio_n))
+#define GPIO_INPUT_GET(gpio_n)           ((READ_PERI_REG(PERIPHS_GPIO_BASEADDR + GPIO_IN_ADDRESS) >> gpio_n) & BIT(0))
+#define GPIO_SET(gpio_n)                  WRITE_PERI_REG(PERIPHS_GPIO_BASEADDR + GPIO_OUT_W1TS_ADDRESS, (1<<gpio_n))
+#define GPIO_CLR(gpio_n)                  WRITE_PERI_REG(PERIPHS_GPIO_BASEADDR + GPIO_OUT_W1TC_ADDRESS, (1<<gpio_n))
+
 // }}
 
 // TIMER reg {{
@@ -244,10 +251,10 @@
 #define PIN_PULLUP_EN(PIN_NAME)                  SET_PERI_REG_MASK(PIN_NAME, PERIPHS_IO_MUX_PULLUP)
 
 #define PIN_FUNC_SELECT(PIN_NAME, FUNC)  do { \
-    WRITE_PERI_REG(PIN_NAME,   \
-                                READ_PERI_REG(PIN_NAME) \
-                                     &  (~(PERIPHS_IO_MUX_FUNC<<PERIPHS_IO_MUX_FUNC_S))  \
-                                     |( (((FUNC&BIT2)<<2)|(FUNC&0x3))<<PERIPHS_IO_MUX_FUNC_S) );  \
+        WRITE_PERI_REG(PIN_NAME,   \
+        READ_PERI_REG(PIN_NAME)    \
+        &  (~(PERIPHS_IO_MUX_FUNC<<PERIPHS_IO_MUX_FUNC_S))  \
+        |( (((FUNC&BIT2)<<2)|(FUNC&0x3))<<PERIPHS_IO_MUX_FUNC_S) );  \
     } while (0)
 
 //}}

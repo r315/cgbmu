@@ -17,6 +17,7 @@ SUBMODULE?=NO
 BUILD    :=REGULAR
 MAIN_MHZ ?=160 #Pick from *52, *80, 104 or *115, 160, *173, *189#, 231, 346, 378#  * = peripheral clock at processor clock. # = Mine won't boot + on ESP8285, Clock Lower and unreliable.  Warning. Peripheral clocks of >115 will NOT boot without a full power-down and up. (Don't know why)
 
+LIBEMBPATH      =$(HOME)/Dropbox/Projects/software/libemb
 ESP_OPEN_SDK    :=~/esp-open-sdk
 GCC_FOLDER      :=$(ESP_OPEN_SDK)/xtensa-lx106-elf
 ESPTOOL         :=esptool.py#$(ESP_OPEN_SDK)/esptool/esptool.py
@@ -38,17 +39,17 @@ PORT:=/dev/ttyUSB0
 LDFLAGS:=-T $(SRCPREFIX)startup/linkerscript.ld -T $(SRCPREFIX)startup/addresses.ld
 FOLDERPREFIX:=$(GCC_FOLDER)/bin
 
-INC =-I../../libemb/include -I../../inc -Ispiffs/include
-CFLAGS:=$(CFLAGS) -Os $(INC) -I$(SRCPREFIX)include -nostdlib -D__ESP03__ -DMAIN_MHZ=$(MAIN_MHZ)  -mno-serialize-volatile -mlongcalls -g
+INC =-I$(LIBEMBPATH)/include -I../../inc -Ispiffs/include
+CFLAGS:=$(CFLAGS) -Os -g -std=c99 $(INC) -I$(SRCPREFIX)include -nostdlib -D__ESP03__ -D_ST7735_ -DMAIN_MHZ=$(MAIN_MHZ)  -mno-serialize-volatile -mlongcalls
 
-SRCS:=                         \
-$(SRCPREFIX)startup/startup.S  \
-$(SRCPREFIX)startup/nosdk8266.c\
-../../libemb/drv/tft/ili9341.c \
-../../libemb/drv/spi/hspi.c    \
-../../libemb/display/lcd.c     \
-../../libemb/display/display.c \
-../../libemb/display/fonts.c   \
+SRCS =                         \
+$(SRCPREFIX)startup/startup.S   \
+$(SRCPREFIX)startup/nosdk8266.c \
+$(LIBEMBPATH)/drv/tft/ili9341.c \
+$(LIBEMBPATH)/drv/spi/hspi.c    \
+$(LIBEMBPATH)/display/lcd.c     \
+$(LIBEMBPATH)/display/display.c \
+$(LIBEMBPATH)/display/fonts.c   \
 ../../dmgcpu/video.c           \
 ../../dmgcpu/dmgcpu.c          \
 ../../dmgcpu/decoder.c         \
@@ -57,10 +58,11 @@ $(SRCPREFIX)startup/nosdk8266.c\
 ../../src/cgbmu.c              \
 ../../src/debug.c              \
 main.c                         \
+#hw_timer.c                     \
 
 all : $(TARGET_OUT).elf
 
-$(TARGET_OUT).elf : $(ADDITIONAL_DEPS) $(SRCS)
+$(TARGET_OUT).elf : $(ADDITIONAL_DEPS) #$(SRCS)
 #@echo $(shell echo $(shell cat count.txt)+1) | bc > count.txt
 	$(GCC) $(CFLAGS) $(SRCS) $(LDFLAGS) -o $@
 #objdump -t $(TARGET_OUT) > image.map
@@ -71,10 +73,13 @@ $(TARGET_OUT).elf : $(ADDITIONAL_DEPS) $(SRCS)
 	$(ESPTOOL) elf2image $(TARGET_OUT).elf 
 
 burn : $(TARGET_OUT).elf
-	($(ESPTOOL) --port $(PORT) write_flash 0x00000 $(FW_0) -ff 80m -fm dout)||(true)
+	$(ESPTOOL) --port $(PORT) write_flash 0x00000 $(FW_0) -ff 80m -fm qio
 #sleep .1
 #($(ESPTOOL) --port $(PORT) run)||(true)
 
 clean :
 	rm -rf $(TARGET_OUT).elf $(TARGET_OUT).map $(TARGET_OUT).lst $(FW_1) $(FW_0)
+
+upload:
+	$(ESPTOOL) --port $(PORT) write_flash 0x80000 $(FILE) -ff 80m -fm qio
 
