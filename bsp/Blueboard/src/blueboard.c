@@ -6,17 +6,15 @@
 TODO: inicializar clock usb
 */
 
-#include "blueboard.h"
-#include <lcd.h>
-#include "spi.h"
+#include "board.h"
+//#include "spi.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 uint32_t SystemCoreClock;
 volatile uint32_t systicks = 0;
-volatile KEYS _KEYS;
+
 //---------------------------------------------------
 //	
 //---------------------------------------------------
@@ -41,7 +39,7 @@ void BB_Init(void)
 
 	LCD_Init();
 	SPI_Init();
-	LCD_BKL_ON;
+	LCD_Bkl(ON);
 }
 //---------------------------------------------------
 //	
@@ -100,65 +98,6 @@ LPC_SC->PCLKSEL1 = 0xAAAAAAAA; /* 00=CCLK/4 01=CCLK 10=CCLK/2 11=CCLK/8 */
 SystemCoreClockUpdate();
 SysTick_Config((SystemCoreClock / 1000) - 1); // config 1000us 
 }
-
-//---------------------------------------------------
-//	
-//---------------------------------------------------
-char keyDown(unsigned int key)
-{
-	if(!_KEYS.Flag)			   // any key pressed?
-		return 0;		       // return FALSE
-
-	if((_KEYS.Key & key))	   // is this key pressed? keys read '0'
-		return 0;		       // not this key pressed
-	else
-		return _KEYS.Flag;	   // return key state TRUE or HOLD
-}
-//---------------------------------------------------
-//	
-//---------------------------------------------------
-char scanKeys(void)
-{
-	_KEYS.Key = ~LPC_GPIO1->FIOPIN & KEYSMASK;
-
-	if(_KEYS.Key == KEYSMASK) // any key pressed?
-	{
-		_KEYS.Flag = 0;			
-		return 0;       // no key pressed
-	}
-		
-	if(!_KEYS.Flag)			// first press?
-	{
-		_KEYS.Flag = 1;	// return true first press
-		return 1;
-	}
-	_KEYS.Flag = HOLD;	    // key still pressed return hold
-	return HOLD;       	
-}
-//---------------------------------------------------
-//	
-/*/---------------------------------------------------
-char KeyDown(unsigned int key)
-{
-	if((_KEYS & key))	   // key pressed = '0'
-		return FALSE;
-	else
-		return TRUE;
-}
-//---------------------------------------------------
-//	
-//---------------------------------------------------
-char ScanKeys(void)
-{
-	_KEYS = LPC_GPIO1->FIOPIN & KEYSMASK;
-
-	if(_KEYS == KEYSMASK)			
-		return FALSE;       // no key pressed
-	
-	else		
-		return TRUE;       //new key pressed
-		
-}*/
 //-----------------------------------------------------									   
 // SysTick Interrupt Handler (1ms)   
 //-----------------------------------------------------
@@ -245,4 +184,3 @@ void SystemCoreClockUpdate (void)
 #ifdef __cplusplus
 }
 #endif
-

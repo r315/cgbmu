@@ -1,15 +1,12 @@
-#include <cgbmu.h>
 #include <string.h>
-#include "blueboard.h"
-#include "display.h"
+#include "board.h"
+#include "cgbmu.h"
 #include "dmgcpu.h"
 #include "video.h"
-#include "lcd.h"
 #include "cartridge.h"
 #include "debug.h"
-#include "button.h"
 #include "decoder.h"
-#include <pff/pff.h>
+
 
 void cgbmu(uint8_t mode);
 
@@ -19,13 +16,13 @@ void cgbmu(uint8_t mode);
 uint8_t readJoyPad(void)
 {
 static uint8_t button = 0;
-    int	keys = ~LPC_GPIO1->FIOPIN & KEYSMASK;
+    int	keys = ~LPC_GPIO1->FIOPIN & BUTTON_MASK;
 
-	button |= ( keys & INPUT_DOWN) ? J_DOWN : 0;
-	button |= ( keys & INPUT_UP)  ? J_UP : 0;
-	button |= ( keys & INPUT_LEFT) ? J_LEFT : 0;
-	button |= ( keys & INPUT_RIGHT) ? J_RIGHT : 0;		
-	button |= ( keys & INPUT_A) ? J_START : 0;
+	button |= ( keys & BUTTON_DOWN) ? J_DOWN : 0;
+	button |= ( keys & BUTTON_UP)  ? J_UP : 0;
+	button |= ( keys & BUTTON_LEFT) ? J_LEFT : 0;
+	button |= ( keys & BUTTON_RIGHT) ? J_RIGHT : 0;		
+	button |= ( keys & BUTTON_A) ? J_START : 0;
     return button;
 }
 
@@ -96,6 +93,41 @@ WORD n;
 	loadRombank(1);	
 	return n;
 }
+//--------------------------------------------------
+//
+//--------------------------------------------------
+
+void testButtons(void) {
+	char *b, t;
+	//printf("Buttons Test\n");
+	while (readJoyPad() != 255) {
+		b = "";
+		IOP1 = IOP14;
+		t = joyPad() & 0x0f;
+		switch (t) {
+		case 0x0e:  b = "  [ A ]   "; break;
+		case 0x0d:  b = "  [ B ]   "; break;
+		case 0x0b:  b = "[ SELECT ]"; break;
+		case 0x07:  b = "[ START ] "; break;
+		case 15: break;
+		default:
+			DISPLAY_printf("%u\n", t);
+			break;
+		}
+		IOP1 = IOP15;
+		switch (joyPad() & 0x0f) {
+		case 0x0e:   b = "[ RIGHT ] "; break;
+		case 0x0d:   b = "[ LEFT  ] "; break;
+		case 0x0b:   b = "[  UP  ]  "; break;
+		case 0x07:   b = "[ DOWN ]  "; break;
+		}
+		if (*b != '\0')
+			DISPLAY_printf("%s\n", b);
+	}
+}
+//--------------------------------------------------
+//
+//--------------------------------------------------
 
 int main (void){
     
@@ -110,6 +142,6 @@ int main (void){
 
 	if(loadRom("mario.gb"))
 		cgbmu(1);
-
+	testButtons();
     return 0;
 }	
