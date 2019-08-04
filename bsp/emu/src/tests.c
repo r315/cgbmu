@@ -41,32 +41,37 @@ void testRom(char *fn) {
 }
 
 void testButtons(void) {
-	char *b, t;
+	char *name, scanned;
 	printf("Buttons Test\n");
 	while (readJoyPad() != 255) {
-		b = "";
+		name = "";
+
 		IOP1 = IOP14;
-		t = joyPad() & 0x0f;
-		switch (t) {
-		case 0x0e:  b = "  [ A ]   "; break;
-		case 0x0d:  b = "  [ B ]   "; break;
-		case 0x0b:  b = "[ SELECT ]"; break;
-		case 0x07:  b = "[ START ] "; break;
-		case 15: break;
-		default:
-			printf("%u\n", t);
-			break;
+		scanned = joyPad() & 0x0f;
+		switch (scanned) {
+			case 0x0e:  name = "  [ A ]   "; break;
+			case 0x0d:  name = "  [ B ]   "; break;
+			case 0x0b:  name = "[ SELECT ]"; break;
+			case 0x07:  name = "[ START ] "; break;			
+			default: 
+				IOP1 = IOP15;
+				scanned = joyPad() & 0x0f;
+				switch (scanned) {
+					case 0x0e:   name = "[ RIGHT ] "; break;
+					case 0x0d:   name = "[ LEFT  ] "; break;
+					case 0x0b:   name = "[  UP  ]  "; break;
+					case 0x07:   name = "[ DOWN ]  "; break;
+					default: break;
+				}
+				break;
 		}
-		IOP1 = IOP15;
-		switch (joyPad() & 0x0f) {
-		case 0x0e:   b = "[ RIGHT ] "; break;
-		case 0x0d:   b = "[ LEFT  ] "; break;
-		case 0x0b:   b = "[  UP  ]  "; break;
-		case 0x07:   b = "[ DOWN ]  "; break;
+		if (*name != '\0'){
+			DISPLAY_printf("%s\n", name);
+			printf("%u %s\n", scanned,name);
 		}
-		if (*b != '\0')
-			DISPLAY_printf("%s\n", b);
-		#if defined(__EMU__)		
+
+		#if defined(__EMU__)
+		//LCD_Update();		
 		SDL_Delay(20);
 		#endif
 	}

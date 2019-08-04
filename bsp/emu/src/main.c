@@ -189,7 +189,16 @@ const Uint8 *keys;
     button |= keys[SDL_SCANCODE_SPACE ] ? J_A : 0;
 return button;
 }
-
+//-----------------------------------------------------------
+//
+//-----------------------------------------------------------
+void printHelp(void){
+printf("Available options:\n\n"
+				"\t -d   Debug on\n"
+				"\t -r   <romfile>\n"
+				"\t -t   tests\n"
+				"\t -i   Instruction mode loop");
+}
 //-----------------------------------------------------------
 //instructions test
 //-----------------------------------------------------------
@@ -231,43 +240,30 @@ int main (int argc, char *argv[])
 	#elif defined(__EMU__)	
 
 	static Param_Type param;
-	memset(&param, 0, sizeof(Param_Type));
-	
+	memset(&param, 0, sizeof(Param_Type));	
 	
 	if(argc == 1) // no arguments
 	{
-		printf("Available options:\n\n"
-				"\t -d   Debug on\n"
-				"\t -r   <romfile>\n"
-				"\t -t   tests\n"
-				"\t -i   Instruction mode loop");
-		return 0;
+		printHelp();
 	}
 
-	LCD_Init();	 
-
-	//testAll();
+	LCD_Init();
 	
 	processArgs(argc - 1, &argv[1], &param);
-	if (!loadRom(param.romfile))
-		exit(1);
 
-	if (param.test) {
-		testMain();
+	if (param.test || !loadRom(param.romfile)) {
+		testAll();
+		//testMain();
 	}else if (param.debug) {
-		printf("Starting frame loop\n");
+		printf("Starting frame loop in debug mode\n");
 		debug();
-	}
-	else {
-		if (param.mode) {
-			printf("Instruction mode\n");
-			cgbmu(1);
-		}
-		else {
-			cgbmu(0);
-		}
-		
-	}	
+	}else if (param.mode) {
+		printf("Instruction mode\n");
+		cgbmu(1);
+	}else {
+		printf("Frame loop mode\n");
+		cgbmu(0);
+	}		
 
 	LCD_Close();
 	#endif

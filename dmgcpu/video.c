@@ -228,10 +228,7 @@ uint8_t video(void) {
 			IOSTAT |= V_M2;
 
 			IOLY = 0;
-			frame = ON;
-			#if defined(__EMU__)			
-			SDL_Delay(20);
-			#endif
+			frame = ON;			
 			LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y, SCREEN_W, SCREEN_H);
 		}
 		break;
