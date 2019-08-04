@@ -1,7 +1,10 @@
 OBJSPATH  =obj
 
-
 all: emu
+
+$(OBJSPATH):
+	mkdir -p $@
+
 	
 clean: 
 	@${RM} $(OBJSPATH)/*.o $(TARGET)
@@ -9,7 +12,7 @@ clean:
 	@$(MAKE) -C bsp/Blueboard clean
 	@$(MAKE) -C bsp/ESP03 clean
 	
-emu:
+emu: $(OBJSPATH)
 	@$(MAKE) -C bsp/emu OBJSPATH=../../$(OBJSPATH)
 
 rpi: 
