@@ -191,25 +191,25 @@ uint8_t memoryRead(uint16_t address)
 		case 1:
 		case 2:
 		case 3:
-			return ROM0[address]; // 0 - 3FFF
+			return ROM0[address]; // 16k Rom bank #0  0x0000 - 0x3FFF 
 			
 		case 4:
 		case 5:
 		case 6:
 		case 7:
-			return ROMBANK[address & 0x3FFF]; //4000 - 7FFF
+			return ROMBANK[address & 0x3FFF]; //16kB switchable ROM bank 4000 - 7FFF
 			
 		case 8:
 		case 9:
-			return vram[address & 0x1FFF];   // 8k
+			return vram[address & 0x1FFF];   // 8k 0x8000 - 0x9FFF
 			
 		case 0x0A:
 		case 0x0B:
-			return 0xFF;// cartridgeRead(address); // 8K
+			return 0xFF; // cartridgeRead(address); // 8kB switchable RAM bank 0xA000 - 0xBFFF
 		
 		case 0x0C:
 		case 0x0D:
-			return iram[address & 0x1FFF]; // 8k
+			return iram[address & 0x1FFF]; // 8kB internal ram 0xC000 - 0xDFFF
 			
 	//	default: break;
 	}	

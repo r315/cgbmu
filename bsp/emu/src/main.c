@@ -91,29 +91,24 @@ void processArgs(int argc, char *argv[], Param_Type *param) {
 #include <unistd.h>
 #endif
 
-unsigned char _ROM0[ROM_SIZE];
-unsigned char _ROMBANK[ROM_SIZE];
-char* romfile;
+uint8_t MBC1_ROM[0x10000];
 
 #define LOG_TAG "CARTRIDGE"
 
-int loadRom(char *fn)
+int loadRom(char *file)
 {
 	char cwd[1024];
 	FILE *fp;
-	romfile = fn;
 	int n;
 
-	ROM0 = _ROM0;
-	ROMBANK = _ROMBANK;
 
 	if (getcwd(cwd, sizeof(cwd)))
 		fprintf(stdout, "Current working dir: %s\n", cwd);
 	else
 		perror("getcwd() error");
 
-	fprintf(stdout, "%s: Loading File \"%s\"\n", LOG_TAG, fn);
-	fp = fopen(romfile, "rb");
+	fprintf(stdout, "%s: Loading File \"%s\"\n", LOG_TAG, file);
+	fp = fopen(file, "rb");
 
 	if (fp == NULL)
 	{
@@ -121,28 +116,31 @@ int loadRom(char *fn)
 		return 0;
 	}
 
-	n = fread(ROM0, 1, ROM_SIZE, fp);
-	n += fread(ROMBANK, 1, ROM_SIZE, fp);
-
-	fclose(fp);
-	bankselect = 1;
+	n = fread(MBC1_ROM, 1, ROM_SIZE*4, fp);
 	printf("%s: Rom file loaded!\n", LOG_TAG);
+
+	if (MBC1_ROM[CARTRIDGE_TYPE_OFFSET] != CARTRIDGE_MBC1) {
+		printf("################### ONLY CARTRIDGE MBC1 SUPPORTED ################\n");
+		n = 0;
+	}
+	else {
+		ROM0 = MBC1_ROM;
+		ROMBANK = MBC1_ROM + ROM_SIZE;
+	}
+	
+	bankselect = 1;
+	fclose(fp);
 	return n;
 }
 //--------------------------------------------------
 //
 //--------------------------------------------------
 int loadRombank(uint8_t bank)
-{
-	FILE *fp;
-	size_t n;
+{	
 	bankselect = bank;
-	fp = fopen(romfile, "rb");
-	fseek(fp, bankselect << 14, SEEK_SET);
-	n = fread(ROMBANK, 1, ROM_SIZE, fp);
-	fclose(fp);
-	//printf("Loaded %u bytes into Rom Bank %u\n", n, bankSelect);
-	return n;
+	ROMBANK = MBC1_ROM + (bankselect << 14);
+	//printf("Loaded Rom Bank %u\n", bankselect);
+	return ROM_SIZE;
 }
 //-----------------------------------------
 //
@@ -252,11 +250,11 @@ int main (int argc, char *argv[])
 	processArgs(argc - 1, &argv[1], &param);
 
 	if (param.test || !loadRom(param.romfile)) {
-		testAll();
-		//testMain();
+		//testAll();
+		TEST_main();
 	}else if (param.debug) {
-		printf("Starting frame loop in debug mode\n");
-		debug();
+		printf("Running in debug mode\n");
+		DBG_run();
 	}else if (param.mode) {
 		printf("Instruction mode\n");
 		cgbmu(1);
