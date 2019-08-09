@@ -124,8 +124,8 @@ int loadRom(char *file)
 		n = 0;
 	}
 	else {
-		ROM0 = MBC1_ROM;
-		ROMBANK = MBC1_ROM + ROM_SIZE;
+		rom0 = MBC1_ROM;
+		rombank = MBC1_ROM + ROM_SIZE;
 	}
 	
 	bankselect = 1;
@@ -138,7 +138,7 @@ int loadRom(char *file)
 int loadRombank(uint8_t bank)
 {	
 	bankselect = bank;
-	ROMBANK = MBC1_ROM + (bankselect << 14);
+	rombank = MBC1_ROM + (bankselect << 14);
 	//printf("Loaded Rom Bank %u\n", bankselect);
 	return ROM_SIZE;
 }

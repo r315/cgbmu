@@ -211,6 +211,8 @@ void TEST_main(void) {
 	//TEST_BGmap();
 	TEST_Sprites(0);
 	LCD_Close();
-	system("PAUSE");
+	#if defined(_WIN32_)
+	system("PAUSE");	
+	#endif
 	exit(0);
 }

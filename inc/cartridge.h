@@ -1,6 +1,8 @@
 #ifndef _cartridge_h_
 #define _cartridge_h_
 
+#include <stdint.h>
+
 #define ROM_SIZE 0x4000		// Rom bank #0 0x0000 - 0x3FFF
 #define RAM_SIZE 0x2000     // Internal
 
@@ -12,11 +14,9 @@
 #define CARTRIDGE_MBC1			1
 #define CARTRIDGE_MBC1_RAM		2
 
-unsigned char bankselect;
-extern unsigned char *ROM0;
-extern unsigned char *ROMBANK;
+extern uint8_t bankselect;
 
-unsigned char cartridgeRead(unsigned short address);
-void cartridgeWrite(unsigned short address,char data);
+uint8_t cartridgeRead(uint16_t address);
+void cartridgeWrite(uint16_t address,uint8_t data);
 
 #endif

@@ -4,7 +4,7 @@
 #if defined(__EMU__)
 void testAll(void);
 void testRom(char *fn);
-void testMain(void);
+void TEST_main(void);
 #endif
 
 void testButtons(void);

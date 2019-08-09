@@ -27,7 +27,7 @@ void blitObjectData(Object *obj, uint8_t *dst) {
 	}
 	else {
 		// Add line offset, 2byte per line
-		objline = TILE_LINE(IOLY - (obj->y - SPRITE_Y_OFFSET));
+		objline = TILE_LINE((IOLY - (obj->y - SPRITE_Y_OFFSET)));
 		objline = (obj->flags & OBJECT_FLAG_YFLIP) ? (SPRITE_H - 1 - objline) : objline;
 	}
 

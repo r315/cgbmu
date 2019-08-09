@@ -10,14 +10,18 @@
 
 void cgbmu(uint8_t mode);
 
+#if !defined(USE_FS)
+extern uint8_t _binary__________roms_mario_gb_start;
+uint8_t *cartridge = &_binary__________roms_mario_gb_start;
+//uint8_t cartridge[] = {0, 0xc3, 0,1};
+#endif
 //-----------------------------------------
 //
 //-----------------------------------------
 uint8_t readJoyPad(void)
 {
-static uint8_t button = 0;
-    int	keys = ~LPC_GPIO1->FIOPIN & BUTTON_MASK;
-
+uint8_t button = 0;
+int	keys = ~LPC_GPIO1->FIOPIN & BUTTON_MASK;
 	button |= ( keys & BUTTON_DOWN) ? J_DOWN : 0;
 	button |= ( keys & BUTTON_UP)  ? J_UP : 0;
 	button |= ( keys & BUTTON_LEFT) ? J_LEFT : 0;
@@ -58,30 +62,37 @@ char* f_error(FRESULT res)
 //-----------------------------------------------------------
 void fsInit(void)
 {
+#if defined(USE_FS)
 	DBG_Info(f_error(pf_mount(&drive0)));
-	ROM0 = (unsigned char*)0x2007C000;
-    ROMBANK = (unsigned char*)0x20080000;
+	rom0 = (uint8_t*)0x2007C000;
+    rombank = (uint8_t*)0x20080000;
+#endif    
 }
 //--------------------------------------------------
 //
 //--------------------------------------------------
 int loadRombank(uint8_t bank)
 {
-WORD n;	
+	bankselect = bank;		// update current bank
+#if defined(USE_FS)
+	WORD n;	
 	//drawNumber(232,0,bankSelect,10);
 	pf_lseek(bank << 14);
-	pf_read(ROMBANK, ROM_SIZE, &n);
+	pf_read(rombank, ROM_SIZE, &n);
 	//DISPLAY_printf("Loaded %u bytes into Rom Bank %u\n",n, bankSelect);
 	//drawChar(232,0,' ');
-	bankselect = bank;		// save current
-	return n;
+#else
+	rombank = cartridge + (bankselect << 14);
+#endif
+	return ROM_SIZE;
 }
 //--------------------------------------------------
 //
 //--------------------------------------------------
 int loadRom(char *fn)
 {
-WORD n;
+#if defined(USE_FS)
+	WORD n;
 	if(!drive0.fs_type){
 		fsInit();
 	}
@@ -89,9 +100,13 @@ WORD n;
 	DBG_Info(fn);
 	DBG_Info(f_error(pf_open(fn)));
 	DBG_Info("Loading ROM0");
-	DBG_Info(f_error(pf_read(ROM0, ROM_SIZE, &n)));
+	DBG_Info(f_error(pf_read(rom0, ROM_SIZE, &n)));
 	loadRombank(1);	
 	return n;
+#else
+	rom0 = cartridge;
+	return ROM_SIZE;
+#endif
 }
 //--------------------------------------------------
 //
@@ -137,11 +152,12 @@ int main (void){
 	LCD_Rotation(LCD_LANDSCAPE);
 
 	DISPLAY_puts("Hello\n");
+	DISPLAY_printf("Clock %uMHz\n", SystemCoreClock/1000000);
 
 	initCpu();		
-
+	DBG_PIN_INIT;
 	if(loadRom("mario.gb"))
-		cgbmu(1);
+		cgbmu(0);
 	testButtons();
     return 0;
 }	

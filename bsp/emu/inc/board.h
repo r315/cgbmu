@@ -4,6 +4,14 @@
 #include <libemb.h>
 #include <lcdsdl.h>
 
+#ifdef _WIN32
+	#include <SDL.h>
+	//#pragma warning(disable:4996)
+	#include <direct.h>
+#elif defined(__linux__)
+	#include <SDL.h>
+#endif
+
 #define LCD_W 256
 #define LCD_H 256
 

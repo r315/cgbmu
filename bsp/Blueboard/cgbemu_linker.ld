@@ -129,7 +129,13 @@ SECTIONS
           _efastcode = . ;
           _sidata = .;
         } >IRAM0 AT>IROM
-
+	/******************************************/
+	/* binary blob */
+	.extbinary :
+	{
+		. = ALIGN (4);
+		*(.extbinary)
+	} > IROM
 	/******************************************/
 	/* This used for USB RAM section */
 	.usb_ram (NOLOAD):

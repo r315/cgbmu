@@ -1,5 +1,5 @@
-TARGET     =bbgb
-LIBEMBPATH =$(LIBEMB_PATH)
+TARGET     =bbcgbemu
+LIBEMBPATH =$(HOME)/Dropbox/Projects/software/libemb
 SRCSPATH  +=../../src ../../dmgcpu pff src $(LIBEMBPATH)/display $(LIBEMBPATH)/drv/tft
 OBJSPATH   :=build
 
@@ -14,13 +14,13 @@ SYMBOLS  =__BB__ NO_LCD_HW_SCROLL
 # system sources and common includes and directories
 INCDIRS +=
 OBJECTS =$(addprefix $(OBJSPATH)/, $(CSRCS:.c=.o)) $(addprefix $(OBJSPATH)/, $(ASRCS:.S=.o)) $(addprefix $(OBJSPATH)/, $(CPPSRCS:.cpp=.o))
-LSCRIPT =linker.ld
+LSCRIPT =cgbemu_linker.ld
 #########################################################################
 #  Compiler Options
 
 INCLUDES = $(addprefix -D, $(SYMBOLS)) $(addprefix -I, $(INCDIRS)) -I.
 
-GCFLAGS = -g -Wall -gdwarf-2 -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections -fno-stack-protector
+GCFLAGS = -O3 -Wall -gdwarf-2 -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections -fno-stack-protector
 GCFLAGS += $(INCLUDES)
 LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,-Map=$(TARGET).map,--cref,--gc-sections #-nostdlib
 
@@ -46,9 +46,9 @@ CHECKSUM =$(LIBEMBPATH)/bsp/tools/checksum
 
 all: $(TARGET).elf stats
 
-$(TARGET).elf: $(OBJECTS)
+$(TARGET).elf: $(OBJECTS) extbin
 	@echo "---- Linking ----> $@"
-	@$(LD) $(LDFLAGS) $(LDOBJECTS) -T $(LSCRIPT) $(OBJECTS) -o $(TARGET).elf
+	@$(LD) $(LDFLAGS) $(LDOBJECTS) -T $(LSCRIPT) $(OBJECTS) extbin.o -o $(TARGET).elf
 
 rebuild: clean all
 
@@ -69,18 +69,26 @@ clean:
 $(OBJSPATH):
 	mkdir -p $@
 
-$(TARGET).bin: $(TARGET).elf
-	$(OBJCOPY) -O binary -j .startup -j .text $(TARGET).elf $@
+$(TARGET).bin: $(TARGET).elf 
+	$(OBJCOPY) -O binary -j .startup -j .text -j .data -j .extbinary $(TARGET).elf $@
 	hd -n 128 $@
 	$(CHECKSUM) $@
 
 $(TARGET).cfg:
-	@echo "Creating opencod configuration file"
-	@echo "interface jlink\ntransport select swd\nsource [find target/lpc17xx.cfg]\nadapter_khz 4000" > $(TARGET).cfg
+	@echo "Generating opencod configuration file"
+	@echo 'interface jlink\ntransport select swd\nsource [find target/lpc17xx.cfg]\nadapter_khz 4000' > $(TARGET).cfg
 
-program: $(TARGET).bin $(TARGET).cfg
+program: $(CHECKSUM) $(TARGET).bin $(TARGET).cfg
 	openocd -f $(TARGET).cfg -c "program $(TARGET).bin 0x00000000 verify reset exit"
-
+	
+#https://balau82.wordpress.com/2012/02/19/linking-a-binary-blob-with-gcc
+extbin : ../../../roms/mario.gb
+	$(OBJCOPY) -I binary -O elf32-littlearm -B armv7 --rename-section .data=.extbinary $< extbin.o
+	$(OBJDUMP) -t extbin.o
+	
+$(CHECKSUM):
+	gcc $@.c -o $@
+	
 test:
 	@echo $(OBJECTS)
 #########################################################################

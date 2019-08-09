@@ -4,11 +4,10 @@
 #include <stdint.h>
 #include <cgbmu.h>
 #include "cartridge.h"
+#include "dmgcpu.h"
 #include "debug.h"
 
-uint8_t bankSelect;
-uint8_t *ROM0;
-uint8_t *ROMBANK;
+uint8_t bankselect;
 
 /***************************************************
 // MBC1
@@ -17,12 +16,12 @@ uint8_t cartridgeRead(uint16_t address)
 {
 	switch(address >> 14)
 	{		
-		case 0:  // 0000-3FFF   Rom bank 0
-			return ROM0[address]; 
+		case 0:  // 0000-3FFF   fixed Rom bank 0
+			return rom0[address]; 
 
-		case 1:  // 4000-7FFF Nota romBank = 0/1 deve de retornar ROM1
+		case 1:  // 4000-7FFF   loadable rom banks
 			address &= 0x3FFF;			
-			return ROMBANK[address]; 
+			return rombank[address]; 
 			
 		case 2:  // 8000-C000 banking Ram not implemented
 		case 3:

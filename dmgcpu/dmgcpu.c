@@ -38,6 +38,8 @@ uint8_t vram[0x2000];                    // 0x8000-0x9FFF
 uint8_t iram[0x2000];                    // 0xC000-0xBFFF
 uint8_t oam[sizeof(Object)*MAX_OBJECTS]; // 0xFE00-0xFEBF
 uint8_t hram[128];                       // 0xFF80-0xFFFE
+uint8_t *rom0;                           // 0x0000-0x3FFF
+uint8_t *rombank;                        // 0x4000-0x7FFF
 
 uint8_t  cycles;
 uint32_t machine_cycles = 0;
@@ -191,13 +193,13 @@ uint8_t memoryRead(uint16_t address)
 		case 1:
 		case 2:
 		case 3:
-			return ROM0[address]; // 16k Rom bank #0  0x0000 - 0x3FFF 
+			return rom0[address]; // 16k Rom bank #0  0x0000 - 0x3FFF 
 			
 		case 4:
 		case 5:
 		case 6:
 		case 7:
-			return ROMBANK[address & 0x3FFF]; //16kB switchable ROM bank 4000 - 7FFF
+			return rombank[address & 0x3FFF]; //16kB switchable ROM bank 4000 - 7FFF
 			
 		case 8:
 		case 9:

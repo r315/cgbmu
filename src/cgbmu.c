@@ -25,7 +25,7 @@ void runCpu(uint16_t nTicks) {
 //-----------------------------------------
 void runOneFrame(void) {
 
-	LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y, SCREEN_W, SCREEN_H);
+	LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y, SCREEN_W, SCREEN_H);  //3us
 
 	IOSTAT &= ~(V_MODE_MASK);
 
@@ -51,6 +51,7 @@ void runOneFrame(void) {
 		if (IOSTAT & HB_IE)			// check H-Blank IE
 			IOIF |= LCDC_IF;
 		runCpu(V_M0_CYCLE);
+
 	}
 
 	IOSTAT |= V_M1;  		// Change to Mode 1
@@ -82,12 +83,13 @@ void cgbmu(uint8_t mode) {
 					DelayMs(FRAME_TIME - ticks);
 				ticks = GetTicks();
 				//DBG_Fps();
+				//DBG_PIN_TOGGLE;
 			}
 		}
 	}
 	else {				// frame loop
 		while (readJoyPad() != 255) {
-			ticks = GetTicks();
+			//ticks = GetTicks();
 			runOneFrame();
 			#if 0
 			ticks = GetTicks() - ticks;
@@ -96,6 +98,7 @@ void cgbmu(uint8_t mode) {
 			}
 			DBG_Fps();
 			#endif
+			//DBG_PIN_TOGGLE;
 		}
 	}	
 }
