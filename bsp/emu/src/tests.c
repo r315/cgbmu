@@ -12,10 +12,29 @@
 
 
 char filename[100];
-extern const char bg_map[32 * 32];
-extern const char tilesData[0x1000];
+extern const char TEST_bg_map[32 * 32];
+extern const char TEST_tilesData[0x1000];
+extern uint8_t scanlinedata[160];
 
-void testRun(void) {
+const char f_letter[] = {
+	0x78,0x78,
+	0x40,0x40,
+	0x40,0x40,
+	0x78,0x78,
+	0x40,0x40,
+	0x40,0x40,
+	0x40,0x40,
+	0x00,0x00
+};
+
+const char sprites[] = {
+	16,8,0,0,
+	16,16,0,OBJECT_FLAG_XFLIP,
+	16 + 8,8,0,OBJECT_FLAG_YFLIP,
+	16 + 8,16,0,(OBJECT_FLAG_XFLIP | OBJECT_FLAG_YFLIP)
+};
+
+void TEST_run(void) {
 	while (readJoyPad() != 255) {
 		interrupts();
 		decode();
@@ -24,25 +43,20 @@ void testRun(void) {
 	}
 }
 
-void testAll(void) {
-	//testRom(ALL_TESTS_ROM);
-	LCD_Window(0, 0, LCD_W, LCD_H);
-	LCD_Fill(LCD_SIZE, RED);
-	DISPLAY_Text(0,0,"Testing Buttons");
-	testButtons();
-}
-
 void testRom(char *fn) {
 	//strcpy(filename, ROMS_BINARY_PATH);
 	//strcat(filename, fn);
 	//loadRom(filename);
 	loadRom(fn);
-	testRun();
+	TEST_run();
 }
 
-void testButtons(void) {
+void TEST_buttons(void) {
 	char *name, scanned;
+
+	DISPLAY_Text(0, 0, "Testing Buttons");
 	printf("Buttons Test\n");
+	
 	while (readJoyPad() != 255) {
 		name = "";
 
@@ -77,23 +91,6 @@ void testButtons(void) {
 	}
 }
 
-const char f_letter[] = {
-	0x78,0x78,
-	0x40,0x40,
-	0x40,0x40,
-	0x78,0x78,
-	0x40,0x40,
-	0x40,0x40,
-	0x40,0x40,
-	0x00,0x00
-};
-const char sprites[] = {
-	16,8,0,0,
-	16,16,0,OBJECT_FLAG_XFLIP,
-	16 + 8,8,0,OBJECT_FLAG_YFLIP,
-	16 + 8,16,0,(OBJECT_FLAG_XFLIP | OBJECT_FLAG_YFLIP)
-};
-extern uint8_t scanlinedata[160];
 void dumpLine(uint8_t *buf, uint8_t size) {
 	uint8_t i;
 	putchar('[');
@@ -106,7 +103,7 @@ void dumpLine(uint8_t *buf, uint8_t size) {
 	printf("]\n");
 }
 
-void testSpriteDataLine(void) {
+void TEST_dumpSpriteDataLine(void) {
 	char i;
 	memcpy(vram, f_letter, sizeof(f_letter));
 	memcpy(oam, sprites, sizeof(sprites));
@@ -116,14 +113,13 @@ void testSpriteDataLine(void) {
 		IOLY = i;
 		scanOAM();
 		dumpLine(scanlinedata, 16);
-
 	}
 }
 
-void testBgDataLine(void) {
+void TEST_dumpBgDataLine(void) {
 	char i;
-	memcpy(vram, tilesData, sizeof(tilesData));
-	memcpy((vram + TILE_MAP0_BASE), bg_map, sizeof(bg_map));
+	memcpy(vram, TEST_tilesData, sizeof(TEST_tilesData));
+	memcpy((vram + TILE_MAP0_BASE), TEST_bg_map, sizeof(TEST_bg_map));
 	IOBGP = IOOBP0 = IOOBP1 = 0xE4;
 	IOLCDC |= BG_W_DATA;
 
@@ -131,21 +127,21 @@ void testBgDataLine(void) {
 		IOLY = i;
 		scanline();
 		dumpLine(scanlinedata, 32);
-
 	}
 }
 
-void loadTileMapAndData(void) {
-	memcpy(vram, tilesData, sizeof(tilesData));
-	memcpy((vram + TILE_MAP0_BASE), bg_map, sizeof(bg_map));
+void TEST_loadTestData(void) {
+	memcpy(vram, TEST_tilesData, sizeof(TEST_tilesData));
+	memcpy((vram + TILE_MAP0_BASE), TEST_bg_map, sizeof(TEST_bg_map));
 	IOBGP = IOOBP0 = IOOBP1 = 0xE4;
 	IOLCDC |= BG_W_DATA;
 	IOSCX = 0;
 	IOSCY = 0;
 }
 
-void Test_DBG_BGmap(void) {
-	loadTileMapAndData();
+void TEST_BGmap(void) {
+	TEST_loadTestData();
+
 	while (1) {
 		//DBG_BGmap();
 		LCD_Window(0, 0, SCREEN_W, SCREEN_H);
@@ -155,26 +151,31 @@ void Test_DBG_BGmap(void) {
 		}
 
 		switch (readJoyPad()) {
-		case 255: return;
-		case J_UP: IOSCY--; DBG_Reg(); break;
-		case J_DOWN: IOSCY++; DBG_Reg(); break;
-		case J_LEFT: IOSCX--; DBG_Reg(); break;
-		case J_RIGHT: IOSCX++; DBG_Reg(); break;
-			
+			case 255: return;
+			case J_UP: IOSCY--; DBG_DumpRegisters(); break;
+			case J_DOWN: IOSCY++; DBG_DumpRegisters(); break;
+			case J_LEFT: IOSCX--; DBG_DumpRegisters(); break;
+			case J_RIGHT: IOSCX++; DBG_DumpRegisters(); break;			
 		}
 		DelayMs(16);
 	}
 }
 
-void Test_DBG_Sprites(void) {
-	loadTileMapAndData();
+void TEST_Sprites(char flags) {
+
+	TEST_loadTestData();
+
+	IOLCDC |= OBJ_SIZE;
 
 	Object *sp = (Object*)&oam[0];
 
 	sp->x = 8;
-	sp->y = 16;
-	sp->pattern = 1;
+	sp->y = 17;
+	sp->pattern = 26;  // offset Tile
+	sp->flags = flags;
 
+	IOSCX = 8;
+	IOSCY = 16;
 
 	while (1) {
 		//DBG_BGmap();
@@ -185,23 +186,31 @@ void Test_DBG_Sprites(void) {
 		}
 
 		switch (readJoyPad()) {
-		case 255: return;
-		case J_UP: sp->y--; DBG_PrintValue(0,"sp.y ", sp->y); break;
-		case J_DOWN: sp->y++; DBG_PrintValue(0,"sp.y ", sp->y); break;
-		case J_LEFT: sp->x--; DBG_PrintValue(1,"sp.x ", sp->x); break;
-		case J_RIGHT: sp->x++; DBG_PrintValue(1,"sp.x ", sp->x); break;
-
+			case 255: return;
+			case J_UP: sp->y--; DBG_PrintValue(0,"sp.y ", sp->y); break;
+			case J_DOWN: sp->y++; DBG_PrintValue(0,"sp.y ", sp->y); break;
+			case J_LEFT: sp->x--; DBG_PrintValue(1,"sp.x ", sp->x); break;
+			case J_RIGHT: sp->x++; DBG_PrintValue(1,"sp.x ", sp->x); break;
 		}
-		DelayMs(30);
+		DelayMs(100);
 	}
 }
 
 
-void testMain(void) {
-	//testSpriteDataLine();
-	//testBgDataLine();
+void TEST_main(void) {
+
+	//testRom(ALL_TESTS_ROM);
+	LCD_Window(0, 0, LCD_W, LCD_H);
+	LCD_Fill(LCD_SIZE, RED);
+	
+	//TEST_buttons();
+
+	//TEST_dumpSpriteDataLine();
+	//TEST_dumpBgDataLine();
 	//testButtons();
-	//Test_DBG_BGmap();
-	Test_DBG_Sprites();
+	//TEST_BGmap();
+	TEST_Sprites(0);
+	LCD_Close();
+	system("PAUSE");
 	exit(0);
 }

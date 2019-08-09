@@ -28,11 +28,14 @@ uint8_t readJoyPad(void);
 void disassemble(void);
 
 #if defined(__EMU__)
-void debug(void){	
+void DBG_run(void){	
 uint8_t key;
 uint32_t ticks = 0, dticks;
+uint8_t frame;
+
 	DISPLAY_SetFcolor(YELLOW); 
-	DBG_Reg();
+	DBG_DumpRegisters();
+
 	while((key = readJoyPad()) != 255){		
 
 		if (stepping != OFF) {
@@ -44,7 +47,7 @@ uint32_t ticks = 0, dticks;
 			
 			switch (stepping) {
 				case STEP:
-					DBG_Reg();
+					DBG_DumpRegisters();
 					disassemble();
 					stepping = PAUSE;
 					break;
@@ -58,7 +61,7 @@ uint32_t ticks = 0, dticks;
 					break;
 			}			
 		}
-#if 1
+#if 0
 		ticks = SDL_GetTicks();
 		runOneFrame();
 		dticks = SDL_GetTicks() - ticks;
@@ -67,13 +70,19 @@ uint32_t ticks = 0, dticks;
 		}
 		DBG_Fps();
 #else
-		stepInstruction();				
+		decode();
+		timer();
+		frame = video();
+		interrupts();
+		
+
 		if (frame == ON) {
 			dticks = SDL_GetTicks() - ticks;
 			if (dticks < FRAME_TIME && stepping == OFF) {
 				SDL_Delay(FRAME_TIME - dticks);
 			}
 			DBG_Fps();
+			//DBG_DumpRegisters();
 			ticks = SDL_GetTicks();
 			frame = OFF;
 		}
@@ -92,7 +101,7 @@ static uint16_t fps = 0;
 	if(GetTicks() > fpsupdatetick)
 	{
 		LCD_Push();
-		printVal(SCREEN_W + 8,FPS_ROW,"Fps ",fps,10,5);
+		DBG_printVal(SCREEN_W + 8,FPS_ROW,"Fps ",fps,10,5);
 		fps = 0;
 		fpsupdatetick = GetTicks() + 1000;
 		LCD_Pop();
@@ -122,7 +131,7 @@ unsigned char i=0,c,dig[16];
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
-int printVal(int x, int y,char *name, int v, char radix, char digitos)
+int DBG_printVal(int x, int y,char *name, int v, char radix, char digitos)
 {	
 	DISPLAY_SetFcolor(RED);
 	x = DISPLAY_Text(x,y,name);
@@ -133,7 +142,7 @@ int printVal(int x, int y,char *name, int v, char radix, char digitos)
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
-void DBG_Reg(void)
+void DBG_DumpRegisters(void)
 {
 	LCD_Push();
 #if 0
@@ -156,21 +165,21 @@ void DBG_Reg(void)
 	
 	//setAttribute(g_double);
 //	setFont(BOLD);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(0),"af: ",REG_A << 8| REG_F ,16,4);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(1),"bc: ",REG_BC,16,4);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(2),"de: ",REG_DE,16,4);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(3),"hl: ",REG_HL,16,4);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(4),"sp: ",REG_SP,16,4);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(5),"pc: ",REG_PC,16,4);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(7),"LCDC: ",IOLCDC,16,2);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(8),"STAT: ", IOSTAT, 16, 2);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(9),"ly:   ",IOLY,16,2);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(0),"af: ",REG_A << 8| REG_F ,16,4);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(1),"bc: ",REG_BC,16,4);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(2),"de: ",REG_DE,16,4);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(3),"hl: ",REG_HL,16,4);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(4),"sp: ",REG_SP,16,4);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(5),"pc: ",REG_PC,16,4);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(7),"LCDC: ",IOLCDC,16,2);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(8),"STAT: ", IOSTAT, 16, 2);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(9),"ly:   ",IOLY,16,2);
 
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(11),"TIMA: ",IOTIMA,16,2);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(12),"DIV:  ",IODIV,16,2);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(11),"TIMA: ",IOTIMA,16,2);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(12),"DIV:  ",IODIV,16,2);
 	
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(15),"SCX:  ", IOSCX, 16, 2);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(16),"SCY:  ", IOSCY, 16, 2);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(15),"SCX:  ", IOSCX, 16, 2);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(16),"SCY:  ", IOSCY, 16, 2);
 	
 #endif
 	LCD_Pop();
@@ -257,20 +266,7 @@ void debugCommans(uint8_t *st){
 
 #endif
 }
-//----------------------------------------------------*/
-//main cpu run
-// decode(),
-// timer(),
-// video(),
-// interrupts() are processed in each iteration
-//------------------------------------------------------
-void stepInstruction(void){
-	decode();	
-	timer();	
-	video();
-	interrupts();	
-	//one instruction
-}
+
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
@@ -328,6 +324,6 @@ void DBG_BGmap(void) {
 void DBG_PrintValue(uint8_t line, char *label, uint8_t val) {
 	LCD_Push();
 	DISPLAY_SetFcolor(YELLOW);
-	printVal(DBG_REG_COL(0), DBG_REG_ROW(line), label, val, 16, 2);
+	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(line), label, val, 16, 2);
 	LCD_Pop();
 }

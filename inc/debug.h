@@ -11,19 +11,19 @@
 #define DBG_REG_ROW(y) (DBG_REG_ROW_BASE + (y*9))
 
 void DBG_Fps(void);
-void DBG_Reg(void);
+void DBG_DumpRegisters(void);
 void DBG_Mem(unsigned short addr, unsigned short siz);
 void DBG_Info(char* text);
 
 void DBG_BGmap(void);		// 32x32 BG Tile map, display must be 256x256px
 
-int printVal(int x, int y,char *name, int v, char radix, char digitos);
+int DBG_printVal(int x, int y,char *name, int v, char radix, char digitos);
 
 
 /**
  * run cpu in debug mode
  * */
-void debug(void);
+void DBG_run(void);
 
 /**
 
