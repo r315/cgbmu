@@ -9,27 +9,40 @@ const unsigned short lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
 uint16_t video_cycles = 0;
 Object *spriteline[MAX_OBJECTS / sizeof(Object)];
 uint8_t bgdataline[40];
-uint8_t scanlinedata[160];		// one line of pixels
-Object *objs[MAX_LINE_OBJECTS];
+uint8_t scanlinedata[SCREEN_W];		// one line of pixels
+Object *visible_objs[MAX_LINE_OBJECTS];
 
 //-----------------------------------------
 //put one line of Sprite data into scanlinedata
 //-----------------------------------------
-void putObjectData(Object *obj, uint8_t *dst) {
-	uint8_t i = SPRITE_W, color, line;
+void blitObjectData(Object *obj, uint8_t *dst) {
+	uint8_t npixels, color, objline;
 	uint8_t pal = (obj->flags & OBJECT_FLAG_PAL) ? IOOBP1 : IOOBP0;
+	uint8_t pattern = obj->pattern;
+
+	//Get pattern, for 8x16 mode the extra data is on the next pattern index
+	if (IOLCDC & OBJ_SIZE) {
+		objline = SPRITE_8x16_LINE_MASK(IOLY - (obj->y - SPRITE_Y_OFFSET));		
+		objline = (obj->flags & OBJECT_FLAG_YFLIP) ? (SPRITE_8x16_H_MASK - 1 - objline) : objline;
+	}
+	else {
+		// Add line offset, 2byte per line
+		objline = TILE_LINE(IOLY - (obj->y - SPRITE_Y_OFFSET));
+		objline = (obj->flags & OBJECT_FLAG_YFLIP) ? (SPRITE_H - 1 - objline) : objline;
+	}
+
 	//Each Tile has 16bytes and one line os pixels neads 2 bytes
-	TileData *td = (TileData*)vram + obj->pattern;
-	// Add line offset, 2byte per line
-	line = (obj->flags & OBJECT_FLAG_YFLIP) ? (7 - TILE_LINE(IOLY)) : TILE_LINE(IOLY);
-
-	uint8_t lsb = td->line[line].lsb;
-	uint8_t msb = td->line[line].msb;
-
+	TileData *td = (TileData*)vram + pattern;
+	
 	dst += obj->x - SPRITE_W;
 
+	uint8_t lsb = td->line[objline].lsb;
+	uint8_t msb = td->line[objline].msb;
+	
+	npixels = SPRITE_W;	
+
 	if (obj->flags & OBJECT_FLAG_XFLIP) {		
-		while (i--) {
+		do{
 			color = (msb & 0x1) ? 2 : 0;
 			color |= (lsb & 0x1) ? 1 : 0;
 			msb >>= 1;
@@ -40,10 +53,10 @@ void putObjectData(Object *obj, uint8_t *dst) {
 					*dst = color;
 			}
 			dst++;
-		}
+		}while (--npixels);
 	}
 	else {
-		while (i--) {
+		do{
 			color = (msb & 0x80) ? 2 : 0;
 			color |= (lsb & 0x80) ? 1 : 0;
 			msb <<= 1;
@@ -54,7 +67,7 @@ void putObjectData(Object *obj, uint8_t *dst) {
 					*dst = color;
 			}
 			dst++;
-		}
+		}while(--npixels);
 	}
 }
 /**-------------------------------------------------------
@@ -66,7 +79,7 @@ void putObjectData(Object *obj, uint8_t *dst) {
 * @param line           the line to put
 * @param size			SCREEN_W for background, WX for window (not implemented yet)
 *---------------------------------------------------------*/
-void putTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint8_t size) {
+void blitTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint8_t size) {
 	uint8_t tileindex, msb, lsb, color;
 	TileData *td;
 
@@ -97,29 +110,23 @@ void putTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_
 // read OBJECT Attribute Memory for one line
 //-----------------------------------------
 void scanOAM() {
-	uint8_t i, n, objline = IOLY + 16;	// Y position has a offset of 16pixels
+	uint8_t m, n, objline = IOLY + 16;	// Y position has a offset of 16pixels
 	Object *pobj = (Object*)oam;
 
 	n = 0;
-	for (i = 0; i < MAX_OBJECTS; i++, pobj++) {
-		if (pobj->x >= SPRITE_W && pobj->x < SCREEN_W + SPRITE_W) {
-			if (IOLCDC & OBJ_SIZE) {	// 8x16 objs
-				if (objline >= pobj->y && objline < (pobj->y + (SPRITE_H * 2))) {
-					objs[n] = pobj;
-					n++;
-				}
-			}
-			else {
-				if (objline >= pobj->y && objline < (pobj->y + SPRITE_W)) {
-					objs[n] = pobj;
-					n++;
-				}
-			}
+	m = (IOLCDC & OBJ_SIZE) ? 1 : 0; // 8x16 objs
+
+	for (int i = 0; i < MAX_OBJECTS; i++, pobj++) {
+		if (pobj->x >= SPRITE_W && pobj->x < SCREEN_W + SPRITE_W) {			
+			if (objline >= pobj->y && objline < (pobj->y + (SPRITE_H << m))) {
+				visible_objs[n] = pobj;
+				n++;
+			}					
 		}		
 		if (n >= MAX_LINE_OBJECTS)
 			break;
 	}
-	objs[n] = NULL;
+	visible_objs[n] = NULL;
 }
 //-----------------------------------------
 //
@@ -136,7 +143,7 @@ void scanline() {
 	tilemapline += TILE_LINE_INDEX(line);
 
 	memset(scanlinedata, 0, sizeof(scanlinedata));
-	putTileData(tilemapline, sld, IOSCX, line, SCREEN_W);	
+	blitTileData(tilemapline, sld, IOSCX, line, SCREEN_W);	
 
 	if (IOLCDC & W_DISPLAY && IOLY >= IOWY && IOWX < SCREEN_W + 7) 
 	{
@@ -144,12 +151,12 @@ void scanline() {
 		sld = scanlinedata + IOWX - 7;				//destination offset given by IOWX, WX has an offset of 7
 		tilemapline = (uint8_t*)(vram + ((IOLCDC & W_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 		tilemapline += TILE_LINE_INDEX(line);
-		putTileData(tilemapline, sld, 0, line, SCREEN_W - IOWX + 7);
+		blitTileData(tilemapline, sld, 0, line, SCREEN_W - IOWX + 7);
 	}
 
 	pixel = 0;
-	while (objs[pixel] != NULL)
-		putObjectData(objs[pixel++], scanlinedata);
+	while (visible_objs[pixel] != NULL)
+		blitObjectData(visible_objs[pixel++], scanlinedata);
 
 	sld = scanlinedata;
 	for (pixel = 0; pixel < SCREEN_W; pixel++, sld++) {
