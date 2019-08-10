@@ -229,8 +229,6 @@ void Reset_Handler(void)
     // Call the application's entry point.
     //
 
-    SystemInit();
-
     main();
     while(1);
 }
@@ -299,8 +297,3 @@ void Default_Handler(void) {
 	}
 }
 
-
-void SystemInit (void){
-	SystemCoreClock = 4000000;
-	SysTick_Config((SystemCoreClock/1000) - 1);
-}

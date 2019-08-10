@@ -29,6 +29,7 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 #define _dmgcpu_h_
 
 #include <stdint.h>
+#include "board.h"
 
 #define ONE_CYCLE	    1
 #define TWO_CYCLE	    2
@@ -37,9 +38,9 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 #define FIVE_CYCLE	    5
 #define SIX_CYCLE	    6
 
-#define CLR_CYCLES()    cycles = 0
-#define ADD_CYCLE(x)    cycles += x // Note one machine cycle = 4 clock cycles
-#define GET_CYCLE()     cycles
+#define RESET_CYCLES    cycles = 0
+#define INC_CYCLES(x)   cycles += x // Note one machine cycle = 4 clock cycles
+#define CYCLES_COUNT    cycles
 
 //Flags
 #define FZ              (1<<7)
@@ -218,6 +219,5 @@ void memoryWrite16(uint16_t address, uint16_t data);
 void initCpu(void);
 void interrupts(void);
 void timer(void);
-void runCpu(uint16_t nTicks);
 uint8_t joyPad(void);
 #endif

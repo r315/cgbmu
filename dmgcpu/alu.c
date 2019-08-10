@@ -233,13 +233,13 @@ uint8_t aux;
 	if(r == &PSW)
 	{
 		aux = memoryRead(REG_HL);
-		ADD_CYCLE(ONE_CYCLE);
+		INC_CYCLES(ONE_CYCLE);
 	}
 	else
 		aux = *r;
 	
 	if(!(aux & (1<<b)))	PSW |= FZ;	
-	ADD_CYCLE(TWO_CYCLE);
+	INC_CYCLES(TWO_CYCLE);
 }
 //-----------------------------------------
 // bit reset
@@ -254,12 +254,12 @@ uint8_t aux;
 		aux = memoryRead(REG_HL);
 		aux &= ~(1<<b);
 		memoryWrite(REG_HL,aux);
-		ADD_CYCLE(TWO_CYCLE);
+		INC_CYCLES(TWO_CYCLE);
 	}
 	else
 		*r &= ~(1<<b);
 		
-	ADD_CYCLE(TWO_CYCLE);
+	INC_CYCLES(TWO_CYCLE);
 }
 //-----------------------------------------
 // bit set
@@ -274,12 +274,12 @@ uint8_t aux;
 		aux = memoryRead(REG_HL);
 		aux |= (1<<b);
 		memoryWrite(REG_HL,aux);
-		ADD_CYCLE(TWO_CYCLE);
+		INC_CYCLES(TWO_CYCLE);
 	}
 	else	
 		*r |= (1<<b);
 		
-	ADD_CYCLE(TWO_CYCLE);
+	INC_CYCLES(TWO_CYCLE);
 }
 //-----------------------------------------
 // add to HL 16bit value

@@ -11,7 +11,7 @@ CSRCS   +=decoder.c alu.c dmgcpu.c cartridge.c video.c cgbmu.c
 LIBS     =-lSDL2main -lSDL2
 SYMBOLS  =-D__DEBUG__ -D__EMU__
 CFLAGS  =-Og -g -Wall -gdwarf-2 -gstrict-dwarf $(addprefix -I, $(INCSPATH)) $(SYMBOLS)
-LDFLAGS =
+LDFLAGS =-LSDL2/lib/x64
 OBJS    =$(addprefix $(OBJSPATH)/, $(CSRCS:.c=.o))
 
 CC      =arm-linux-gnueabihf-gcc
@@ -26,7 +26,8 @@ clean:
 
 
 $(TARGET): $(OBJS)
-	$(GCC) $(LDFLAGS) $(OBJS) $(LIBS) -o $(TARGET)
+#	$(GCC) $(LDFLAGS) $(OBJS) $(LIBS) -o $(TARGET)
+	$(GCC) $(OBJS) -o $(TARGET) $(shell sdl2-config --cflags --libs)
 #@./$(TARGET) -r ../../../roms/mario.gb
 	
 $(OBJSPATH)/%.o : %.c

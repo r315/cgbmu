@@ -28,7 +28,7 @@ uint8_t CardType;
 /*-----------------------------------------------------------------------*/
 static void release_spi (void)
 {
-	DESELECT_CARD();
+	DESELECT_CARD;
 	SPI(0xFF);
 }
 /*-----------------------------------------------------------------------*/
@@ -48,9 +48,9 @@ static uint8_t send_cmd (
 	}
 
 	/* Select the card */
-	DESELECT_CARD();
+	DESELECT_CARD;
 	SPI(0xFF);
-	SELECT_CARD();
+	SELECT_CARD;
 	SPI(0xFF);
 
 	/* Send a command packet */
@@ -88,7 +88,7 @@ DSTATUS disk_initialize (void)
 #if _WRITE_FUNC
 	if (MMC_SEL) disk_writep(0, 0);		/* Finalize write process if it is in progress */
 #endif
-	SELECT_CARD();
+	SELECT_CARD;
 	for (n = 100; n; n--) SPI(0xFF);	/* Dummy clocks */
 
 	ty = 0;

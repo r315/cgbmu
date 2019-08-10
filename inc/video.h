@@ -53,8 +53,10 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 #define SCREEN_H			144
 #define SCREEN_H_TILES		SCREEN_W/8		// Horizontal Tiles
 #define SCREEN_V_TILES		SCREEN_H/8		// Vertical Tiles
+#ifndef SCREEN_OFFSET_X
 #define SCREEN_OFFSET_X		0 //160
 #define SCREEN_OFFSET_Y		0
+#endif
 
 #define V_M0				0
 #define V_M1				1
@@ -119,8 +121,11 @@ typedef struct _Tile {
 	}line[8];
 }TileData;
 
+extern uint16_t video_cycles;
+
 uint8_t video(void);
 void nextLine(void);
 void scanline(void);
 void scanOAM(void);
+
 #endif

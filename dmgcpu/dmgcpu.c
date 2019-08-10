@@ -59,6 +59,7 @@ uint8_t readJoyPad(void); // this function must be implemented by the target arc
 //-----------------------------------------
 //
 //-----------------------------------------
+FAST_CODE
 void jumpVector(uint16_t vector)
 {
 	IME = 0;
@@ -69,6 +70,7 @@ void jumpVector(uint16_t vector)
 //-----------------------------------------
 //
 //-----------------------------------------
+FAST_CODE
 void interrupts(void)
 {
 uint8_t irq;
@@ -107,7 +109,9 @@ uint8_t irq;
 		jumpVector(0x0060);
 	}			
 }
-
+//-----------------------------------------
+//
+//-----------------------------------------
 void setTimerPrescaler(void){
 	switch(IOTAC & 3)	{
 		case 0: // 4096Hz		
@@ -127,11 +131,12 @@ void setTimerPrescaler(void){
 //-----------------------------------------
 //
 //-----------------------------------------
+FAST_CODE
 void timer(void)
 {
 	if(!(IOTAC & TIMER_STOP)) return; // timer stopped
 	
-	timer_cycles += GET_CYCLE();	
+	timer_cycles += CYCLES_COUNT;
 	
 	while(timer_cycles >= timer_prescaler)	{
 		IOTIMA++;
@@ -145,6 +150,7 @@ void timer(void)
 //-----------------------------------------
 //
 //-----------------------------------------
+FAST_CODE
 void dma(uint16_t src){
 uint8_t i, *pdst;
 	pdst = (uint8_t*)&oam[0];
@@ -164,6 +170,7 @@ uint8_t i, *pdst;
 * P13 -------+-[Down]-----+-[Start]
 *            |            |
 //----------------------------------------- */
+FAST_CODE
 uint8_t joyPad(void) {
 	uint8_t buttons;
 
@@ -185,6 +192,7 @@ uint8_t joyPad(void) {
 //-----------------------------------------
 //
 //-----------------------------------------
+FAST_CODE
 uint8_t memoryRead(uint16_t address)
 {	
 	switch(address>>12)
@@ -252,6 +260,7 @@ uint8_t memoryRead(uint16_t address)
 //-----------------------------------------
 //
 //-----------------------------------------
+FAST_CODE
 void memoryWrite(uint16_t address, uint8_t data)
 {	
 	switch(address>>12)
@@ -330,6 +339,7 @@ void memoryWrite(uint16_t address, uint8_t data)
 //-----------------------------------------
 //
 //-----------------------------------------
+FAST_CODE
 uint16_t memoryRead16(uint16_t address)
 {	
 	return memoryRead(address) | (memoryRead(address+1)<<8);
@@ -337,6 +347,7 @@ uint16_t memoryRead16(uint16_t address)
 //-----------------------------------------
 //
 //-----------------------------------------
+FAST_CODE
 void memoryWrite16(uint16_t address, uint16_t data)
 {
 	memoryWrite(address++, (uint8_t)data);

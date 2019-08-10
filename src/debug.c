@@ -91,7 +91,7 @@ uint8_t frame;
 }
 #endif
 //----------------------------------------------------*/
-//
+//Note FPS is double of the frequency of a pin toggle
 //------------------------------------------------------
 void DBG_Fps(void){
 static uint32_t fpsupdatetick = 0;
@@ -102,9 +102,9 @@ static uint16_t fps = 0;
 	{
 		LCD_Push();
 		DBG_printVal(SCREEN_W + 8,FPS_ROW,"Fps ",fps,10,5);
+		LCD_Pop();
 		fps = 0;
 		fpsupdatetick = GetTicks() + 1000;
-		LCD_Pop();
 	}
 }
 //----------------------------------------------------*/

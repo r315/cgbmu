@@ -11,15 +11,22 @@
 #include <blueboard.h>
 #include "pff/pff.h"
 
-#define PLL48   0
-#define PLL72   1
-#define PLL80   2
-#define PLL100  3
 
+#define DBG_PIN (1<<12)
+#define DBG_PIN_INIT  \
+{                     \
+	LPC_GPIO2->FIODIR |= DBG_PIN; \
+}
 
-#define XTAL        (12000000UL)        /* Oscillator frequency               */
-#define OSC_CLK     (      XTAL)        /* Main oscillator frequency          */
-#define RTC_CLK     (   32000UL)        /* RTC oscillator frequency           */
-#define IRC_OSC     ( 4000000UL)        /* Internal RC oscillator frequency   */
+#define DBG_PIN_TOGGLE \
+{                      \
+	LPC_GPIO2->FIOPIN ^= DBG_PIN; \
+} 
 
+#ifdef USE_FAST_CODE
+#define FAST_CODE __attribute__ ((section(".fastcode")))
+#else
+#define FAST_CODE
+#endif
+void BOARD_Init(void);
 #endif

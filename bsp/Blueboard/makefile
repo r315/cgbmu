@@ -3,12 +3,12 @@ LIBEMBPATH =$(HOME)/Dropbox/Projects/software/libemb
 SRCSPATH  +=../../src ../../dmgcpu pff src $(LIBEMBPATH)/display $(LIBEMBPATH)/drv/tft
 OBJSPATH   :=build
 
-CSRCS      =startup.c blueboard.c ili9328.c spi.c main.c lcd.c display.c fonts.c debug.c
+CSRCS      =startup.c board.c ili9328.c spi.c main.c lcd.c display.c fonts.c debug.c
 CSRCS     +=alu.c cartridge.c dmgcpu.c video.c decoder.c cgbmu.c
 CSRCS     +=pff.c mmc.c
 
 INCDIRS  =../../inc inc $(LIBEMBPATH)/include
-SYMBOLS  =__BB__ NO_LCD_HW_SCROLL
+SYMBOLS  =-D__BB__ -DNO_LCD_HW_SCROLL -DSCREEN_OFFSET_X=80 -DSCREEN_OFFSET_Y=48 -DUSE_FAST_CODE
 #########################################################################
 #  List of the objects files to be compiled/assembled
 # system sources and common includes and directories
@@ -18,10 +18,10 @@ LSCRIPT =cgbemu_linker.ld
 #########################################################################
 #  Compiler Options
 
-INCLUDES = $(addprefix -D, $(SYMBOLS)) $(addprefix -I, $(INCDIRS)) -I.
+INCLUDES =$(addprefix -I, $(INCDIRS)) -I.
 
-GCFLAGS = -O3 -Wall -gdwarf-2 -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections -fno-stack-protector
-GCFLAGS += $(INCLUDES)
+GCFLAGS = -Og -g -Wall -gdwarf-2 -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections -fno-stack-protector
+GCFLAGS +=$(SYMBOLS) $(INCLUDES)
 LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,-Map=$(TARGET).map,--cref,--gc-sections #-nostdlib
 
 ASFLAGS = $(LISTING) -mcpu=cortex-m3 -mthumb
@@ -82,7 +82,7 @@ program: $(CHECKSUM) $(TARGET).bin $(TARGET).cfg
 	openocd -f $(TARGET).cfg -c "program $(TARGET).bin 0x00000000 verify reset exit"
 	
 #https://balau82.wordpress.com/2012/02/19/linking-a-binary-blob-with-gcc
-extbin : ../../../roms/mario.gb
+extbin : ../../../roms/mario.gb #tests/cpu_instrs.gb
 	$(OBJCOPY) -I binary -O elf32-littlearm -B armv7 --rename-section .data=.extbinary $< extbin.o
 	$(OBJDUMP) -t extbin.o
 	

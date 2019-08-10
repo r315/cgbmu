@@ -202,10 +202,7 @@ printf("Available options:\n\n"
 //-----------------------------------------------------------
 int main (int argc, char *argv[])
 {
-	#if defined(__BB__)
-	
-
-	#elif defined(__ESP03__)	
+	#if defined(__ESP03__)	
 
 	#define HSPI_DIVIDER 1
 	
@@ -235,7 +232,7 @@ int main (int argc, char *argv[])
 	initCpu();
 	
 
-	#elif defined(__EMU__)	
+	#else
 
 	static Param_Type param;
 	memset(&param, 0, sizeof(Param_Type));	

@@ -3,26 +3,25 @@
 #include <video.h>
 #include <dmgcpu.h>
 #include <debug.h>
-
-extern uint16_t video_cycles;
-
-void decode(void);
+#include <decoder.h>
 
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
-void runCpu(uint16_t nTicks) {
-	while (nTicks > video_cycles) {
+FAST_CODE
+inline void runCpu(uint32_t nTicks) {
+uint32_t elapsed_cycles = 0;
+	while (nTicks > elapsed_cycles) {
 		timer();
 		interrupts();
 		decode();
-		video_cycles += GET_CYCLE();
+		elapsed_cycles += CYCLES_COUNT;
 	}
-	video_cycles -= nTicks;
 }
 //-----------------------------------------
 //
 //-----------------------------------------
+FAST_CODE
 void runOneFrame(void) {
 
 	LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y, SCREEN_W, SCREEN_H);  //3us
@@ -66,6 +65,7 @@ void runOneFrame(void) {
 	}
 }
 
+FAST_CODE
 void cgbmu(uint8_t mode) {
 	uint32_t ticks;
 
@@ -89,16 +89,9 @@ void cgbmu(uint8_t mode) {
 	}
 	else {				// frame loop
 		while (readJoyPad() != 255) {
-			//ticks = GetTicks();
 			runOneFrame();
-			#if 0
-			ticks = GetTicks() - ticks;
-			if (ticks < FRAME_TIME) {
-				DelayMs(FRAME_TIME - ticks);
-			}
 			DBG_Fps();
-			#endif
-			//DBG_PIN_TOGGLE;
+			DBG_PIN_TOGGLE;
 		}
 	}	
 }

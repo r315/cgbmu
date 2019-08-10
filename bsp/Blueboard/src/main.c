@@ -13,11 +13,13 @@ void cgbmu(uint8_t mode);
 #if !defined(USE_FS)
 extern uint8_t _binary__________roms_mario_gb_start;
 uint8_t *cartridge = &_binary__________roms_mario_gb_start;
-//uint8_t cartridge[] = {0, 0xc3, 0,1};
+//extern uint8_t _binary__________roms_tests_cpu_instrs_gb_start;
+//uint8_t *cartridge = &_binary__________roms_tests_cpu_instrs_gb_start;
 #endif
 //-----------------------------------------
 //
 //-----------------------------------------
+FAST_CODE
 uint8_t readJoyPad(void)
 {
 uint8_t button = 0;
@@ -146,18 +148,17 @@ void testButtons(void) {
 
 int main (void){
     
-    BB_Init();
-	BB_ConfigPLL(PLL100);	
+    BOARD_Init();	
 
 	LCD_Rotation(LCD_LANDSCAPE);
+	
+	DISPLAY_printf("Hello \nClock %uMHz\n", SystemCoreClock/1000000);
 
-	DISPLAY_puts("Hello\n");
-	DISPLAY_printf("Clock %uMHz\n", SystemCoreClock/1000000);
-
-	initCpu();		
 	DBG_PIN_INIT;
+
 	if(loadRom("mario.gb"))
 		cgbmu(0);
 	testButtons();
-    return 0;
+    
+	return 0;
 }	
