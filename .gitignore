@@ -18,3 +18,4 @@ stdafx.h
 targetver.h
 *.o
 libemb
+build/

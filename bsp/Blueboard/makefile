@@ -35,7 +35,7 @@ INCLUDES =$(addprefix -I, $(INCDIRS)) -I.
 GCFLAGS = -Og -g -Wall -gdwarf-2 -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections -fno-stack-protector
 GCFLAGS +=$(SYMBOLS) $(INCLUDES)
 LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,-Map=$(TARGET).map,--cref,--gc-sections #-nostdlib
-
+#semihosting flags: --specs=rdimon.specs -lc -lrdimon
 ASFLAGS = $(LISTING) -mcpu=cortex-m3 -mthumb
 
 #########################################################################
@@ -62,45 +62,41 @@ $(TARGET).elf: $(OBJECTS)
 	@echo "---- Linking ----> $@"
 	@$(LD) $(LDFLAGS) $(LDOBJECTS) -T $(LSCRIPT) $(OBJECTS) -o $(TARGET).elf
 
-rebuild: clean all
-
-list: $(TARGET).elf
-	@echo "---- Listing ----"
-	@$(OBJDUMP) -S $(TARGET).elf > $(TARGET).lst
-
-firmware.bin: $(TARGET).elf
-	@$(OBJCOPY) -O binary -j .text -j .data $(TARGET).elf firmware.bin
-
-stats: $(TARGET).elf
-	@echo "---- Size ----"
-	@$(SIZE) -A -x $<
-
-clean:
-	$(REMOVE) $(BUILD_DIR) $(TARGET).hex $(TARGET).elf $(TARGET).map $(TARGET).bin
-	
 $(BUILD_DIR):
 	mkdir -p $@
 
 $(TARGET).bin: $(TARGET).elf 
-	$(OBJCOPY) -O binary -j .startup -j .text -j .data -j .extbinary $(TARGET).elf $@
-	hd -n 128 $@
-	$(CHECKSUM) $@
+	$(OBJCOPY) -O binary $(TARGET).elf $@
+#hd -n 128 $@
+	@echo "---- Generating checksum ----"
+	@$(CHECKSUM) $@
 
-$(TARGET).cfg:
-	@echo "Generating opencod configuration file"
-	@echo 'interface jlink\ntransport select swd\nsource [find target/lpc17xx.cfg]\nadapter_khz 4000' > $(TARGET).cfg
-
-program: $(CHECKSUM) $(TARGET).bin $(TARGET).cfg
-	openocd -f $(TARGET).cfg -c "program $(TARGET).bin 0x00000000 verify reset exit"
-	
 #https://balau82.wordpress.com/2012/02/19/linking-a-binary-blob-with-gcc
 $(BUILD_DIR)/extbin.eo : ../../../roms/mario.gb #tests/cpu_instrs.gb
 	$(OBJCOPY) -I binary -O elf32-littlearm $(EXTBIN_ARCH) --rename-section .data=.extbinary $< $@
 	$(OBJDUMP) -t $@
 	
 $(CHECKSUM):
-	gcc $@.c -o $@
-	
+	@gcc $@.c -o $@
+
+$(TARGET).cfg:
+	@echo "---- Generating opencod configuration file ----"
+	@echo 'interface jlink\ntransport select swd\nsource [find target/lpc17xx.cfg]\nadapter_khz 4000' > $(TARGET).cfg
+
+list: $(TARGET).elf
+	@echo "---- Listing ----"
+	@$(OBJDUMP) -S $(TARGET).elf > $(TARGET).lst
+
+stats: $(TARGET).elf
+	@echo "---- Size ----"
+	@$(SIZE) -A -x $<
+
+clean:
+	$(REMOVE) $(BUILD_DIR) 
+
+program: $(CHECKSUM) $(TARGET).bin $(TARGET).cfg
+	openocd -f $(TARGET).cfg -c "program $(TARGET).bin 0x00000000 verify reset exit"
+
 test:
 	@echo $(OBJECTS)
 #########################################################################

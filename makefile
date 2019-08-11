@@ -19,6 +19,10 @@ rpi:
 
 bb:
 	@$(MAKE) -C bsp/Blueboard BUILD_DIR=../../$(BUILD_DIR)/blueboard
+	
+bb-program:
+	@$(MAKE) -C bsp/Blueboard BUILD_DIR=../../$(BUILD_DIR)/blueboard program
+
 
 DISCO: 
 	@$(MAKE) -C bsp/Discovery BUILD_DIR=../../$(BUILD_DIR)/discovery

@@ -145,7 +145,9 @@ void testButtons(void) {
 //--------------------------------------------------
 //
 //--------------------------------------------------
-
+#ifdef SEMI_HOSTING
+extern void initialise_monitor_handles(void);
+#endif
 int main (void){
     
     BOARD_Init();	
@@ -155,7 +157,10 @@ int main (void){
 	DISPLAY_printf("Hello \nClock %uMHz\n", SystemCoreClock/1000000);
 
 	DBG_PIN_INIT;
-
+#ifdef SEMI_HOSTING
+	initialise_monitor_handles();
+	printf("\n\nTesting semihosting\n\n");
+#endif
 	if(loadRom("mario.gb"))
 		cgbmu(0);
 	testButtons();
