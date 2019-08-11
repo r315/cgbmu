@@ -1,19 +1,31 @@
-TARGET     =bbcgbemu
-LIBEMBPATH =$(HOME)/Dropbox/Projects/software/libemb
-SRCSPATH  +=../../src ../../dmgcpu pff src $(LIBEMBPATH)/display $(LIBEMBPATH)/drv/tft
-OBJSPATH   :=build
+TARGET =$(BUILD_DIR)/bbcgbemu
+
+ifeq ($(shell uname), Linux)
+LIBEMB_PATH =$(HOME)/Dropbox/Projects/software/libemb
+EXTBIN_ARCH =-B armv7 # confirm this for linux
+else
+EXTBIN_ARCH =-B arm
+endif
+
+SRCSPATH  +=../../src ../../dmgcpu pff src $(LIBEMB_PATH)/display $(LIBEMB_PATH)/drv/tft
+BUILD_DIR   :=build
 
 CSRCS      =startup.c board.c ili9328.c spi.c main.c lcd.c display.c fonts.c debug.c
-CSRCS     +=alu.c cartridge.c dmgcpu.c video.c decoder.c cgbmu.c
 CSRCS     +=pff.c mmc.c
+CSRCS     +=alu.c cartridge.c dmgcpu.c video.c decoder.c cgbmu.c
 
-INCDIRS  =../../inc inc $(LIBEMBPATH)/include
+INCDIRS  =../../inc inc $(LIBEMB_PATH)/include
 SYMBOLS  =-D__BB__ -DNO_LCD_HW_SCROLL -DSCREEN_OFFSET_X=80 -DSCREEN_OFFSET_Y=48 -DUSE_FAST_CODE
 #########################################################################
 #  List of the objects files to be compiled/assembled
 # system sources and common includes and directories
 INCDIRS +=
-OBJECTS =$(addprefix $(OBJSPATH)/, $(CSRCS:.c=.o)) $(addprefix $(OBJSPATH)/, $(ASRCS:.S=.o)) $(addprefix $(OBJSPATH)/, $(CPPSRCS:.cpp=.o))
+OBJECTS = \
+$(addprefix $(BUILD_DIR)/, $(CSRCS:.c=.o)) \
+$(addprefix $(BUILD_DIR)/, $(ASRCS:.S=.o)) \
+$(addprefix $(BUILD_DIR)/, $(CPPSRCS:.cpp=.o)) \
+$(BUILD_DIR)/extbin.eo
+
 LSCRIPT =cgbemu_linker.ld
 #########################################################################
 #  Compiler Options
@@ -41,14 +53,14 @@ SIZE = $(GCC_EXEC_PREFIX)-size
 OBJCOPY = $(GCC_EXEC_PREFIX)-objcopy
 OBJDUMP = $(GCC_EXEC_PREFIX)-objdump
 REMOVE = rm -fR
-CHECKSUM =$(LIBEMBPATH)/bsp/tools/checksum
+CHECKSUM =$(LIBEMB_PATH)/bsp/tools/checksum
 #########################################################################
 
 all: $(TARGET).elf stats
 
-$(TARGET).elf: $(OBJECTS) extbin
+$(TARGET).elf: $(OBJECTS)
 	@echo "---- Linking ----> $@"
-	@$(LD) $(LDFLAGS) $(LDOBJECTS) -T $(LSCRIPT) $(OBJECTS) extbin.o -o $(TARGET).elf
+	@$(LD) $(LDFLAGS) $(LDOBJECTS) -T $(LSCRIPT) $(OBJECTS) -o $(TARGET).elf
 
 rebuild: clean all
 
@@ -64,9 +76,9 @@ stats: $(TARGET).elf
 	@$(SIZE) -A -x $<
 
 clean:
-	$(REMOVE) $(OBJSPATH) $(TARGET).hex $(TARGET).elf $(TARGET).map $(TARGET).bin
+	$(REMOVE) $(BUILD_DIR) $(TARGET).hex $(TARGET).elf $(TARGET).map $(TARGET).bin
 	
-$(OBJSPATH):
+$(BUILD_DIR):
 	mkdir -p $@
 
 $(TARGET).bin: $(TARGET).elf 
@@ -82,9 +94,9 @@ program: $(CHECKSUM) $(TARGET).bin $(TARGET).cfg
 	openocd -f $(TARGET).cfg -c "program $(TARGET).bin 0x00000000 verify reset exit"
 	
 #https://balau82.wordpress.com/2012/02/19/linking-a-binary-blob-with-gcc
-extbin : ../../../roms/mario.gb #tests/cpu_instrs.gb
-	$(OBJCOPY) -I binary -O elf32-littlearm -B armv7 --rename-section .data=.extbinary $< extbin.o
-	$(OBJDUMP) -t extbin.o
+$(BUILD_DIR)/extbin.eo : ../../../roms/mario.gb #tests/cpu_instrs.gb
+	$(OBJCOPY) -I binary -O elf32-littlearm $(EXTBIN_ARCH) --rename-section .data=.extbinary $< $@
+	$(OBJDUMP) -t $@
 	
 $(CHECKSUM):
 	gcc $@.c -o $@
@@ -95,14 +107,14 @@ test:
 #  Default rules to compile .c and .cpp file to .o
 #  and assemble .s files to .o
 #########################################################################
-$(OBJSPATH)/%.o : %.c | $(OBJSPATH)
+$(BUILD_DIR)/%.o : %.c | $(BUILD_DIR)
 	@echo "-----" $< "---->" $@
 	@$(GCC) $(GCFLAGS) -c $< -o $@
 
-$(OBJSPATH)/%.o : %.S | $(OBJSPATH)
+$(BUILD_DIR)/%.o : %.S | $(BUILD_DIR)
 	@echo "-----" $< "---->" $@
 	@$(AS) $(ASFLAGS) -o $(<:.S=.o) $< > $(<:.S=.lst)
 #########################################################################
 #
 #########################################################################
-#.PHONY: $(OBJSPATH)
+#.PHONY: $(BUILD_DIR)

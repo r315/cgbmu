@@ -15,4 +15,6 @@
 #define LCD_W 256
 #define LCD_H 256
 
+#define FAST_CODE
+#define DBG_PIN_TOGGLE
 #endif

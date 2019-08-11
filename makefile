@@ -1,32 +1,24 @@
-OBJSPATH  =obj
+BUILD_DIR  =build
 
-all: emu
+all: bb disco disco
 
-$(OBJSPATH):
+$(BUILD_DIR):
 	mkdir -p $@
-
 	
 clean: 
-	@${RM} $(OBJSPATH)/*.o $(TARGET)
-	@$(MAKE) -C bsp/emu clean
-	@$(MAKE) -C bsp/Blueboard clean
-	@$(MAKE) -C bsp/ESP03 clean
+	@${RM} -Rf $(BUILD_DIR)
+#@$(MAKE) -C bsp/emu clean
+#@$(MAKE) -C bsp/Blueboard clean
+#@$(MAKE) -C bsp/Discovery clean
 	
-emu: $(OBJSPATH)
-	@$(MAKE) -C bsp/emu OBJSPATH=../../$(OBJSPATH)
+emu: $(BUILD_DIR)
+	@$(MAKE) -C bsp/emu BUILD_DIR=../../$(BUILD_DIR)/emu
 
 rpi: 
-	@$(MAKE) -C bsp/emu OBJSPATH=../../$(OBJSPATH) rpi
+	@$(MAKE) -C bsp/emu BUILD_DIR=../../$(BUILD_DIR)/rpi rpi
 
 bb:
-	@$(MAKE) -C bsp/Blueboard OBJSPATH=../../$(OBJSPATH)
+	@$(MAKE) -C bsp/Blueboard BUILD_DIR=../../$(BUILD_DIR)/blueboard
 
-
-esp: 
-	@$(MAKE) -C bsp/ESP03 OBJSPATH=../../$(OBJSPATH)
-
-esp-burn: 
-	@$(MAKE) -C bsp/ESP03 OBJSPATH=../../$(OBJSPATH) burn	
-
-
-
+DISCO: 
+	@$(MAKE) -C bsp/Discovery BUILD_DIR=../../$(BUILD_DIR)/discovery

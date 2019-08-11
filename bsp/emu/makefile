@@ -2,7 +2,7 @@
 TARGET   =gbemu
 LIBEMBPATH =$(HOME)/Dropbox/Projects/software/libemb
 SRCSPATH =src ../../src ../../dmgcpu $(LIBEMBPATH)/drv/tft $(LIBEMBPATH)/display
-OBJSPATH =.
+BUILD_DIR :=.
 INCSPATH =. ../../inc inc $(LIBEMBPATH)/include
 INCSPATH +=SDL2/include
 
@@ -12,7 +12,7 @@ LIBS     =-lSDL2main -lSDL2
 SYMBOLS  =-D__DEBUG__ -D__EMU__
 CFLAGS  =-Og -g -Wall -gdwarf-2 -gstrict-dwarf $(addprefix -I, $(INCSPATH)) $(SYMBOLS)
 LDFLAGS =-LSDL2/lib/x64
-OBJS    =$(addprefix $(OBJSPATH)/, $(CSRCS:.c=.o))
+OBJS    =$(addprefix $(BUILD_DIR)/, $(CSRCS:.c=.o))
 
 CC      =arm-linux-gnueabihf-gcc
 GCC     =gcc 
@@ -22,7 +22,7 @@ VPATH   +=$(SRCSPATH)
 all: $(TARGET) 
 	
 clean: 
-	@${RM} $(TARGET) $(OBJSPATH)/*.o
+	@${RM} $(TARGET) $(BUILD_DIR)/*.o
 
 
 $(TARGET): $(OBJS)
@@ -30,13 +30,14 @@ $(TARGET): $(OBJS)
 	$(GCC) $(OBJS) -o $(TARGET) $(shell sdl2-config --cflags --libs)
 #@./$(TARGET) -r ../../../roms/mario.gb
 	
-$(OBJSPATH)/%.o : %.c
+$(BUILD_DIR)/%.o : %.c | $(BUILD_DIR)
 	@echo "-----" $< "---->" $@
 	@$(GCC) $(CFLAGS) -c $< -o $@
 	
-rpi: $(OBJS) $(OBJSPATH)/lcdfb.o 
-	$(CC) $(OBJS) $(OBJSPATH)/lcdfb.o -lSDLmain -lSDL -o $(TARGET)
+rpi: $(OBJS) $(BUILD_DIR)/lcdfb.o 
+	$(CC) $(OBJS) $(BUILD_DIR)/lcdfb.o -lSDLmain -lSDL -o $(TARGET)
 	
 
-
+$(BUILD_DIR):
+	mkdir -p $@
 

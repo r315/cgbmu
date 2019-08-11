@@ -5,7 +5,6 @@
 #include "board.h"
 #include "debug.h"
 #include "dmgcpu.h"
-#include "display.h"
 #include "video.h"
 
 #define FPS_ROW 0
@@ -122,7 +121,7 @@ unsigned char i=0,c,dig[16];
 	} while(v);
 	
 	for(c=i;c<digitos;c++)
-		x= DISPLAY_Char(x,y,'0');
+		x = DISPLAY_Char(x,y,'0');
 	
 	while(i--)
 	x = DISPLAY_Char(x,y,dig[i]);		
@@ -134,7 +133,7 @@ unsigned char i=0,c,dig[16];
 int DBG_printVal(int x, int y,char *name, int v, char radix, char digitos)
 {	
 	DISPLAY_SetFcolor(RED);
-	x = DISPLAY_Text(x,y,name);
+	//x = DISPLAY_Text(x,y,name);
 	DISPLAY_SetFcolor(YELLOW);
 	x = printInt(x,y,v,radix,digitos);	 
 	return x;
@@ -272,8 +271,8 @@ void debugCommans(uint8_t *st){
 //------------------------------------------------------
 void DBG_Info(char* text)
 {
-	DISPLAY_printf(text);
-	DISPLAY_putc('\n');
+	//DISPLAY_printf(text);
+	//DISPLAY_putc('\n');
 }
 
 extern const unsigned short lcd_pal[];
