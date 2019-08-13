@@ -91,16 +91,15 @@ void processArgs(int argc, char *argv[], Param_Type *param) {
 #include <unistd.h>
 #endif
 
-uint8_t MBC1_ROM[0x10000];
+static uint8_t *MBC1_ROM;
 
-#define LOG_TAG "CARTRIDGE"
+#define LOG_TAG "MAIN"
 
 int loadRom(char *file)
 {
 	char cwd[1024];
 	FILE *fp;
 	int n;
-
 
 	if (getcwd(cwd, sizeof(cwd)))
 		fprintf(stdout, "Current working dir: %s\n", cwd);
@@ -116,31 +115,26 @@ int loadRom(char *file)
 		return 0;
 	}
 
-	n = fread(MBC1_ROM, 1, ROM_SIZE*4, fp);
-	printf("%s: Rom file loaded!\n", LOG_TAG);
+	fseek(fp, 0L, SEEK_END);
+	int sz = ftell(fp);
+	fseek(fp, 0L, SEEK_SET);
+
+	printf("%s: Reading %lu bytes\n", LOG_TAG, sz);
+
+	MBC1_ROM = (uint8_t*)malloc(sz);
+
+	n = fread(MBC1_ROM, 1, sz, fp);
 
 	if (MBC1_ROM[CARTRIDGE_TYPE_OFFSET] != CARTRIDGE_MBC1) {
 		printf("################### ONLY CARTRIDGE MBC1 SUPPORTED ################\n");
 		n = 0;
 	}
-	else {
-		rom0 = MBC1_ROM;
-		rombank = MBC1_ROM + ROM_SIZE;
+	else {		
+		printf("Rom size %uKbit\n", MBC1_ROM[CARTRIDGE_TYPE_OFFSET] * 256);
+		cartridgeInit(MBC1_ROM);
 	}
-	
-	bankselect = 1;
 	fclose(fp);
 	return n;
-}
-//--------------------------------------------------
-//
-//--------------------------------------------------
-int loadRombank(uint8_t bank)
-{	
-	bankselect = bank;
-	rombank = MBC1_ROM + (bankselect << 14);
-	//printf("Loaded Rom Bank %u\n", bankselect);
-	return ROM_SIZE;
 }
 //-----------------------------------------
 //
@@ -261,6 +255,7 @@ int main (int argc, char *argv[])
 	}		
 
 	LCD_Close();
+	free(MBC1_ROM);
 	#endif
 	return 0;
 }

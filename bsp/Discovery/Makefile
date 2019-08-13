@@ -207,7 +207,8 @@ aslist: $(BUILD_DIR)/$(TARGET).elf
 test:
 	 @echo $(OBJECTS)
 
-$(BUILD_DIR)/extbin.eo : ../../../roms/mario.gb #tests/cpu_instrs.gb
+$(BUILD_DIR)/extbin.eo : ../../../roms/mario.gb 
+#$(BUILD_DIR)/extbin.eo : ../../../roms/tests/cpu_instrs.gb
 	$(CP) -I binary -O elf32-littlearm -B arm --rename-section .data=.extbinary $< $@
 	$(DP) -t $@
 #######################################

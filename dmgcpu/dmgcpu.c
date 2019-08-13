@@ -215,11 +215,11 @@ uint8_t memoryRead(uint16_t address)
 			
 		case 0x0A:
 		case 0x0B:
-			return 0xFF; // cartridgeRead(address); // 8kB switchable RAM bank 0xA000 - 0xBFFF
+			return cartridgeRead(address);  // 8kB switchable RAM bank 0xA000 - 0xBFFF
 		
 		case 0x0C:
 		case 0x0D:
-			return iram[address & 0x1FFF]; // 8kB internal ram 0xC000 - 0xDFFF
+			return iram[address & 0x1FFF];  // 8kB internal ram 0xC000 - 0xDFFF
 			
 	//	default: break;
 	}	

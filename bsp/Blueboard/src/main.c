@@ -73,24 +73,6 @@ void fsInit(void)
 //--------------------------------------------------
 //
 //--------------------------------------------------
-int loadRombank(uint8_t bank)
-{
-	bankselect = bank;		// update current bank
-#if defined(USE_FS)
-	WORD n;	
-	//drawNumber(232,0,bankSelect,10);
-	pf_lseek(bank << 14);
-	pf_read(rombank, ROM_SIZE, &n);
-	//DISPLAY_printf("Loaded %u bytes into Rom Bank %u\n",n, bankSelect);
-	//drawChar(232,0,' ');
-#else
-	rombank = cartridge + (bankselect << 14);
-#endif
-	return ROM_SIZE;
-}
-//--------------------------------------------------
-//
-//--------------------------------------------------
 int loadRom(char *fn)
 {
 #if defined(USE_FS)
@@ -106,7 +88,7 @@ int loadRom(char *fn)
 	loadRombank(1);	
 	return n;
 #else
-	rom0 = cartridge;
+	cartridgeInit(cartridge);
 	return ROM_SIZE;
 #endif
 }

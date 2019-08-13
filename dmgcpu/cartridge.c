@@ -7,8 +7,15 @@
 #include "dmgcpu.h"
 #include "debug.h"
 
-uint8_t bankselect;
+static uint8_t bankselect;
+static uint8_t *cartbase;
 
+void cartridgeInit(uint8_t *ptr) {
+	cartbase = ptr;
+	bankselect = 1;
+	rom0 = cartbase;
+	rombank = cartbase + ROM_SIZE;
+}
 /***************************************************
 // MBC1
 ***************************************************/
@@ -40,7 +47,8 @@ void cartridgeWrite(uint16_t address, uint8_t data)
 		case 3: // MBC1 bank select area 2000-3FFF
 			if(data != bankselect)
 			{
-				loadRombank(data);
+				bankselect = data;
+				rombank = cartbase + (bankselect << 14);
 			}
 			break;
 

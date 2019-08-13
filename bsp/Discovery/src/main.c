@@ -17,7 +17,7 @@ int main(void){
     BSP_LCD_SetTextColor(LCD_COLOR_RED);
     BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
 
-    rom0 = cartridge;
+    cartridgeInit(cartridge);
     cgbmu(0);
 }
 
@@ -27,11 +27,4 @@ uint8_t readJoyPad(void)
 uint8_t button = 0;
 
     return button;
-}
-
-int loadRombank(uint8_t bank)
-{
-	bankselect = bank;		// update current bank
-	rombank = cartridge + (bankselect << 14);
-	return ROM_SIZE;
 }
