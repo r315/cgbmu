@@ -2,12 +2,14 @@
 #include "dmgcpu.h"
 #include "alu.h"
 
+#define DST_REG(op) ((op >> 3) & 0x07)
+#define SRC_REG(op) (op & 0x07)
+
 //-----------------------------------------
 //-----------------------------------------
 FAST_CODE
 void decode(void)
 {
-uint8_t src;
 uint8_t dst;
 uint8_t aux;
 uint8_t opcode;
@@ -17,9 +19,6 @@ uint16_t aux16;
 	 opcode = 0; // NOP
     else
      opcode = memoryRead(REG_PC++);
-	
-	src = (opcode & 0x07);	
-	dst = ((opcode >> 3) & 0x07);
 	
 	RESET_CYCLES;
 
@@ -47,7 +46,7 @@ uint16_t aux16;
 		case 0x26:
 		case 0x2E:
 		case 0x3E: // LD A,#		
-			REG_INDEX(dst) = memoryRead(REG_PC++);
+			REG_INDEX(DST_REG(opcode)) = memoryRead(REG_PC++);
 			INC_CYCLES(TWO_CYCLE);
 			break;	
 			
@@ -100,7 +99,7 @@ uint16_t aux16;
         case 0x7C:
         case 0x7D:
 		case 0x7F:		
-            REG_INDEX(dst) = REG_INDEX(src);
+            REG_INDEX(DST_REG(opcode)) = REG_INDEX(SRC_REG(opcode));
             INC_CYCLES(ONE_CYCLE);
             break;
             
@@ -111,7 +110,7 @@ uint16_t aux16;
 		case 0x66:
 		case 0x6E:
 		case 0x7E: // LD A,(HL)			
-			REG_INDEX(dst) = memoryRead(REG_HL);
+			REG_INDEX(DST_REG(opcode)) = memoryRead(REG_HL);
 			INC_CYCLES(TWO_CYCLE);
 			break;			
 			
@@ -122,7 +121,7 @@ uint16_t aux16;
 		case 0x74:
 		case 0x75:
 		case 0x77: // LD (HL),A			
-			memoryWrite(REG_HL, REG_INDEX(src));
+			memoryWrite(REG_HL, REG_INDEX(SRC_REG(opcode)));
 			INC_CYCLES(TWO_CYCLE);
 			break;	
                 
@@ -207,7 +206,8 @@ uint16_t aux16;
 // 16bit loads	
 		case 0x01: // LD n,nn
 		case 0x11:
-		case 0x21:			
+		case 0x21:
+			dst = DST_REG(opcode);
 			REG_INDEX(dst+1) = memoryRead(REG_PC++); // LSB
 		    REG_INDEX(dst)   = memoryRead(REG_PC++); // MSB
 			INC_CYCLES(THREE_CYCLE);
@@ -242,6 +242,7 @@ uint16_t aux16;
 		case 0xC5: // PUSH Rnn
 		case 0xD5:
 		case 0xE5:
+			dst = DST_REG(opcode);
 			memoryWrite(--REG_SP, REG_INDEX(dst));   // MSB
 			memoryWrite(--REG_SP, REG_INDEX(dst+1)); // LSB
 			INC_CYCLES(FOUR_CYCLE);
@@ -256,6 +257,7 @@ uint16_t aux16;
 		case 0xC1: // POP Rnn
 		case 0xD1:
 		case 0xE1:
+			dst = DST_REG(opcode);
 			REG_INDEX(dst+1) = memoryRead(REG_SP++); // LSB
 			REG_INDEX(dst) = memoryRead(REG_SP++); // MSB
 			INC_CYCLES(THREE_CYCLE);
@@ -324,7 +326,7 @@ uint16_t aux16;
 		case 0xBC:
 		case 0xBD:		
 		case 0xBF:	
-			alu(dst, REG_INDEX(src));
+			alu(DST_REG(opcode), REG_INDEX(SRC_REG(opcode)));
 			INC_CYCLES(ONE_CYCLE);
 			break;
 			
@@ -336,7 +338,7 @@ uint16_t aux16;
 		case 0xAE: // XOR (HL)
 		case 0xB6: // OR (HL)
 		case 0xBE: // CP (HL)
-			alu(dst, memoryRead(REG_HL));
+			alu(DST_REG(opcode), memoryRead(REG_HL));
 			INC_CYCLES(TWO_CYCLE);
 			break;		
 		
@@ -348,7 +350,7 @@ uint16_t aux16;
 		case 0xEE: // XOR #
 		case 0xF6: // OR #
 		case 0xFE: // CP #
-			alu(dst,memoryRead(REG_PC++));
+			alu(DST_REG(opcode),memoryRead(REG_PC++));
 			INC_CYCLES(TWO_CYCLE);
 			break;		
 			
@@ -359,7 +361,7 @@ uint16_t aux16;
 		case 0x24:
 		case 0x2C:
 		case 0x3C:
-			inc(REG_ADDR(dst));
+			inc(REG_ADDR(DST_REG(opcode)));
 			INC_CYCLES(ONE_CYCLE);
 			break;	
 			
@@ -381,7 +383,7 @@ uint16_t aux16;
 		case 0x25:
 		case 0x2D:
 		case 0x3D:
-			dec(REG_ADDR(dst));
+			dec(REG_ADDR(DST_REG(opcode)));
 			INC_CYCLES(ONE_CYCLE);
 			break;		 		
 				
