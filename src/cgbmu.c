@@ -4,12 +4,13 @@
 #include <dmgcpu.h>
 #include <debug.h>
 #include <decoder.h>
+#include "liblcd.h"
 
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
 FAST_CODE
-inline void runCpu(uint32_t nTicks) {
+void runCpu(uint32_t nTicks) {
 uint32_t elapsed_cycles = 0;
 	while (nTicks > elapsed_cycles) {
 		timer();
@@ -66,22 +67,25 @@ void runOneFrame(void) {
 }
 
 FAST_CODE
-void cgbmu(uint8_t mode) {
+void cgbmu(void) {
 	uint32_t ticks;
+	uint8_t mode = 0;
 
+	loadRom("mario.gb");
+	
 	initCpu();
 
 	if (mode) {			// instruction loop
-		ticks = GetTicks();
+		ticks = GetTick();
 		while (readJoyPad() != 255) {
 			decode();
 			interrupts();
 			timer();
 			if (video() == ON) {
-				ticks = GetTicks() - ticks;
+				ticks = GetTick() - ticks;
 				if (ticks < FRAME_TIME)
 					DelayMs(FRAME_TIME - ticks);
-				ticks = GetTicks();
+				ticks = GetTick();
 				//DBG_Fps();
 				//DBG_PIN_TOGGLE;
 			}
@@ -89,9 +93,22 @@ void cgbmu(uint8_t mode) {
 	}
 	else {				// frame loop
 		while (readJoyPad() != 255) {
+#if defined(__EMU__)
+		int startTicks = GetTick();
+#endif
+
+
 			runOneFrame();
 			DBG_Fps();
 			DBG_PIN_TOGGLE;
+
+
+#if defined(__EMU__)
+			int delta = GetTick() - startTicks;
+			if (delta < FRAME_TIME) {
+				DelayMs(FRAME_TIME - delta);
+			}
+#endif
 		}
 	}	
 }

@@ -6,8 +6,10 @@
 #include "debug.h"
 #include "dmgcpu.h"
 #include "video.h"
+#include "liblcd.h"
+#include "lib2d.h"
 
-#define FPS_ROW 0
+#define DBG_TEXT_REG_LINE 1
 
 enum {
 	STEP = 1,
@@ -27,12 +29,12 @@ uint8_t readJoyPad(void);
 void disassemble(void);
 
 #if defined(__EMU__)
-void DBG_run(void){	
+void DBG_run(uint32_t flags){	
 uint8_t key;
 uint32_t ticks = 0, dticks;
 uint8_t frame;
 
-	DISPLAY_SetFcolor(YELLOW); 
+	LIB2D_SetFcolor(YELLOW); 
 	DBG_DumpRegisters();
 
 	while((key = readJoyPad()) != 255){		
@@ -60,14 +62,15 @@ uint8_t frame;
 					break;
 			}			
 		}
-#if 0
+#if 1
 		ticks = SDL_GetTicks();
-		runOneFrame();
+		runOneFrame();		
 		dticks = SDL_GetTicks() - ticks;
 		if (dticks < FRAME_TIME && stepping == OFF) {
 			SDL_Delay(FRAME_TIME - dticks);
 		}
 		DBG_Fps();
+		DBG_DumpRegisters();
 #else
 		decode();
 		timer();
@@ -81,7 +84,7 @@ uint8_t frame;
 				SDL_Delay(FRAME_TIME - dticks);
 			}
 			DBG_Fps();
-			//DBG_DumpRegisters();
+			DBG_DumpRegisters();
 			ticks = SDL_GetTicks();
 			frame = OFF;
 		}
@@ -97,13 +100,13 @@ static uint32_t fpsupdatetick = 0;
 static uint16_t fps = 0;
     fps++;
     
-	if(GetTicks() > fpsupdatetick)
+	if(GetTick() > fpsupdatetick)
 	{
 		LCD_Push();
-		DBG_printVal(SCREEN_W + 8,FPS_ROW,"Fps ",fps,10,5);
+		DBG_printVal(DBG_TEXT_POS(0,0), "Fps ",fps,10,5);
 		LCD_Pop();
 		fps = 0;
-		fpsupdatetick = GetTicks() + 1000;
+		fpsupdatetick = GetTick() + 1000;
 	}
 }
 //----------------------------------------------------*/
@@ -121,10 +124,10 @@ unsigned char i=0,c,dig[16];
 	} while(v);
 	
 	for(c=i;c<digitos;c++)
-		x = DISPLAY_Char(x,y,'0');
+		x = LIB2D_Char(x,y,'0');
 	
 	while(i--)
-	x = DISPLAY_Char(x,y,dig[i]);		
+	x = LIB2D_Char(x,y,dig[i]);		
 	return x;		
 }
 //----------------------------------------------------*/
@@ -132,9 +135,9 @@ unsigned char i=0,c,dig[16];
 //------------------------------------------------------
 int DBG_printVal(int x, int y,char *name, int v, char radix, char digitos)
 {	
-	DISPLAY_SetFcolor(RED);
-	//x = DISPLAY_Text(x,y,name);
-	DISPLAY_SetFcolor(YELLOW);
+	LIB2D_SetFcolor(LCD_RED);
+	x = LIB2D_Text(x,y, name);
+	LIB2D_SetFcolor(LCD_YELLOW);
 	x = printInt(x,y,v,radix,digitos);	 
 	return x;
 }
@@ -164,21 +167,21 @@ void DBG_DumpRegisters(void)
 	
 	//setAttribute(g_double);
 //	setFont(BOLD);
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(0),"af: ",REG_A << 8| REG_F ,16,4);
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(1),"bc: ",REG_BC,16,4);
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(2),"de: ",REG_DE,16,4);
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(3),"hl: ",REG_HL,16,4);
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(4),"sp: ",REG_SP,16,4);
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(5),"pc: ",REG_PC,16,4);
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(7),"LCDC: ",IOLCDC,16,2);
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(8),"STAT: ", IOSTAT, 16, 2);
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(9),"ly:   ",IOLY,16,2);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE),"af: ",REG_A << 8| REG_F ,16,4);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 1),"bc: ",REG_BC,16,4);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 2),"de: ",REG_DE,16,4);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 3),"hl: ",REG_HL,16,4);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 4),"sp: ",REG_SP,16,4);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 5),"pc: ",REG_PC,16,4);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 6),"LCDC: ",IOLCDC,16,2);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 7),"STAT: ", IOSTAT, 16, 2);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 8),"ly:   ",IOLY,16,2);
 
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(11),"TIMA: ",IOTIMA,16,2);
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(12),"DIV:  ",IODIV,16,2);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 10),"TIMA: ",IOTIMA,16,2);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 11),"DIV:  ",IODIV,16,2);
 	
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(15),"SCX:  ", IOSCX, 16, 2);
-	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(16),"SCY:  ", IOSCY, 16, 2);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 13),"SCX:  ", IOSCX, 16, 2);
+	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 14),"SCY:  ", IOSCY, 16, 2);
 	
 #endif
 	LCD_Pop();
@@ -194,9 +197,9 @@ unsigned char p = 160;
 	for(i=0;i<siz;i++)
 		printf("0x%.4X = 0x%.2X\n",addr+i,memoryRead(addr+i));	
 #else
-	DISPLAY_SetFcolor(TOMATO);
-	DISPLAY_Text(5*8, p-8, " 0 1 2 3 4 5 6 7 8 9 A C B D E F");
-	DISPLAY_SetFcolor(RED);
+	LIB2D_SetFcolor(LCD_TOMATO);
+	LIB2D_Text(5*8, p-8, " 0 1 2 3 4 5 6 7 8 9 A C B D E F");
+	LIB2D_SetFcolor(LCD_RED);
 	for(i=0; i < (siz>>4); i++)
 	{
 		x = printInt(0,p+(i*8),addr,16,4)+8;
@@ -213,12 +216,12 @@ void printStackFrame(void)
 unsigned short x,_sp;	
 signed char i;
 _sp = regs.SP;
-	DISPLAY_SetFcolor(PINK);
+	LIB2D_SetFcolor(LCD_PINK);
 	
 	for(i=7; i >-1 ; i--)
 	{	
 		x = printInt(0,i*8,_sp,16,4);
-		x = DISPLAY_Char(x,i*8,':');
+		x = LIB2D_Char(x,i*8,':');
 		x = printInt(x,i*8,memoryRead(_sp+1),16,2);
 		x = printInt(x,i*8,memoryRead(_sp),16,2);
 		_sp +=2;	
@@ -271,7 +274,7 @@ void debugCommans(uint8_t *st){
 //------------------------------------------------------
 void DBG_Info(char* text)
 {
-	//DISPLAY_printf(text);
+	//LIB2D_Print(text);
 	//DISPLAY_putc('\n');
 }
 
@@ -322,7 +325,7 @@ void DBG_BGmap(void) {
 
 void DBG_PrintValue(uint8_t line, char *label, uint8_t val) {
 	LCD_Push();
-	DISPLAY_SetFcolor(YELLOW);
+	LIB2D_SetFcolor(LCD_YELLOW);
 	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(line), label, val, 16, 2);
 	LCD_Pop();
 }

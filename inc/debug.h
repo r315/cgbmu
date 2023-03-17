@@ -4,10 +4,17 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define DBG_REG_COL_BASE 175
+#define RUN_FLAG_DEBUG	(1<<0)
+#define RUN_FLAG_TEST	(1<<1)
+#define RUN_FLAG_MODE	(1<<2)
+#define RUN_FLAG_FILE	(1<<3)
+
+#define DBG_REG_COL_BASE 160
 #define DBG_REG_ROW_BASE 12
 #define DBG_REG_COL(x) (DBG_REG_COL_BASE + (x*8))
 #define DBG_REG_ROW(y) (DBG_REG_ROW_BASE + (y*9))
+
+#define DBG_TEXT_POS(_X,_Y) (_X*8 + 168), (_Y*8 + 0)
 
 void DBG_Fps(void);
 void DBG_DumpRegisters(void);
@@ -22,7 +29,7 @@ int DBG_printVal(int x, int y,char *name, int v, char radix, char digitos);
 /**
  * run cpu in debug mode
  * */
-void DBG_run(void);
+void DBG_run(uint32_t flags);
 
 /**
 
