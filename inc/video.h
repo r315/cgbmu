@@ -25,7 +25,7 @@ Tile Data        (LCDC.4) 0:8800-97FF, 1:8000-8FFF
 
   Mode 2  2_____2_____2_____2_____2_____2___________________2____   80
   Mode 3  _33____33____33____33____33____33__________________3___   172
-  Mode 0  ___000___000___000___000___000___000________________000	204
+  Mode 0  ___000___000___000___000___000___000________________000	  204
   Mode 1  ____________________________________11111111111111_____   4560
 
   - A cycle through all modes 2,3,0 takes 456 cycles (one line)
@@ -53,10 +53,6 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 #define SCREEN_H			144
 #define SCREEN_H_TILES		SCREEN_W/8		// Horizontal Tiles
 #define SCREEN_V_TILES		SCREEN_H/8		// Vertical Tiles
-#ifndef SCREEN_OFFSET_X
-#define SCREEN_OFFSET_X		0 //160
-#define SCREEN_OFFSET_Y		0
-#endif
 
 #define V_M0				0
 #define V_M1				1

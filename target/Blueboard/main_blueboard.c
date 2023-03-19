@@ -15,6 +15,27 @@ uint8_t *cartridge = &_binary__________roms_mario_gb_start;
 //extern uint8_t _binary__________roms_tests_cpu_instrs_gb_start;
 //uint8_t *cartridge = &_binary__________roms_tests_cpu_instrs_gb_start;
 #endif
+
+const unsigned short lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
+
+// Dark - light
+// RGB(0,19, 25), RGB(60,127,38), RGB(170, 204, 71), RGB(248, 255, 178)
+//-----------------------------------------
+//
+//-----------------------------------------
+void pushScanLine(uint8_t *scanline){
+    uint8_t *end = scanline + SCREEN_W;
+
+    while(scanline < end){
+		LCD_Data(lcd_pal[*scanline++]);
+    }
+}
+//-----------------------------------------
+//
+//-----------------------------------------
+inline void prepareFrame(void){
+    LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y, SCREEN_W, SCREEN_H);  //3us
+}
 //-----------------------------------------
 //
 //-----------------------------------------
@@ -132,12 +153,14 @@ int main (void){
     
     BOARD_Init();	
 
-    LCD_Rotation(LCD_LANDSCAPE);
+    LCD_SetOrientation(LCD_LANDSCAPE);
     
-    LIB2D_Print("Hello \nClock %uMHz\n", SystemCoreClock/1000000);
+    LIB2D_Print("CPU %uMHz\n", SystemCoreClock/1000000);
 
     DBG_PIN_INIT;
 
+    loadRom("mario.gb");
+    
     cgbmu();
 
     testButtons();

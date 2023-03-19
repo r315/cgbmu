@@ -11,6 +11,16 @@
 
 #define DBG_TEXT_REG_LINE 1
 
+#if defined(__EMU__)	
+	#include "disassembler.h"
+	#define FRAME_TIME 16	
+#else
+	#define REGISTERS_ROW 11
+	#define LCD_Push()
+	#define LCD_Pop()
+#endif
+
+
 enum {
 	STEP = 1,
 	CONTINUE,
@@ -32,9 +42,8 @@ void disassemble(void);
 void DBG_run(uint32_t flags){	
 uint8_t key;
 uint32_t ticks = 0, dticks;
-uint8_t frame;
 
-	LIB2D_SetFcolor(YELLOW); 
+	LIB2D_SetFcolor(LCD_YELLOW); 
 	DBG_DumpRegisters();
 
 	while((key = readJoyPad()) != 255){		
@@ -274,8 +283,7 @@ void debugCommans(uint8_t *st){
 //------------------------------------------------------
 void DBG_Info(char* text)
 {
-	//LIB2D_Print(text);
-	//DISPLAY_putc('\n');
+	LIB2D_Print("%s\n", text);
 }
 
 extern const unsigned short lcd_pal[];
@@ -285,7 +293,7 @@ void DBG_DrawTileLine(uint8_t msb, uint8_t lsb) {
 		color = (msb & 0x80) ? 2 : 0;
 		color |= (lsb & 0x80) ? 1 : 0;
 		color = (IOBGP >> (color << 1));
-		LCD_Data(lcd_pal[color & 3]);
+		//LCD_Data(lcd_pal[color & 3]);
 		msb <<= 1;
 		lsb <<= 1;
 	}
@@ -293,7 +301,7 @@ void DBG_DrawTileLine(uint8_t msb, uint8_t lsb) {
 
 void DBG_DrawTile(uint8_t x, uint8_t y, TileData *td) {
 	uint8_t i;
-	LCD_Window(x * 8, y * 8, 8, 8);
+	//LCD_Window(x * 8, y * 8, 8, 8);
 	for(i = 0; i < 8; i++) {
 		DBG_DrawTileLine(td->line[i].msb, td->line[i].lsb);
 	} 

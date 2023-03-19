@@ -4,17 +4,12 @@
 #include "video.h"
 #include "board.h"
 #include "liblcd.h"
+#include "cgbmu.h"
 
-const unsigned short lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
-
-// Dark - light
-// RGB(0,19, 25), RGB(60,127,38), RGB(170, 204, 71), RGB(248, 255, 178)
 
 uint16_t video_cycles = 0;
-Object *spriteline[MAX_OBJECTS / sizeof(Object)];
-uint8_t bgdataline[40];
+static Object *visible_objs[MAX_LINE_OBJECTS];
 uint8_t scanlinedata[SCREEN_W];		// one line of pixels
-Object *visible_objs[MAX_LINE_OBJECTS];
 
 //-----------------------------------------
 //put one line of Sprite data into scanlinedata
@@ -123,17 +118,20 @@ void scanOAM() {
 	n = 0;
 	m = (IOLCDC & OBJ_SIZE) ? 1 : 0; // 8x16 objs
 
+	memset(visible_objs, 0, sizeof(visible_objs));
+
 	for (int i = 0; i < MAX_OBJECTS; i++, pobj++) {
 		if (pobj->x >= SPRITE_W && pobj->x < SCREEN_W + SPRITE_W) {			
-			if (objline >= pobj->y && objline < (pobj->y + (SPRITE_H << m))) {
+			if (objline >= pobj->y && objline < (pobj->y + (SPRITE_H << m))) {				
 				visible_objs[n] = pobj;
 				n++;
 			}					
-		}		
+		}
 		if (n >= MAX_LINE_OBJECTS)
 			break;
 	}
-	visible_objs[n] = NULL;
+
+	//visible_objs[n] = NULL;
 }
 //-----------------------------------------
 //
@@ -150,7 +148,7 @@ void scanline() {
 	line = (uint8_t)(IOLY + IOSCY);
 	tilemapline += TILE_LINE_INDEX(line);
 
-	memset(scanlinedata, 0, sizeof(scanlinedata));
+	memset(sld, 0, SCREEN_W);
 	blitTileData(tilemapline, sld, IOSCX, line, SCREEN_W);	
 
 	if (IOLCDC & W_DISPLAY && IOLY >= IOWY && IOWX < SCREEN_W + 7) 
@@ -166,10 +164,7 @@ void scanline() {
 	while (visible_objs[pixel] != NULL)
 		blitObjectData(visible_objs[pixel++], scanlinedata);
 
-	sld = scanlinedata;
-	for (pixel = 0; pixel < SCREEN_W; pixel++, sld++) {
-		LCD_Data(lcd_pal[*sld]);
-	}
+	pushScanLine(scanlinedata);
 }
 //-----------------------------------------
 // Clear/set Coincidence flag on STAT
@@ -245,7 +240,7 @@ uint8_t video(void) {
 
 			IOLY = 0;
 			frame = ON;			
-			LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y, SCREEN_W, SCREEN_H);
+			prepareFrame();
 		}
 		break;
 	}

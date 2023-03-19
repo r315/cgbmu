@@ -9,6 +9,7 @@
 #include "debug.h"
 #include "decoder.h"
 #include "tests.h"
+#include "liblcd.h"
 
 
 char filename[100];
@@ -201,7 +202,7 @@ void TEST_main(uint32_t flags) {
 
 	//testRom(ALL_TESTS_ROM);
 	LCD_Window(0, 0, LCD_W, LCD_H);
-	LCD_Fill(LCD_SIZE, RED);
+	LCD_Fill(LCD_SIZE, LCD_RED);
 	
 	TEST_buttons();
 

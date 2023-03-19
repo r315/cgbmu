@@ -5,13 +5,10 @@ http://fms.komkon.org/EMUL8/HOWTO.html
 http://meatfighter.com/gameboy
 
 */
+#include <stdint.h>
 #include "dmgcpu.h"
 #include "video.h"
 #include "cartridge.h"
-
-#if defined(WIN32)
-#pragma warning(disable:4996)
-#endif
 
 // IO Registers
 uint8_t IOP1;   // 0xFF00 P1

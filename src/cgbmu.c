@@ -1,10 +1,9 @@
 #include "board.h"
-#include <cgbmu.h>
-#include <video.h>
-#include <dmgcpu.h>
-#include <debug.h>
-#include <decoder.h>
-#include "liblcd.h"
+#include "cgbmu.h"
+#include "video.h"
+#include "dmgcpu.h"
+#include "debug.h"
+#include "decoder.h"
 
 //----------------------------------------------------*/
 //
@@ -25,7 +24,7 @@ uint32_t elapsed_cycles = 0;
 FAST_CODE
 void runOneFrame(void) {
 
-	LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y, SCREEN_W, SCREEN_H);  //3us
+	prepareFrame();
 
 	IOSTAT &= ~(V_MODE_MASK);
 
@@ -70,8 +69,6 @@ FAST_CODE
 void cgbmu(void) {
 	uint32_t ticks;
 	uint8_t mode = 0;
-
-	loadRom("mario.gb");
 	
 	initCpu();
 
@@ -86,7 +83,7 @@ void cgbmu(void) {
 				if (ticks < FRAME_TIME)
 					DelayMs(FRAME_TIME - ticks);
 				ticks = GetTick();
-				//DBG_Fps();
+				DBG_Fps();
 				//DBG_PIN_TOGGLE;
 			}
 		}
@@ -96,14 +93,11 @@ void cgbmu(void) {
 #if defined(__EMU__)
 		int startTicks = GetTick();
 #endif
-
-
 			runOneFrame();
 			DBG_Fps();
 			DBG_PIN_TOGGLE;
 
-
-#if defined(__EMU__)
+#if defined(__EMU__)			
 			int delta = GetTick() - startTicks;
 			if (delta < FRAME_TIME) {
 				DelayMs(FRAME_TIME - delta);

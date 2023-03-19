@@ -1,17 +1,15 @@
 
-#include <cgbmu.h>
 #include <string.h>
 #include <stdlib.h>
-#include <pthread.h>
+//#include <pthread.h>
 #include "board.h"
+#include "cgbmu.h"
 #include "dmgcpu.h"
 #include "video.h"
 #include "cartridge.h"
 #include "debug.h"
 #include "decoder.h"
 #include "tests.h"
-
-void cgbmu(uint8_t mode);
 
 typedef struct _opt{
 	const char *opt;
@@ -20,6 +18,9 @@ typedef struct _opt{
 	void *ctx;
 	void (*parse)(void *opt);	
 }opt_t;
+
+const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
+static uint16_t tft_line[SCREEN_W];
 
 void optParseFlag(void *opt){
 	*((uint8_t*)(((opt_t*)opt)->ctx)) |= ((opt_t*)opt)->flag;
@@ -157,6 +158,21 @@ void *sdf(void *r){
 	}
 	return NULL;
 }
+
+void prepareFrame(void) {
+
+}
+
+void pushScanLine(uint8_t *scanline) {
+	uint8_t *end = scanline + SCREEN_W;
+	uint8_t pixel = 0;
+
+	while (scanline < end) {
+		tft_line[pixel++] = lcd_pal[*scanline++];
+	}
+
+	LCD_WriteArea(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + IOLY, SCREEN_W, 1, tft_line);
+}
 //-----------------------------------------------------------
 //
 //-----------------------------------------------------------
@@ -219,9 +235,10 @@ opt_t options[] = {
 	}
 
 	LCD_Init();
+	LIB2D_Init();
 
-	pthread_t update;
-	pthread_create(&update,NULL,sdf,NULL);
+	//pthread_t update;
+	//pthread_create(&update,NULL,sdf,NULL);
 	
 	parseOptions(argc, argv, sizeof(options)/sizeof(opt_t), options);	
 
@@ -234,10 +251,9 @@ opt_t options[] = {
 	
 		if(flags & RUN_FLAG_DEBUG){
 			printf("Running in debug mode\n");
-			LCD_SetWidth(256);
 			DBG_run(flags);
 		}else{
-			cgbmu(flags);
+			cgbmu();
 		}
 	}
 	
