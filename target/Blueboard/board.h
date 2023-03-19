@@ -10,15 +10,8 @@
 #include "blueboard.h"
 
 #define DBG_PIN (1<<12)
-#define DBG_PIN_INIT  \
-{                     \
-	LPC_GPIO2->FIODIR |= DBG_PIN; \
-}
-
-#define DBG_PIN_TOGGLE \
-{                      \
-	LPC_GPIO2->FIOPIN ^= DBG_PIN; \
-}
+#define DBG_PIN_INIT  LPC_GPIO2->FIODIR |= DBG_PIN
+#define DBG_PIN_TOGGLE LPC_GPIO2->FIOPIN ^= DBG_PIN
 
 #ifdef USE_FAST_CODE
 #define FAST_CODE __attribute__ ((section(".fastcode")))

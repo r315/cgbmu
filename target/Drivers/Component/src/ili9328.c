@@ -300,7 +300,7 @@ void LCD_Init(void *param){
 	LCD_Command(LCD_DISP_CTRL1);
 	LCD_Data(0x0173);
 	DelayMs(500);
-	LCD_Rotation(LCD_PORTRAIT);
+	LCD_SetOrientation(LCD_PORTRAIT);
 }
 
 uint16_t LCD_GetWidth(void){
@@ -315,7 +315,7 @@ uint32_t LCD_GetSize(void){
     return _width * _height;
 }
 
-void LCD_Rotation(uint8_t m) {
+void LCD_SetOrientation(uint8_t m) {
 
     switch (m) {
         case LCD_PORTRAIT:    

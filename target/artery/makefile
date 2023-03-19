@@ -59,15 +59,15 @@ CSRCS = \
 $(BOARD_SOURCES) \
 $(LIB_PATH)/src/liblcd.c \
 $(LIB_PATH)/src/lib2d.c \
-$(LIB_PATH)/src/libbutton.c \
 $(LIB_PATH)/src/font.c \
-$(EMU_PATH)/src/debug.c \
+$(LIB_PATH)/src/libbutton.c \
 $(EMU_PATH)/src/alu.c \
 $(EMU_PATH)/src/cartridge.c \
 $(EMU_PATH)/src/dmgcpu.c \
 $(EMU_PATH)/src/video.c \
 $(EMU_PATH)/src/decoder.c \
 $(EMU_PATH)/src/cgbmu.c \
+$(EMU_PATH)/src/debug.c \
 
 # ASM sources
 #ASM_SOURCES =startup_at32f415cbt7.s

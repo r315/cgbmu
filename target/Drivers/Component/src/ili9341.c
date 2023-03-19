@@ -35,7 +35,7 @@ static void LCD_Command(uint8_t cmd){
     LCD_CD1;
 }
 
-static void LCD_Data(uint16_t data){
+void LCD_Data(uint16_t data){
     // MSB first
     scratch[0] = data >> 8;
     scratch[1] = data;

@@ -396,7 +396,7 @@ void LCD_Scroll(uint16_t sc){
 /**
  * @brief
  * */
-void LCD_Rotation(uint8_t m) {
+void LCD_SetOrientation(uint8_t m) {
 
 	madd &= ~(MADCTL_MY | MADCTL_MX | MADCTL_MV);
 

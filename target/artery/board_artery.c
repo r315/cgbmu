@@ -3,7 +3,6 @@
 #include "gpio.h"
 #include "libbutton.h"
 #include "liblcd.h"
-#include "lib2d.h"
 
 static spibus_t spibus;
 
@@ -63,8 +62,7 @@ void BOARD_Init(void)
     
     LCD_Init(&spibus);
 
-	LIB2D_Init();
-	LCD_Clear(LCD_RED);
+	LCD_Clear(LCD_BLACK);
 
     LCD_Bkl(ON);
 }

@@ -196,7 +196,7 @@ void LCD_Data(uint16_t data);
 /*
  * @brief muda a orientação do lcd
  */
-void LCD_Rotation(uint8_t m);
+void LCD_SetOrientation(uint8_t m);
 
 /*
  * @brief get display controller id 

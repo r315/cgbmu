@@ -11,8 +11,8 @@ extern "C" {
 #include "at32f4xx.h"
 #include "gpio.h"
 #include "gpio_at32f4xx.h"
-//#include "ili9341.h"
-#include "st7735.h"
+#include "ili9341.h"
+//#include "st7735.h"
 
 #define BOARD_ARTERY
 
@@ -82,11 +82,15 @@ extern "C" {
 #define DBG_PIN_INIT    LED1_PIN_INIT
 #define DBG_PIN_TOGGLE  LED1_TOGGLE
 
+#define USE_FAST_CODE
 #ifdef USE_FAST_CODE
 #define FAST_CODE __attribute__ ((section(".fastcode")))
 #else
 #define FAST_CODE
 #endif
+
+#define SCREEN_OFFSET_X     80
+#define SCREEN_OFFSET_Y     48
 
 enum {false = 0, true, OFF = false, ON = true};
 
