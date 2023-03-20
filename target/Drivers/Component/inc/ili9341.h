@@ -17,10 +17,6 @@
 #define TFT_W 240
 #define TFT_H 320
 
-#define LCD_W       TFT_W
-#define LCD_H       TFT_H
-#define LCD_SIZE    (TFT_W * TFT_H)
-
 #define ILI9341_SWRST    0x01
 #define ILI9341_RDDID    0x04
 #define ILI9341_SLPIN    0x10

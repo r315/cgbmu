@@ -181,6 +181,7 @@ void nextLine(void) {
 //-----------------------------------------
 //
 //-----------------------------------------
+FAST_CODE
 uint8_t video(void) {
 	uint8_t frame = OFF;
 	if (!(IOLCDC & LCD_DISPLAY)) return frame; 	// Lcd controller off	

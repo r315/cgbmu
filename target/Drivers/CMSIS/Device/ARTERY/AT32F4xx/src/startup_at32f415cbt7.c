@@ -5,7 +5,7 @@
 
 #define WEAK    __attribute__((weak))
 #define ISR     __attribute__((section(".isr_vector")))
-#define NORETURN   __attribute__((naked, __noreturn__, aligned(8)))
+#define NORETURN   __attribute__((naked, __noreturn__, aligned(4)))
 
 
 ISR void *vector_table[];
@@ -13,8 +13,7 @@ extern uint32_t _sidata, _sdata, _edata, _sbss, _ebss, _stack, _estack;
 
 WEAK int main(void){}
 
-NORETURN 
-void Reset_Handler(void)
+NORETURN void Reset_Handler(void)
 {
     volatile uint32_t *src, *dest;
 
@@ -58,9 +57,10 @@ void HardFault_Handler(void){
         " mrseq r0, msp                              \n"        // Move msp to r0 ??
         " mrsne r0, psp                              \n"        // Move psp to r0 ??
         " ldr r1, [r0, #24]                          \n"        // Get address were exception happen ?
-        " ldr r2, dumpHandler_address                \n"
-        " bx r2                                      \n"
-        " dumpHandler_address: .word Stack_Dump     \n"
+        " b Stack_Dump                               \n"
+        //" ldr r2, dumpHandler_address                \n"
+        //" bx r2                                      \n"
+        //" dumpHandler_address: .word Stack_Dump     \n"
     );
 }
 

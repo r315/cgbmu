@@ -24,6 +24,11 @@ extern "C" {
 #ifndef _ili9341_h_
 #define TFT_W   128
 #define TFT_H   160
+#define SCREEN_OFFSET_X     0
+#define SCREEN_OFFSET_Y     0
+#else
+#define SCREEN_OFFSET_X     80
+#define SCREEN_OFFSET_Y     48
 #endif
 /**
 * @brief Lcd Pin configuration:
@@ -89,8 +94,7 @@ extern "C" {
 #define FAST_CODE
 #endif
 
-#define SCREEN_OFFSET_X     80
-#define SCREEN_OFFSET_Y     48
+
 
 enum {false = 0, true, OFF = false, ON = true};
 

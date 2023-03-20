@@ -8,17 +8,17 @@
 #include "debug.h"
 
 static uint8_t bankselect;
-static uint8_t *cartbase;
 
-void cartridgeInit(uint8_t *ptr) {
-	cartbase = ptr;
+
+void cartridgeInit(const uint8_t *rom) {
 	bankselect = 1;
-	rom0 = cartbase;
-	rombank = cartbase + ROM_SIZE;
+	rom0 = (uint8_t *)rom;
+	rombank = (uint8_t *)rom + ROM_SIZE;
 }
 /***************************************************
 // MBC1
 ***************************************************/
+FAST_CODE
 uint8_t cartridgeRead(uint16_t address)
 {
 	switch(address >> 14)
@@ -39,6 +39,7 @@ uint8_t cartridgeRead(uint16_t address)
 //----------------------------------------------------
 //
 //----------------------------------------------------
+FAST_CODE
 void cartridgeWrite(uint16_t address, uint8_t data)
 {	
 	switch(address >> 12)
@@ -48,7 +49,7 @@ void cartridgeWrite(uint16_t address, uint8_t data)
 			if(data != bankselect)
 			{
 				bankselect = data;
-				rombank = cartbase + (bankselect << 14);
+				rombank = rom0 + (bankselect << 14);
 			}
 			break;
 

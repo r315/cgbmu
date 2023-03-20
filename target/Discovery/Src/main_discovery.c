@@ -26,7 +26,6 @@ int main(void){
     cgbmu();
 }
 
-FAST_CODE
 uint8_t readJoyPad(void)
 {
 uint8_t button = 0;

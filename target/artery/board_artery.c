@@ -63,6 +63,6 @@ void BOARD_Init(void)
     LCD_Init(&spibus);
 
 	LCD_Clear(LCD_BLACK);
-
-    LCD_Bkl(ON);
+    
+	LCD_Bkl(ON);
 }

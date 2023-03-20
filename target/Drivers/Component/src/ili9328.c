@@ -258,11 +258,11 @@ void LCD_Init(void *param){
 	LCD_Command(START_ADX);
 	LCD_Data(0x0000);
 	LCD_Command(END_ADX);
-	LCD_Data(LCD_W - 1);
+	LCD_Data(TFT_W - 1);
 	LCD_Command(START_ADY);
 	LCD_Data(0x0000);
 	LCD_Command(END_ADY);
-	LCD_Data(LCD_H - 1);
+	LCD_Data(TFT_H - 1);
 
 	LCD_Command(LCD_GATE_SCAN_CTRL1);
 	LCD_Data(VAL_GATE_SCAN);

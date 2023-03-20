@@ -109,6 +109,7 @@ uint8_t irq;
 //-----------------------------------------
 //
 //-----------------------------------------
+FAST_CODE
 void setTimerPrescaler(void){
 	switch(IOTAC & 3)	{
 		case 0: // 4096Hz		

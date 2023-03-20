@@ -131,11 +131,6 @@ extern "C" {
 #define TFT_H 320
 #define TFT_W 240
 
-#define LCD_W TFT_W
-#define LCD_H TFT_H
-
-#define LCD_SIZE (TFT_W*TFT_H)
-
 #define LCD_USE_ID
 
 #if 0//defined(LCD_LANDSCAPE)

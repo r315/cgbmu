@@ -18,5 +18,5 @@
 
 uint8_t cartridgeRead(uint16_t address);
 void cartridgeWrite(uint16_t address, uint8_t data);
-void cartridgeInit(uint8_t *ptr);
+void cartridgeInit(const uint8_t *ptr);
 #endif

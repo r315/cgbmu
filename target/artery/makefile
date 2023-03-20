@@ -3,17 +3,6 @@
 ######################################
 TARGET =gbemu
 
-######################################
-# building variables
-######################################
-ifdef RELEASE
-DEBUG =0
-OPT   =-O2
-else
-DEBUG =1
-OPT   =-O0 -g -gdwarf-2
-endif
-
 #######################################
 # paths
 #######################################
@@ -53,6 +42,7 @@ $(DRIVERS_COSTUM_PATH)/src/spi_at32f4xx.c \
 $(DRIVERS_COSTUM_PATH)/src/dma_at32f4xx.c \
 $(DRIVERS_COSTUM_PATH)/src/gpio_at32f4xx.c \
 $(DRIVERS_COMPONENT_PATH)/src/ili9341.c \
+#$(DRIVERS_COMPONENT_PATH)/src/st7735.c \
 
 
 CSRCS = \
@@ -122,6 +112,15 @@ FLOAT-ABI = #-u_printf_float
 # mcu
 MCU = $(CPU) $(FPU) $(FLOAT-ABI)
 
+ifdef RELEASE
+DEBUG =0
+OPT   =-O2
+else
+DEBUG =1
+OPT   =-Os -g -gdwarf-2 -Wall
+endif
+
+
 ifndef V
 VERBOSE =@
 else
@@ -141,10 +140,10 @@ LDLIBS_PATH =
 # Generate dependency information
 #CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst))
 
-CFLAGS   =$(MCU) $(OPT) $(addprefix -D, $(C_DEFS)) $(addprefix -I, $(C_INCLUDES)) -Wall -fdata-sections -ffunction-sections -std=gnu11
+CFLAGS   =$(MCU) $(OPT) $(addprefix -D, $(C_DEFS)) $(addprefix -I, $(C_INCLUDES)) -fdata-sections -ffunction-sections -std=gnu11
 CPPFLAGS =$(CFLAGS)
 ASFLAGS  =$(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
-LDFLAGS  =$(MCU) $(SPECS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
+LDFLAGS  =$(MCU) $(SPECS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref,--gc-sections
 
 #######################################
 # Rules
@@ -199,10 +198,10 @@ size: $(BUILD_DIR)/$(TARGET).elf
 	$(VERBOSE)$(SZ) -A -x $<
 	$(VERBOSE)$(SZ) -B $<
 
-$(BUILD_DIR)/extbin.o : ../../../roms/mario.gb
-	$(OBJCOPY) -I binary -O elf32-littlearm $(EXTBIN_ARCH) --rename-section .data=.rodata $< $@
+$(BUILD_DIR)/extbin.o : ../../../roms/Tetris.gb
+	$(OBJCOPY) -I binary -O elf32-littlearm --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0  $< $@
 	@$(OBJDUMP) -t $@
-	
+#--rename-section .data=.rodata
 #######################################
 # clean up
 #######################################

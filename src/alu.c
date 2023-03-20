@@ -6,6 +6,7 @@
 // ADD, ADC, SUB, SBC, AND, XOR, OR, CP
 // flags affected Z,0,H,C
 //-----------------------------------------
+FAST_CODE
 void alu(uint8_t op, uint8_t opb)
 {
 uint16_t sum;
@@ -77,6 +78,7 @@ uint8_t opa = REG_A;
 // Details:
 // http://www.emutalk.net/showthread.php?t=41525&page=108
 //-----------------------------------------
+FAST_CODE
 void daa(void)
 {
 uint16_t opa = REG_A;
@@ -112,6 +114,7 @@ uint16_t opa = REG_A;
 // increments 8 bit register
 // flags affected Z,0,H,-
 //-----------------------------------------
+FAST_CODE
 void inc(uint8_t *r)
 {
 	PSW &= ~(FZ | FN | FH);	
@@ -123,6 +126,7 @@ void inc(uint8_t *r)
 // decrements 8 bit register
 // flags affected Z,1,H,-
 //-----------------------------------------
+FAST_CODE
 void dec(uint8_t *r)
 {
 	PSW &= ~(FZ | FH);
@@ -136,6 +140,7 @@ void dec(uint8_t *r)
 // rotate register left
 // flags: Z,0,0,C  b7 to carry  
 //-----------------------------------------
+FAST_CODE
 void rlc(uint8_t *r)
 {
 uint8_t LSb;
@@ -148,6 +153,7 @@ uint8_t LSb;
 // rotate register right
 // flags: Z,0,0,C  b0 to carry   
 //-----------------------------------------
+FAST_CODE
 void rrc(uint8_t *r)
 {
 uint8_t MSb;	
@@ -160,6 +166,7 @@ uint8_t MSb;
 // rotate register left through carry  
 // flags: Z,0,0,C  carry to b0, b7 to carry
 //-----------------------------------------
+FAST_CODE
 void rl(uint8_t *r)
 {
 uint8_t LSb;
@@ -172,6 +179,7 @@ uint8_t LSb;
 // rotate register right through carry   
 // flags: Z,0,0,C  carry to b7, b0 to carry
 //-----------------------------------------
+FAST_CODE
 void rr(uint8_t *r)
 {
 uint8_t MSb;
@@ -184,6 +192,7 @@ uint8_t MSb;
 // shift left into carry, LSb = 0
 // flags: Z,0,0,C  b7 to carry
 //-----------------------------------------
+FAST_CODE
 void sla(uint8_t *r)
 {
 	PSW = (*r & (1<<7)) ? FC : 0;		
@@ -194,6 +203,7 @@ void sla(uint8_t *r)
 // shift right into carry with signal extension
 // flags: Z,0,0,C  b0 to carry
 //-----------------------------------------
+FAST_CODE
 void sra(uint8_t *r)
 {
 	PSW = (*r & (1<<0)) ? FC : 0;
@@ -204,6 +214,7 @@ void sra(uint8_t *r)
 // shift right into carry MSb = 0
 // flags: Z,0,0,C   b0 to carry
 //-----------------------------------------
+FAST_CODE
 void srl(uint8_t *r)
 {
 	PSW = (*r & (1<<0)) ? FC : 0;
@@ -214,6 +225,7 @@ void srl(uint8_t *r)
 // swap nibles
 // fags: Z,0,0,0
 //-----------------------------------------
+FAST_CODE
 void swap(uint8_t *r)
 {
 	PSW = 0;
@@ -224,6 +236,7 @@ void swap(uint8_t *r)
 // bit test
 // flags: Z,0,1,-
 //-----------------------------------------
+FAST_CODE
 void BiT(uint8_t b, uint8_t *r)
 {
 uint8_t aux;
@@ -245,6 +258,7 @@ uint8_t aux;
 // bit reset
 // flags: no flags affected
 //-----------------------------------------
+FAST_CODE
 void res(uint8_t b, uint8_t *r)
 {
 uint8_t aux;
@@ -265,6 +279,7 @@ uint8_t aux;
 // bit set
 // flags: no flags affected
 //-----------------------------------------
+FAST_CODE
 void set(uint8_t b, uint8_t *r)
 {
 uint8_t aux;
@@ -285,6 +300,7 @@ uint8_t aux;
 // add to HL 16bit value
 // flags: -,0,H,C
 //-----------------------------------------
+FAST_CODE
 void addHL(uint16_t v)
 {
 uint32_t aux;
@@ -302,6 +318,7 @@ uint32_t aux;
 //-----------------------------------------
 // get value from stack (ret instruction)
 //-----------------------------------------
+FAST_CODE
 uint16_t pop(void)
 {
 uint16_t v;
@@ -313,6 +330,7 @@ uint16_t v;
 //-----------------------------------------
 // put value to stack (call instruction)
 //-----------------------------------------
+FAST_CODE
 void push(uint16_t v)
 {
 	REG_SP -= 2;
@@ -322,6 +340,7 @@ void push(uint16_t v)
 // increment 16bit reg
 // no flags affected
 //-----------------------------------------
+FAST_CODE
 void inc16(uint16_t *r)
 {
 	(*r)++;
@@ -330,7 +349,7 @@ void inc16(uint16_t *r)
 // decrement 16bit reg
 // no flags affected
 //-----------------------------------------
-
+FAST_CODE
 void dec16(uint16_t *r)
 {
 	(*r)--;

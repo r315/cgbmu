@@ -434,6 +434,8 @@ void LCD_SetOrientation(uint8_t m) {
 		_height = TFT_H;
 	}
 
+	SPI_WaitEOT(spidev);
+
 	LCD_CS0;
 	LCD_Command(ST7735_MADCTL);
 	SPI_Transfer(spidev, &madd, 1);
