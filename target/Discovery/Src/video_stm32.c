@@ -5,43 +5,27 @@
 #include "board.h"
 #include "dmgcpu.h"
 
-#define DOUBLE_SCREEN 1
+#define DOUBLE_SCREEN 0
 
-typedef struct __attribute__((__packed__)){
-    uint8_t b;    
-    uint8_t g;
-    uint8_t r;
-    uint8_t alpha;
-}palette_t;
-
-static DMA2D_HandleTypeDef  hdma2d;
-static uint32_t forground_clut[256];
+#define DMA2D_CR_M2M (0 << 16)
+#define DMA2D_CR_M2M_PFC (1 << 16)
+#define DMA2D_CR_M2M_BLEND (2 << 16)
+#define DMA2D_CR_R2M (3 << 16)
+#define DMA2D_FGPFCCR_SET_ALPHA(a) ((a << 24) | (1 << 16))
+#define DMA2D_FGPFCCR_SET_CS(cs) ((cs) << 8)	// CLUT size
+#define DMA2D_FGPFCCR_SET_CM(cm) ((cm) << 0)  // Input Color mode
+#define DMA2D_OPFCCR_SET_CM(cm) ((cm) << 0)	// Output Color mode
+#define DMA2D_NLR_PLNL(pl, nl) (((pl) << 16) | nl)
 
 uint8_t *screen;
 
-uint8_t palette [256] = {
-230,  // R
-248,  // G
-215,  // B
-138,
-192,
-114,
-55,
-106,
-87,
-10,
-26,
-39
-};
+// 4 * RGB
+uint8_t palette [256] = {230,248,215, 138,192,114, 55,106,87, 10,26,39};
 
 uint16_t video_cycles = 0;
 Object *spriteline[MAX_OBJECTS / sizeof(Object)];
 uint8_t bgdataline[40];
 Object *visible_objs[MAX_LINE_OBJECTS];
-
-uint8_t video(void){
-    return 1;
-}
 
 //-----------------------------------------
 //put one line of Sprite data into scanlinedata
@@ -110,7 +94,6 @@ void blitObjectData(Object *obj, uint8_t *dst) {
 * @param line           the line to put
 * @param size			SCREEN_W for background, WX for window (not implemented yet)
 *---------------------------------------------------------*/
-
 void blitTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint8_t size) {
 	uint8_t tileindex, msb, lsb, color;
 	TileData *td;
@@ -141,7 +124,6 @@ void blitTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8
 //-----------------------------------------
 // read OBJECT Attribute Memory for one line
 //-----------------------------------------
-
 void scanOAM() {
 	uint8_t m, n, objline = IOLY + 16;	// Y position has a offset of 16pixels
 	Object *pobj = (Object*)oam;
@@ -164,7 +146,6 @@ void scanOAM() {
 //-----------------------------------------
 //
 //-----------------------------------------
-
 void scanline() {
 	uint8_t *tilemapline;
 	uint8_t pixel, line;
@@ -192,127 +173,44 @@ void scanline() {
 	pixel = 0;
 	while (visible_objs[pixel] != NULL)
 		blitObjectData(visible_objs[pixel++], scanline);
-
-	//sld = scanlinedata;
-	//for (pixel = 0; pixel < SCREEN_W; pixel++, sld++) {
-	//	LCD_Data(lcd_pal[*sld]);
-	//}
 }
 //-----------------------------------------
 // Clear/set Coincidence flag on STAT
-// activate STAT IF if Coincedence or OAM
+// activate STAT IF if Coincidence or OAM
 //-----------------------------------------
-
 void nextLine(void) {
 	IOLY++;
-	IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & (~LYC_LY_FLAG));	
-	//if ((IOSTAT & LYC_LY_IE) && (IOSTAT & LYC_LY_FLAG))
+	IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & (~LYC_LY_FLAG));
 	if (IOSTAT & LYC_LY_FLAG)
 		IOIF |= LCDC_IF;
 }
-//
-//  LoadPalette
-//
-void LoadPalette(uint32_t *clut)
-{   
-    DMA2D_CLUTCfgTypeDef CLUTCfg;
 
-    hdma2d.Instance = DMA2D;   
-    
-    /*##-1- Configure the DMA2D Mode, Color Mode and output offset #############*/ 
-    hdma2d.Init.Mode          = DMA2D_M2M_PFC;
-    hdma2d.Init.ColorMode     = DMA2D_OUTPUT_ARGB8888;
-#ifdef DOUBLE_SCREEN
-    hdma2d.Init.OutputOffset  = BSP_LCD_GetXSize() - (SCREEN_W<<1);
-#else
-    hdma2d.Init.OutputOffset  = BSP_LCD_GetXSize() - SCREEN_W; // Offset added to the end of each line
-#endif
-    hdma2d.Init.AlphaInverted = DMA2D_REGULAR_ALPHA;  /* No Output Alpha Inversion*/  
-    hdma2d.Init.RedBlueSwap   = DMA2D_RB_REGULAR;     /* No Output Red & Blue swap */  
-
-    /*##-2- DMA2D Callbacks Configuration ######################################*/
-    hdma2d.XferCpltCallback  = NULL;
-
-    /*##-3- Foreground Configuration ###########################################*/
-    hdma2d.LayerCfg[DMA2D_FOREGROUND_LAYER].AlphaMode      = DMA2D_REPLACE_ALPHA;
-    hdma2d.LayerCfg[DMA2D_FOREGROUND_LAYER].InputAlpha     = 0xFF; /* Opaque */
-    hdma2d.LayerCfg[DMA2D_FOREGROUND_LAYER].InputColorMode = DMA2D_INPUT_L8;
-    hdma2d.LayerCfg[DMA2D_FOREGROUND_LAYER].InputOffset    = 0;
-    hdma2d.LayerCfg[DMA2D_FOREGROUND_LAYER].AlphaInverted  = DMA2D_REGULAR_ALPHA; /* No ForeGround Alpha inversion */  
-    hdma2d.LayerCfg[DMA2D_FOREGROUND_LAYER].RedBlueSwap    = DMA2D_RB_REGULAR;    /* No ForeGround Red/Blue swap */ 
-   
-    /* DMA2D Initialization */
-    if(HAL_DMA2D_Init(&hdma2d) == HAL_OK) 
-    {
-        if(HAL_DMA2D_ConfigLayer(&hdma2d, DMA2D_FOREGROUND_LAYER) == HAL_OK) 
-        {
-            /* Load DMA2D Foreground CLUT */
-            CLUTCfg.CLUTColorMode = DMA2D_CCM_ARGB8888;     
-            CLUTCfg.pCLUT = clut;
-            CLUTCfg.Size = 255;
-
-            if(HAL_DMA2D_CLUTLoad(&hdma2d, CLUTCfg, DMA2D_FOREGROUND_LAYER) == HAL_OK){
-                HAL_DMA2D_PollForTransfer(&hdma2d, 100);  
-            }            
-        }
-    }   
-}
 
 void VIDEO_Update(void)
 {
-#ifdef DOUBLE_SCREEN   
-    #define FRAME_OFFSET ( ((400 - SCREEN_W) + ((240 - SCREEN_H) * 800)) * 4)
+	DMA2D->CR |= DMA2D_CR_START;
+    do{
 
-    uint8_t *dfb = malloc(SCREEN_W * SCREEN_H * 4);
-    uint8_t *fb = screen;
-
-    for(int i = 0; i < SCREEN_H<<1; i+=2){
-        for(int j = 0; j < SCREEN_W<<1; j+=2, fb++){
-            uint8_t idx = *fb;
-            dfb[(i*SCREEN_W<<1) + j] = idx;
-            dfb[(i*SCREEN_W<<1) + j + 1] = idx;
-            dfb[((i+1)*SCREEN_W<<1) + j] = idx;
-            dfb[((i+1)*SCREEN_W<<1) + j + 1] = idx;
-        }
-    }
-    //CopyBuffer((uint32_t *)LCD_FB_START_ADDRESS, (uint32_t *)screens[0], 400 - 160, 240 - 100, 320, 200);
-    if (HAL_DMA2D_Start(&hdma2d, (uint32_t)dfb, LCD_FB_START_ADDRESS + FRAME_OFFSET, SCREEN_W<<1, SCREEN_H<<1) == HAL_OK)
-    {
-        /* Polling For DMA transfer */  
-        HAL_DMA2D_PollForTransfer(&hdma2d, 100);               
-    }
-    free(dfb);
-#else
-    #define FRAME_OFFSET ( ((800 - SCREEN_W)/2 + ((480 - SCREEN_H) * 400)) * 4)
-    if (HAL_DMA2D_Start(&hdma2d, (uint32_t)screen, LCD_FB_START_ADDRESS + FRAME_OFFSET, SCREEN_W, SCREEN_H) == HAL_OK)
-    {
-        /* Polling For DMA transfer */  
-        HAL_DMA2D_PollForTransfer(&hdma2d, 0);               
-    }
-#endif
+    }while(DMA2D->CR & DMA2D_CR_START);
 }
 
-//
-// I_SetPalette
-//
-void VIDEO_SetPalette(uint8_t *palette)
+static void LCD_ConfigVideoDma(uint32_t dst, uint32_t src, uint16_t w, uint16_t h, uint32_t bgc)
 {
-  palette_t *pClut = (palette_t*)forground_clut;
-  uint8_t brightness = 50;
+    DMA2D->CR = DMA2D_CR_M2M_PFC;
+    DMA2D->FGMAR = src;
+    DMA2D->FGOR = 0;
+    DMA2D->FGPFCCR = DMA2D_FGPFCCR_SET_ALPHA(0xFF) |        // Replace alpha 
+                     DMA2D_FGPFCCR_SET_CS(256 - 1) |        // CLUT Size
+                     DMA2D_FGPFCCR_SET_CM(DMA2D_INPUT_L8) | // Input color format
+                     DMA2D_FGPFCCR_CCM;                     // RGB CLUT Mode
+    DMA2D->OPFCCR = DMA2D_OPFCCR_SET_CM(DMA2D_OUTPUT_ARGB8888) |
+                    //DMA2D_OPFCCR_RBS |                    // Swap Red Blue
+                    0;
+    DMA2D->OMAR = dst;  									// Absolute start memory of top left
+    DMA2D->OOR = BSP_LCD_GetXSize() - w;                    // Add offset to start of next line
+    DMA2D->NLR = DMA2D_NLR_PLNL(w, h);
 
-    for (uint32_t i = 0; i < 256; ++i, ++pClut)
-    {
-        pClut->r = *palette++;
-        pClut->g = *palette++;
-        pClut->b = *palette++;
-        pClut->alpha = 0xFF;
-
-        pClut->r = (pClut->r + brightness) < 256 ? pClut->r + brightness : 255;
-        pClut->g = (pClut->g + brightness) < 256 ? pClut->g + brightness : 255;
-        pClut->b = (pClut->b + brightness) < 256 ? pClut->b + brightness : 255;
-    }
-    
-    LoadPalette(forground_clut);
+    LTDC->BCCR = bgc;
 }
 
 void VIDEO_Init(void)
@@ -324,20 +222,90 @@ void VIDEO_Init(void)
 
     BSP_LCD_Clear(LCD_COLOR_BLACK);
 
-    BSP_LED_On(LED2);   
-
-    //BSP_LCD_SetFont(&Font16);
-    //BSP_LCD_DisplayStringAtLine(0, "Hello"); 
+    BSP_LED_On(LED2);
 
     screen = (uint8_t *)malloc(SCREEN_W * SCREEN_H);
 
-    VIDEO_SetPalette(palette);
-    //memset(screens[0], 0, 320 * 200);
-    //LCD_LayerInit(0, LCD_FB_START_ADDRESS); 
-    //_CopyBuffer((uint32_t *)LCD_FB_START_ADDRESS, (uint32_t *)screens[0], 400 - 160, 240 - 100, 320, 200);
+    LCD_ConfigVideoDma(LCD_FB_START_ADDRESS + 200 + (200 * BSP_LCD_GetXSize()), (uint32_t)screen, 160, 144, 0);
+
+	uint8_t *pal = palette;
+	for (uint32_t i = 0; i < 256; ++i)
+    {
+        uint8_t r = *pal++;
+        uint8_t g = *pal++;
+        uint8_t b = *pal++;
+
+		((uint32_t*)DMA2D->FGCLUT)[i] = (r << 16) | (g << 8) | (b << 0);		
+    }
 }
 
-void LCD_Window(uint16_t x, uint16_t y, uint16_t w, uint16_t h){
-    VIDEO_Update();
-}
+//-----------------------------------------
+// return true if frame is starting
+//-----------------------------------------
+uint8_t video(void) {
 
+	if (!(IOLCDC & LCD_DISPLAY)) 
+		return false;
+
+	video_cycles += instr_cycles;
+
+	switch (IOSTAT & V_MODE_MASK)
+	{
+	case V_M2: 							// Mode 2 oam access start scanline	
+		if (video_cycles > V_M2_CYCLE)
+		{
+			video_cycles -= V_M2_CYCLE;
+			IOSTAT |= V_M3;				// Next, Mode 3 vram access				
+			scanOAM();
+		}
+		break;
+
+	case V_M3: 							// Mode 3 vram access
+		if (video_cycles > V_M3_CYCLE)
+		{
+			video_cycles -= V_M3_CYCLE;
+			IOSTAT &= ~(V_MODE_MASK);  // Next, Mode 0 H-blank				 
+			if (IOSTAT & HB_IE) 		// LCD STAT & H-Blank IE
+				IOIF |= LCDC_IF;
+			scanline();
+		}
+		break;
+
+	case V_M0: 							// Mode 0 H-Blank
+		if (video_cycles > V_M0_CYCLE) {
+			video_cycles -= V_M0_CYCLE;
+			nextLine();			// Finish processing scanline, go to next one
+			if (IOLY < SCREEN_H) {
+				IOSTAT |= V_M2;     	// Next, Mode 2 searching oam
+				if (IOSTAT & OAM_IE)
+					IOIF |= LCDC_IF;
+			}
+			else {
+				IOSTAT |= V_M1;     	// Next, Mode 1 V-blank
+				IOIF |= V_BLANK_IF;
+				if (IOSTAT & VB_IE)
+					IOIF |= LCDC_IF;
+			}
+		}
+		break;
+
+	case V_M1: 							// Mode 1 V-blank 10 lines
+		if (video_cycles > V_LINE_CYCLE)
+		{
+			video_cycles -= V_LINE_CYCLE;
+			nextLine();
+			if (IOLY < (SCREEN_H + VBLANK_LINES))
+				return false;
+
+			IOSTAT &= ~(V_MODE_MASK); 	// Next, Mode 2 searching oam
+			IOSTAT |= V_M2;
+
+			IOLY = 0;
+			VIDEO_Update();
+			return true;
+		}
+		break;
+	}
+
+	return false;
+}
