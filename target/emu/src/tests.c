@@ -17,6 +17,7 @@ extern const char TEST_bg_map[32 * 32];
 extern const char TEST_tilesData[0x1000];
 extern uint8_t scanlinedata[160];
 
+
 const char f_letter[] = {
 	0x78,0x78,
 	0x40,0x40,
@@ -35,22 +36,6 @@ const char sprites[] = {
 	16 + 8,16,0,(OBJECT_FLAG_XFLIP | OBJECT_FLAG_YFLIP)
 };
 
-void TEST_run(void) {
-	while (readJoyPad() != 255) {
-		interrupts();
-		decode();
-		timer();
-		video();
-	}
-}
-
-void testRom(char *fn) {
-	//strcpy(filename, ROMS_BINARY_PATH);
-	//strcat(filename, fn);
-	//loadRom(filename);
-	loadRom(fn);
-	TEST_run();
-}
 
 void TEST_buttons(void) {
 	char *name, scanned;
@@ -58,7 +43,7 @@ void TEST_buttons(void) {
 	LIB2D_Text(0, 0, "Testing Buttons");
 	printf("Buttons Test\n");
 	
-	while (readJoyPad() != 255) {
+	while (readButtons() != 255) {
 		name = "";
 
 		IOP1 = IOP14;
@@ -151,7 +136,7 @@ void TEST_BGmap(void) {
 			scanline();
 		}
 
-		switch (readJoyPad()) {
+		switch (readButtons()) {
 			case 255: return;
 			case J_UP: IOSCY--; DBG_DumpRegisters(); break;
 			case J_DOWN: IOSCY++; DBG_DumpRegisters(); break;
@@ -186,7 +171,7 @@ void TEST_Sprites(char flags) {
 			scanline();
 		}
 
-		switch (readJoyPad()) {
+		switch (readButtons()) {
 			case 255: return;
 			case J_UP: sp->y--; DBG_PrintValue(0,"sp.y ", sp->y); break;
 			case J_DOWN: sp->y++; DBG_PrintValue(0,"sp.y ", sp->y); break;
@@ -198,14 +183,10 @@ void TEST_Sprites(char flags) {
 }
 
 
-void TEST_main(uint32_t flags) {
-
-	//testRom(ALL_TESTS_ROM);
+void TEST_main(void) {
 	LCD_Window(0, 0, LCD_W, LCD_H);
 	LCD_Fill(LCD_SIZE, LCD_RED);
-	
 	TEST_buttons();
-
 	//TEST_dumpSpriteDataLine();
 	//TEST_dumpBgDataLine();
 	//testButtons();

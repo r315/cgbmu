@@ -8,11 +8,8 @@
 
 #define UPDATE_TIME 30 //30ms => 33fps
 
-#define WINDOW_W LCD_W * 2
-#define WINDOW_H LCD_H * 2
-
-#define LCD_OFFSETX 0 
-#define LCD_OFFSETY 0
+#define WINDOW_W	LCD_W
+#define WINDOW_H	LCD_H
 
 typedef struct _Wnd{
 	SDL_Window *window;
@@ -29,7 +26,7 @@ typedef struct _Wnd{
     uint32_t auto_update;
 }Lcd;
 
-static Lcd lcd, blcd;
+static Lcd lcd;
 
 void LCD_Scroll(uint16_t y){}
 void LCD_Bkl(uint8_t state){}
@@ -81,6 +78,7 @@ SDL_Window *Window_Init(Lcd *plcd){
   
     SDL_AddTimer(UPDATE_TIME, LCD_Auto_Update, plcd);
 
+	SDL_SetWindowPosition(plcd->window, 20, 50);
     return plcd->window;
 }
 
@@ -185,13 +183,6 @@ uint16_t LCD_GetWidth(void){
 }
 uint16_t LCD_GetHeight(void){
     return lcd.h;
-}
-
-void LCD_Push(void){
-    memcpy(&blcd, &lcd, sizeof(Lcd));
-}
-void LCD_Pop(void){
-    memcpy(&lcd, &blcd, sizeof(Lcd));
 }
 
 void LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {

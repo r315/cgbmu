@@ -5,12 +5,16 @@
 uint32_t clockcounter = 0;
 char rname[] = {"bcdehlfa"};
 
+void disassembleHeader(void) {
+	printf("\n\t\tInstruction\t\tcycles\n");
+}
+
 void disassemble(void){
 uint8_t src;
 uint8_t dst;
 uint8_t opcode;
 
-    clockcounter += cycles;
+    clockcounter += instr_cycles;
     printf("PC: %04X\t", REG_PC);
 
     opcode = memoryRead(REG_PC);	
@@ -255,7 +259,7 @@ uint8_t opcode;
         case 0xB6: // OR (HL)
             printf("or a,(hl)\t"); break;
 		case 0xBE: // CP (HL)
-            printf("cp (hl)\t"); break;
+            printf("cp (hl)\t\t"); break;
             		
         case 0xC6: // ADD A,#
             printf("add a,%02x\t", memoryRead(REG_PC+1)); break;
@@ -281,7 +285,7 @@ uint8_t opcode;
 		case 0x24:
 		case 0x2C:
 		case 0x3C:
-			printf("inc %c\t", rname[dst]); break;			
+			printf("inc %c\t\t", rname[dst]); break;			
 		case 0x05: // DEC rn
 		case 0x0D:
 		case 0x15:
@@ -289,7 +293,7 @@ uint8_t opcode;
 		case 0x25:
 		case 0x2D:
 		case 0x3D:
-            printf("dec %c\t", rname[dst]); break;	
+            printf("dec %c\t\t", rname[dst]); break;	
             	
         case 0x34: // INC (HL)
             printf("inc (hl)\t"); break;	
@@ -366,7 +370,7 @@ uint8_t opcode;
             printf("rst %02x\t", opcode & 0x38); break;
 
 // Returns	
-		case 0xD9: printf("reti\t"); break;			
+		case 0xD9: printf("reti\t\t"); break;			
 		case 0xC9: printf("ret\t\t"); break;			
 		case 0xC0: printf("ret nz\t"); break;	
 		case 0xC8: printf("ret z\t"); break;			
@@ -408,7 +412,7 @@ uint8_t opcode;
                 case 0x14:
                 case 0x15:
                 case 0x17:
-                    printf("rl %c\t", rname[src]); break;		
+                    printf("rl %c\t\t", rname[src]); break;		
                 case 0x16: printf("rl (hl)\t"); break;
                 
                 case 0x18: // RR Rn
@@ -418,7 +422,7 @@ uint8_t opcode;
                 case 0x1C:
                 case 0x1D:
                 case 0x1F:
-                    printf("rr %c\t", rname[src]); break;		
+                    printf("rr %c\t\t", rname[src]); break;		
                 case 0x1E: printf("rr (hl)\t"); break;
                     
                 case 0x20: // SLA Rn

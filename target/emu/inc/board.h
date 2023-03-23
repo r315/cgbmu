@@ -12,7 +12,7 @@
 	#include <SDL.h>
 #endif
 
-#define LCD_W		160
+#define LCD_W		320
 #define LCD_H		144
 #define LCD_SIZE    (LCD_W * LCD_H)
 
@@ -22,10 +22,10 @@
 #define GetTick SDL_GetTicks
 #define DelayMs	SDL_Delay
 
-#define SCREEN_OFFSET_X		80
-#define SCREEN_OFFSET_Y		48
+#define SCREEN_OFFSET_X		0
+#define SCREEN_OFFSET_Y		0
 
-enum { OFF = 0, ON };
+enum { OFF = 0, ON, false = OFF, true = ON };
 
 enum {
 	LCD_PORTRAIT = 0,
@@ -38,6 +38,4 @@ void LCD_Close(void);
 void LCD_Init(void);
 void LCD_Update(void);
 void LCD_Data(uint16_t color);
-void LCD_Push(void);
-void LCD_Pop(void);
 #endif

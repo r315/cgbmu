@@ -11,6 +11,7 @@
 #include "decoder.h"
 #include "tests.h"
 
+
 typedef struct _opt{
 	const char *opt;
 	char *optv;
@@ -19,8 +20,26 @@ typedef struct _opt{
 	void (*parse)(void *opt);	
 }opt_t;
 
+const char *test_roms[] = {
+	"cpu_instrs.gb",
+	"01-special.gb",
+	"02-interrupts.gb",
+	"03-op sp,hl.gb",
+	"04-op r,imm.gb",
+	"05-op rp.gb",
+	"06-ld r,r.gb",
+	"07-jr,jp,call,ret,rst.gb",
+	"08-misc instrs.gb",
+	"09-op r,r.gb",
+	"10-bit ops.gb",
+	"11-op a,(hl).gb",
+	"instr_timing.gb",	// https://github.com/retrio/gb-test-roms/tree/master/instr_timing
+	"interrupt_time.gb"
+};
+
 const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
 static uint16_t tft_line[SCREEN_W];
+static uint8_t *MBC1_ROM = NULL;
 
 void optParseFlag(void *opt){
 	*((uint8_t*)(((opt_t*)opt)->ctx)) |= ((opt_t*)opt)->flag;
@@ -55,9 +74,10 @@ void parseOptions(int argc, char **argv, int optc, opt_t *options) {
 #include <unistd.h>
 #endif
 
-static uint8_t *MBC1_ROM;
+
 
 #define LOG_TAG "MAIN"
+static const char *card_types[] = { "ROM", "MBC1", "MBC1 + RAM" };
 
 int loadRom(char *file)
 {
@@ -66,16 +86,16 @@ int loadRom(char *file)
 	int n;
 
 	if (getcwd(cwd, sizeof(cwd)))
-		fprintf(stdout, "Current working dir: %s\n", cwd);
+		printf("Current working dir: %s\n", cwd);
 	else
 		perror("getcwd() error");
 
 	if (file == NULL) {
-		fprintf(stdout, "%s: No rom file\n", __func__);
+		printf("No rom file\n");
 		return 0;
 	}
 
-	fprintf(stdout, "%s: Loading File \"%s\"\n", LOG_TAG, file);
+	printf("%s: Loading File \"%s\"\n", LOG_TAG, file);
 	fp = fopen(file, "rb");
 
 	if (fp == NULL)
@@ -94,21 +114,24 @@ int loadRom(char *file)
 
 	n = fread(MBC1_ROM, 1, sz, fp);
 
-	if (MBC1_ROM[CARTRIDGE_TYPE_OFFSET] > CARTRIDGE_MBC1) {
-		printf("################### ONLY CARTRIDGE MBC1 SUPPORTED ################\n%u\n", MBC1_ROM[CARTRIDGE_TYPE_OFFSET]);
-		n = 0;
+	uint8_t card_type = MBC1_ROM[CARTRIDGE_TYPE_OFFSET];
+
+	printf("Card type: %s\n", card_types[card_type]);
+
+	if (card_type > CARTRIDGE_MBC1) {
+		printf("Warning ONLY CARTRIDGE MBC1 SUPPORTED \n");
+	
 	}
-	else {		
-		printf("Rom size %uKbit\n", MBC1_ROM[CARTRIDGE_TYPE_OFFSET] * 256);
-		cartridgeInit(MBC1_ROM);
-	}
+
+	printf("Rom size %uKbit\n", MBC1_ROM[CARTRIDGE_TYPE_OFFSET] * 256);
+	cartridgeInit(MBC1_ROM);	
 	fclose(fp);
 	return n;
 }
 //-----------------------------------------
 //
 //-----------------------------------------
-uint8_t readJoyPad(void)
+uint8_t readButtons(void)
 {
 static uint8_t button = 0;	
 SDL_Event ev;
@@ -159,10 +182,6 @@ void *sdf(void *r){
 	return NULL;
 }
 
-void prepareFrame(void) {
-
-}
-
 void pushScanLine(uint8_t *scanline) {
 	uint8_t *end = scanline + SCREEN_W;
 	uint8_t pixel = 0;
@@ -183,49 +202,43 @@ printf("Available options:\n\n"
 				"\t -t   tests\n"
 				"\t -i   Instruction mode loop");
 }
+
+int loadTestRom(uint8_t nr) {
+	char *path = malloc(128);
+
+	strcpy(path, ROM_PATH); // Defined on project properties
+
+	int len = strlen(path);
+	*(path + len) = '\\';
+	strcpy(path + len + 1, test_roms[nr]);
+	
+	return loadRom(path);
+}
+
+
+void dry_run(void) {
+	initCpu();
+	while (readButtons() != 255) {
+#if 1
+		// slow path
+		DBG_SingleStep();
+#else
+		runOneFrame();
+#endif
+	}
+}
 //-----------------------------------------------------------
 //instructions test
 //-----------------------------------------------------------
 int main (int argc, char *argv[])
 {
-	#if defined(__ESP03__)	
-
-	#define HSPI_DIVIDER 1
-	
-	int i = 0;
-	nosdk8266_init();
-
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U,FUNC_GPIO2);
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U,FUNC_GPIO5);
-
-	Cache_Read_Disable();	
-	Cache_Read_Enable(0,0,1);	
-
-    HSPI_Init(HSPI_DIVIDER, HSPI_MODE_TX);
-	LCD_Init();
-	LCD_Clear(RED);
-	LCD_Bkl(ON);
-
-	LCD_Rect(0,0,120,120,BLUE);
-
-	GPIO_OUTPUT_SET(0,0);
-
-	float val = 3.141592;
-	LIB2D_Print("Float Test\nPI: %f\n", val);
-
-	LCD_Rotation(LCD_LANDSCAPE);
-
-	initCpu();
-	
-
-	#else
-char *romfile;
+char *romfile = NULL;
 uint8_t flags = 0;
 opt_t options[] = {
 	{"-d", NULL, RUN_FLAG_DEBUG, &flags, optParseFlag},
 	{"-t", NULL, RUN_FLAG_TEST, &flags, optParseFlag},
 	{"-r", NULL, RUN_FLAG_FILE, &romfile,optParseStr},
-	{"-i", NULL, RUN_FLAG_MODE, &flags, optParseFlag}
+	//{"-i", NULL, RUN_FLAG_MODE, &instrs_test_rom_path, optParseStr}
 };
 	
 	if(argc == 1) // no arguments
@@ -236,41 +249,31 @@ opt_t options[] = {
 
 	LCD_Init();
 	LIB2D_Init();
-
-	//pthread_t update;
-	//pthread_create(&update,NULL,sdf,NULL);
 	
-	parseOptions(argc, argv, sizeof(options)/sizeof(opt_t), options);	
+	parseOptions(argc, argv, sizeof(options)/sizeof(opt_t), options);
 
-	if (!loadRom(romfile)) {
-		//if(flags & RUN_FLAG_TEST){
-			//testAll();
-			TEST_main(flags);
-		//}
-	}else{
+#if 0
+	if (loadRom(romfile) > 0) {
+#else
+	if(loadTestRom(12) > 0){
+#endif
+		//dry_run();		// Generic run
+
+		DBG_run();		// Run loaded rom in debug mode
 	
-		if(flags & RUN_FLAG_DEBUG){
-			printf("Running in debug mode\n");
-			DBG_run(flags);
-		}else{
-			cgbmu();
-		}
+		//cgbmu(MBC1_ROM);  // Run emulator in normal mode
+	
 	}
-	
-	/*
-	 if ((flags & FLAG_DEBUG)) {
+	else {
+		LIB2D_Text(0, 4, "Fail to load rom");
+		SDL_Delay(5000);
+	}
 
-	}else if ((flags & FLAG_MODE)) {
-		printf("Instruction mode\n");
-		cgbmu(1);
-	}else {
-		printf("Frame loop mode\n");
-		cgbmu(0);
-	}		
-*/
 	LCD_Close();
-	free(MBC1_ROM);
-	#endif
+
+	if(MBC1_ROM)
+		free(MBC1_ROM);
+
 	return 0;
 }
 
