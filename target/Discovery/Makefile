@@ -161,7 +161,8 @@ LIBDIR =
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,--gc-sections
 
 # default action: build all
-all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
+all: $(BUILD_DIR)/$(TARGET).elf 
+#$(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
 
 program: all
 	openocd -f startup/STM32F769-DISCO.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
@@ -173,13 +174,13 @@ test:
 
 $(BUILD_DIR)/extbin.o : ../../../roms/mario.gb 
 #$(BUILD_DIR)/extbin.o : ../../../roms/tests/cpu_instrs.gb
-	$(CP) -I binary -O elf32-littlearm -B arm --rename-section .data=.extbinary $< $@
+	$(CP) -I binary -O elf32-littlearm -B arm --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0 $< $@
 	$(DP) -t $@
 #######################################
 # build the application
 #######################################
 # list of objects
-OBJECTS = $(addprefix $(BUILD_DIR)/, $(notdir $(C_SOURCES:.c=.o)))
+OBJECTS = $(addprefix $(BUILD_DIR)/, $(notdir $(C_SOURCES:.c=.o))) $(BUILD_DIR)/extbin.o
 vpath %.c $(sort $(dir $(C_SOURCES)))
 # list of ASM program objects
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
@@ -193,8 +194,8 @@ $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
 	@echo "Assemble " $<
 	@$(AS) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile $(BUILD_DIR)/extbin.o
-	@$(CC) $(OBJECTS) $(BUILD_DIR)/extbin.o $(LDFLAGS) -o $@
+$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile 
+	@$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	@$(SZ) $@ -A
 
 $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)

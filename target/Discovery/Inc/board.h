@@ -12,9 +12,6 @@ extern "C" {
 #include "video_stm32.h"
 //#include <display.h>
 
-#define ON 1
-#define OFF 0
-
 #define DBG_PIN_TOGGLE
 
 #ifdef USE_FAST_CODE
@@ -26,6 +23,8 @@ extern "C" {
 #define DelayMs HAL_Delay
 #define GetTick HAL_GetTick
 
+enum {false = 0, true, OFF = false, ON = true};
+
 static inline uint16_t __DISPLAY_Char(uint16_t x, uint16_t y, uint8_t c){
 	BSP_LCD_DisplayChar(x,y,c);
 	return x + 14;
@@ -36,6 +35,8 @@ static inline uint16_t __DISPLAY_Char(uint16_t x, uint16_t y, uint8_t c){
 static inline uint16_t LIB2D_Text(uint16_t x, uint16_t y, char *text) {
 	return BSP_LCD_DisplayStringAt(x, y, (uint8_t*)text, LEFT_MODE);
 }
+
+#define LIB2D_Print 
 
 void BOARD_Init(void);
 void LCD_Window(uint16_t x, uint16_t y, uint16_t w, uint16_t h);

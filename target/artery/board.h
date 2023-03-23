@@ -87,15 +87,6 @@ extern "C" {
 #define DBG_PIN_INIT    LED1_PIN_INIT
 #define DBG_PIN_TOGGLE  LED1_TOGGLE
 
-#define USE_FAST_CODE
-#ifdef USE_FAST_CODE
-#define FAST_CODE __attribute__ ((section(".fastcode")))
-#else
-#define FAST_CODE
-#endif
-
-
-
 enum {false = 0, true, OFF = false, ON = true};
 
 void BOARD_Init(void);

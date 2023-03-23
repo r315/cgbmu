@@ -10,8 +10,8 @@
 
 
 #if !defined(USE_FS)
-#define CARTRIDGE_NAME _binary_rom_start
-extern const uint8_t CARTRIDGE_NAME;
+extern uint8_t _binary_rom_start;
+static const uint8_t *cartridge = &_binary_rom_start;
 #endif
 
 
@@ -32,17 +32,15 @@ void pushScanLine(uint8_t *scanline){
     LCD_WriteArea(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + IOLY, SCREEN_W, 1, tft_line);
 }
 
-void prepareFrame(void){
-   
-}
-
 int loadRom(char *fn)
 {
-    cartridgeInit(&CARTRIDGE_NAME);
-    return ROM_SIZE;
+    //load from SD Card here
+    //cartridgeInit(&CARTRIDGE_NAME);
+    //return ROM_SIZE;
+    return 0;
 }
 
-uint8_t readJoyPad(void)
+uint8_t readButtons(void)
 {
     uint8_t button = 0;
     //int	keys = ~LPC_GPIO1->FIOPIN & BUTTON_MASK;
@@ -66,9 +64,7 @@ int main(void)
     LIB2D_Init();
     LIB2D_Print("CPU %uMHz\n", SystemCoreClock/1000000);
     
-    loadRom(NULL);
-    
-    cgbmu();
+    cgbmu(cartridge);
     
     while (1)
     {

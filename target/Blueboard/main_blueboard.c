@@ -9,11 +9,8 @@
 #include "lib2d.h"
 
 #if !defined(USE_FS)
-//https://balau82.wordpress.com/2012/02/19/linking-a-binary-blob-with-gcc
-extern uint8_t _binary__________roms_mario_gb_start;
-uint8_t *cartridge = &_binary__________roms_mario_gb_start;
-//extern uint8_t _binary__________roms_tests_cpu_instrs_gb_start;
-//uint8_t *cartridge = &_binary__________roms_tests_cpu_instrs_gb_start;
+extern uint8_t _binary_rom_start;
+uint8_t *cartridge = &_binary_rom_start;
 #endif
 
 const unsigned short lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
@@ -25,21 +22,16 @@ const unsigned short lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
 //-----------------------------------------
 void pushScanLine(uint8_t *scanline){
     uint8_t *end = scanline + SCREEN_W;
-
+    LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + IOLY, SCREEN_W, 1);
     while(scanline < end){
 		LCD_Data(lcd_pal[*scanline++]);
     }
 }
+
 //-----------------------------------------
 //
 //-----------------------------------------
-inline void prepareFrame(void){
-    LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y, SCREEN_W, SCREEN_H);  //3us
-}
-//-----------------------------------------
-//
-//-----------------------------------------
-uint8_t readJoyPad(void)
+uint8_t readButtons(void)
 {
 uint8_t button = 0;
 int	keys = ~LPC_GPIO1->FIOPIN & BUTTON_MASK;
@@ -109,8 +101,9 @@ int loadRom(char *fn)
     loadRombank(1);	
     return n;
 #else
-    cartridgeInit(cartridge);
-    return ROM_SIZE;
+    //cartridgeInit(cartridge);
+    //return ROM_SIZE;
+    return 0;
 #endif
 }
 //--------------------------------------------------
@@ -120,7 +113,7 @@ int loadRom(char *fn)
 void testButtons(void) {
     char *b, t;
     //printf("Buttons Test\n");
-    while (readJoyPad() != 255) {
+    while (readButtons() != 255) {
         b = "";
         IOP1 = IOP14;
         t = joyPad() & 0x0f;
@@ -160,7 +153,7 @@ int main (void){
 
     loadRom("mario.gb");
     
-    cgbmu();
+    cgbmu(cartridge);
 
     testButtons();
     

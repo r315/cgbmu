@@ -106,7 +106,7 @@ $(TARGET).bin: $(TARGET).elf
 
 #https://balau82.wordpress.com/2012/02/19/linking-a-binary-blob-with-gcc
 $(BUILD_DIR)/extbin.o : ../../../roms/mario.gb #tests/cpu_instrs.gb
-	$(OBJCOPY) -I binary -O elf32-littlearm $(EXTBIN_ARCH) --rename-section .data=.extbinary $< $@
+	$(OBJCOPY) -I binary -O elf32-littlearm $(EXTBIN_ARCH) --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0 $< $@
 	@$(OBJDUMP) -t $@
 	
 $(CHECKSUM):

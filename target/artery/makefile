@@ -152,6 +152,8 @@ LDFLAGS  =$(MCU) $(SPECS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref,--gc-sectio
 all: $(BUILD_DIR)/$(TARGET).elf size
 #$(BUILD_DIR)/$(TARGET).bin 
 
+bin: $(BUILD_DIR)/$(TARGET).bin
+
 program: $(BUILD_DIR)/$(TARGET).elf
 	openocd -f $(OCD_CONFIG) -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
 
@@ -198,7 +200,9 @@ size: $(BUILD_DIR)/$(TARGET).elf
 	$(VERBOSE)$(SZ) -A -x $<
 	$(VERBOSE)$(SZ) -B $<
 
-$(BUILD_DIR)/extbin.o : ../../../roms/Tetris.gb
+#ROM =tests/cpu_instrs.gb
+ROM =mario.gb
+$(BUILD_DIR)/extbin.o : ../../../roms/$(ROM)
 	$(OBJCOPY) -I binary -O elf32-littlearm --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0  $< $@
 	@$(OBJDUMP) -t $@
 #--rename-section .data=.rodata
