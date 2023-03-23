@@ -117,8 +117,6 @@ typedef struct _Tile {
 	}line[8];
 }TileData;
 
-extern uint16_t video_cycles;
-
 uint8_t video(void);
 void nextLine(void);
 void scanline(void);

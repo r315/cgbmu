@@ -90,7 +90,7 @@ $(REPOSITORY_DIR)/Middlewares/Third_Party/FatFs/src \
 $(EMU_PATH)/inc
 
 CGBEMU_SOURCES = \
-$(EMU_PATH)/src/alu.c \
+$(EMU_PATH)/src/instrs.c \
 $(EMU_PATH)/src/cartridge.c \
 $(EMU_PATH)/src/dmgcpu.c \
 $(EMU_PATH)/src/decoder.c \

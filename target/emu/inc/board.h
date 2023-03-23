@@ -16,7 +16,6 @@
 #define LCD_H		144
 #define LCD_SIZE    (LCD_W * LCD_H)
 
-#define FAST_CODE
 #define DBG_PIN_TOGGLE
 
 #define GetTick SDL_GetTicks

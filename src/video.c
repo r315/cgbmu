@@ -7,14 +7,13 @@
 #include "cgbmu.h"
 
 
-uint16_t video_cycles = 0;
+static uint16_t video_cycles = 0;
 static Object *visible_objs[MAX_LINE_OBJECTS];
 uint8_t scanlinedata[SCREEN_W];		// one line of pixels
 
 //-----------------------------------------
 //put one line of Sprite data into scanlinedata
 //-----------------------------------------
-FAST_CODE
 void blitObjectData(Object *obj, uint8_t *dst) {
 	uint8_t npixels, color, objline;
 	uint8_t pal = (obj->flags & OBJECT_FLAG_PAL) ? IOOBP1 : IOOBP0;
@@ -79,7 +78,6 @@ void blitObjectData(Object *obj, uint8_t *dst) {
 * @param line           the line to put
 * @param size			SCREEN_W for background, WX for window (not implemented yet)
 *---------------------------------------------------------*/
-FAST_CODE
 void blitTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint8_t size) {
 	uint8_t tileindex, msb, lsb, color;
 	TileData *td;
@@ -110,7 +108,6 @@ void blitTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8
 //-----------------------------------------
 // read OBJECT Attribute Memory for one line
 //-----------------------------------------
-FAST_CODE
 void scanOAM() {
 	uint8_t m, n, objline = IOLY + 16;	// Y position has a offset of 16pixels
 	Object *pobj = (Object*)oam;
@@ -136,7 +133,6 @@ void scanOAM() {
 //-----------------------------------------
 //
 //-----------------------------------------
-FAST_CODE
 void scanline() {
 	uint8_t *tilemapline;
 	uint8_t pixel, line;
@@ -170,7 +166,6 @@ void scanline() {
 // Clear/set Coincidence flag on STAT
 // activate STAT IF if Coincedence or OAM
 //-----------------------------------------
-FAST_CODE
 void nextLine(void) {
 	IOLY++;
 	IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & (~LYC_LY_FLAG));	
@@ -179,14 +174,14 @@ void nextLine(void) {
 		IOIF |= LCDC_IF;
 }
 //-----------------------------------------
-//
+// return true if frame is starting
 //-----------------------------------------
-FAST_CODE
 uint8_t video(void) {
-	uint8_t frame = OFF;
-	if (!(IOLCDC & LCD_DISPLAY)) return frame; 	// Lcd controller off	
 
-	video_cycles += CYCLES_COUNT;
+	if (!(IOLCDC & LCD_DISPLAY)) 
+		return false;
+
+	video_cycles += instr_cycles;
 
 	switch (IOSTAT & V_MODE_MASK)
 	{
@@ -234,16 +229,16 @@ uint8_t video(void) {
 			video_cycles -= V_LINE_CYCLE;
 			nextLine();
 			if (IOLY < (SCREEN_H + VBLANK_LINES))
-				return frame;
+				return false;
 
 			IOSTAT &= ~(V_MODE_MASK); 	// Next, Mode 2 searching oam
 			IOSTAT |= V_M2;
 
 			IOLY = 0;
-			frame = ON;			
-			prepareFrame();
+			return true;
 		}
 		break;
 	}
-	return frame;
+
+	return false;
 }

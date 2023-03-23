@@ -14,12 +14,6 @@ extern "C" {
 
 #define DBG_PIN_TOGGLE
 
-#ifdef USE_FAST_CODE
-#define FAST_CODE __attribute__ ((section(".fastcode")))
-#else
-#define FAST_CODE
-#endif
-
 #define DelayMs HAL_Delay
 #define GetTick HAL_GetTick
 

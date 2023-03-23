@@ -51,7 +51,7 @@ $(LIB_PATH)/src/liblcd.c \
 $(LIB_PATH)/src/lib2d.c \
 $(LIB_PATH)/src/font.c \
 $(LIB_PATH)/src/libbutton.c \
-$(EMU_PATH)/src/alu.c \
+$(EMU_PATH)/src/instrs.c \
 $(EMU_PATH)/src/cartridge.c \
 $(EMU_PATH)/src/dmgcpu.c \
 $(EMU_PATH)/src/video.c \
@@ -117,7 +117,7 @@ DEBUG =0
 OPT   =-O2
 else
 DEBUG =1
-OPT   =-Os -g -gdwarf-2 -Wall
+OPT   =-Og -g -gdwarf-2 -Wall
 endif
 
 

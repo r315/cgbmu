@@ -6,9 +6,9 @@
 #include "cartridge.h"
 #include "dmgcpu.h"
 #include "debug.h"
+#include "board.h"
 
 static uint8_t bankselect;
-
 
 void cartridgeInit(const uint8_t *rom) {
 	bankselect = 1;
@@ -18,7 +18,6 @@ void cartridgeInit(const uint8_t *rom) {
 /***************************************************
 // MBC1
 ***************************************************/
-FAST_CODE
 uint8_t cartridgeRead(uint16_t address)
 {
 	switch(address >> 14)
@@ -39,7 +38,6 @@ uint8_t cartridgeRead(uint16_t address)
 //----------------------------------------------------
 //
 //----------------------------------------------------
-FAST_CODE
 void cartridgeWrite(uint16_t address, uint8_t data)
 {	
 	switch(address >> 12)
@@ -61,5 +59,3 @@ void cartridgeWrite(uint16_t address, uint8_t data)
 /***************************************************
 // MBC2
 ***************************************************/
-
-

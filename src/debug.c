@@ -9,95 +9,111 @@
 #include "liblcd.h"
 #include "lib2d.h"
 
-#define DBG_TEXT_REG_LINE 1
-
 #if defined(__EMU__)	
 	#include "disassembler.h"
-	#define FRAME_TIME 16	
-#else
-	#define REGISTERS_ROW 11
-	#define LCD_Push()
-	#define LCD_Pop()
+	#define FRAME_TIME 16
+
+	#define BREAK_CONDITION(_cond_) if((_cond_)){ printf("break hit\n"); state = STEP; break; } 
 #endif
 
-
 enum {
-	STEP = 1,
+	RUNNING = 0,
+	STEP,
+	PAUSE,
+	SINGLE,
 	CONTINUE,
-	PAUSE
 };
 
 uint16_t breakpoint = 0x100;
-uint8_t stepping = OFF;
 
 void debugCommans(uint8_t *st);
 void decode(void);
 char readLine(char *dst, uint8_t max);
 void stepInstruction(void);
 void runOneFrame(void);
-uint8_t readJoyPad(void);
+uint8_t readButtons(void);
 void disassemble(void);
+void disassembleHeader(void);
 
 #if defined(__EMU__)
-void DBG_run(uint32_t flags){	
-uint8_t key;
-uint32_t ticks = 0, dticks;
+
+void DBG_SingleStep(void) {
+	// execute one instruction
+	decode();
+	timer();
+	video();
+	interrupts();
+}
+
+void DBG_run(void){	
+	uint8_t key, skey;
+	uint32_t ticks = 0, dticks;
+	uint8_t state = STEP;
 
 	LIB2D_SetFcolor(LCD_YELLOW); 
+	initCpu();
+
+	disassembleHeader();
+
 	DBG_DumpRegisters();
 
-	while((key = readJoyPad()) != 255){		
-
-		if (stepping != OFF) {
-			//debugCommans(&stepping);
-
-			if (REG_PC == breakpoint && !stepping) {
-				stepping = STEP;
-			}
-			
-			switch (stepping) {
-				case STEP:
-					DBG_DumpRegisters();
-					disassemble();
-					stepping = PAUSE;
-					break;
-
-				case PAUSE:
-					if (key != J_A) {
-						SDL_Delay(30);
-						continue;
-					}
-				case CONTINUE:					
-					break;
-			}			
-		}
-#if 1
-		ticks = SDL_GetTicks();
-		runOneFrame();		
-		dticks = SDL_GetTicks() - ticks;
-		if (dticks < FRAME_TIME && stepping == OFF) {
-			SDL_Delay(FRAME_TIME - dticks);
-		}
-		DBG_Fps();
-		DBG_DumpRegisters();
-#else
-		decode();
-		timer();
-		frame = video();
-		interrupts();
-		
-
-		if (frame == ON) {
-			dticks = SDL_GetTicks() - ticks;
-			if (dticks < FRAME_TIME && stepping == OFF) {
-				SDL_Delay(FRAME_TIME - dticks);
-			}
-			DBG_Fps();
+	while((key = readButtons()) != 255){			
+		switch (state) {
+		case STEP:
+			state = PAUSE;
+			disassemble();
 			DBG_DumpRegisters();
-			ticks = SDL_GetTicks();
-			frame = OFF;
+			continue;
+
+		case PAUSE:
+			if (key == J_A || key == J_B) {
+				state = CONTINUE;
+				skey = key;
+				break;
+			}
+			skey = 0;
+			SDL_Delay(30);
+			continue;
+
+		case CONTINUE:
+			if (skey & J_A && key != J_A) {
+				state = SINGLE;
+				break;
+			}
+
+			if (skey & J_B && key != J_B) {
+				state = RUNNING;
+				break;
+			}
+
+			SDL_Delay(30);
+			continue;
+
+		case SINGLE:
+			DBG_SingleStep();
+			state = STEP;
+			break;
+
+		case RUNNING:
+			// Place here breakpoints
+			BREAK_CONDITION(key == J_A);			
+			//BREAK_CONDITION(memoryRead(REG_PC) == 0xD9);
+			//BREAK_CONDITION(memoryRead(REG_PC) == 0xFB);
+			//BREAK_CONDITION(REG_PC== 0xc2c5);
+
+			//ticks = SDL_GetTicks();
+			DBG_SingleStep();
+			//dticks = SDL_GetTicks() - ticks;
+			//if (dticks < FRAME_TIME) {
+			//	SDL_Delay(FRAME_TIME - dticks);
+			//}
+			//DBG_Fps();
+			//DBG_DumpRegisters();
+			break;
+
+		default:
+			break;
 		}
-#endif	
 	}
 }
 #endif
@@ -111,9 +127,7 @@ static uint16_t fps = 0;
     
 	if(GetTick() > fpsupdatetick)
 	{
-		LCD_Push();
 		DBG_printVal(DBG_TEXT_POS(0,0), "Fps ",fps,10,5);
-		LCD_Pop();
 		fps = 0;
 		fpsupdatetick = GetTick() + 1000;
 	}
@@ -155,7 +169,6 @@ int DBG_printVal(int x, int y,char *name, int v, char radix, char digitos)
 //------------------------------------------------------
 void DBG_DumpRegisters(void)
 {
-	LCD_Push();
 #if 0
 	putchar('\n');
 	fprintf(stdout,"AF = %.4X\n\r",REG_A << 8| REG_F);
@@ -176,24 +189,23 @@ void DBG_DumpRegisters(void)
 	
 	//setAttribute(g_double);
 //	setFont(BOLD);
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE),"af: ",REG_A << 8| REG_F ,16,4);
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 1),"bc: ",REG_BC,16,4);
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 2),"de: ",REG_DE,16,4);
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 3),"hl: ",REG_HL,16,4);
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 4),"sp: ",REG_SP,16,4);
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 5),"pc: ",REG_PC,16,4);
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 6),"LCDC: ",IOLCDC,16,2);
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 7),"STAT: ", IOSTAT, 16, 2);
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 8),"ly:   ",IOLY,16,2);
+	DBG_printVal(DBG_TEXT_LINE1, "af: ",REG_A << 8| REG_F ,16,4);
+	DBG_printVal(DBG_TEXT_LINE2,"bc: ",REG_BC,16,4);
+	DBG_printVal(DBG_TEXT_LINE3,"de: ",REG_DE,16,4);
+	DBG_printVal(DBG_TEXT_LINE4,"hl: ",REG_HL,16,4);
+	DBG_printVal(DBG_TEXT_LINE5,"sp: ",REG_SP,16,4);
+	DBG_printVal(DBG_TEXT_LINE6,"pc: ",REG_PC,16,4);
+	DBG_printVal(DBG_TEXT_LINE7,"LCDC: ",IOLCDC,16,2);
+	DBG_printVal(DBG_TEXT_LINE8,"STAT: ", IOSTAT, 16, 2);
+	DBG_printVal(DBG_TEXT_LINE9,"ly:   ",IOLY,16,2);
 
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 10),"TIMA: ",IOTIMA,16,2);
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 11),"DIV:  ",IODIV,16,2);
+	DBG_printVal(DBG_TEXT_LINE10,"TIMA: ",IOTIMA,16,2);
+	DBG_printVal(DBG_TEXT_LINE11,"DIV:  ",IODIV,16,2);
 	
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 13),"SCX:  ", IOSCX, 16, 2);
-	DBG_printVal(DBG_TEXT_POS(0,DBG_TEXT_REG_LINE + 14),"SCY:  ", IOSCY, 16, 2);
+	DBG_printVal(DBG_TEXT_LINE13,"SCX:  ", IOSCX, 16, 2);
+	DBG_printVal(DBG_TEXT_LINE14,"SCY:  ", IOSCY, 16, 2);
 	
 #endif
-	LCD_Pop();
 }
 //----------------------------------------------------*/
 //
@@ -237,7 +249,7 @@ _sp = regs.SP;
 	}
 }
 //----------------------------------------------------*/
-//avalilable debug commands
+//available debug commands
 //bp <addr hex>
 //------------------------------------------------------
 #ifdef WIN32
@@ -281,7 +293,7 @@ void debugCommans(uint8_t *st){
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
-void DBG_Info(char* text)
+void _DBG_Info(char* text)
 {
 	LIB2D_Print("%s\n", text);
 }
@@ -332,8 +344,6 @@ void DBG_BGmap(void) {
 
 
 void DBG_PrintValue(uint8_t line, char *label, uint8_t val) {
-	LCD_Push();
 	LIB2D_SetFcolor(LCD_YELLOW);
 	DBG_printVal(DBG_REG_COL(0), DBG_REG_ROW(line), label, val, 16, 2);
-	LCD_Pop();
 }

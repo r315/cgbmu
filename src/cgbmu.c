@@ -1,30 +1,28 @@
 #include "board.h"
+#include "cartridge.h"
 #include "cgbmu.h"
 #include "video.h"
 #include "dmgcpu.h"
 #include "debug.h"
 #include "decoder.h"
 
+enum{ RUN_FRAME, SINGLE_STEP};
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
-FAST_CODE
 void runCpu(uint32_t nTicks) {
 uint32_t elapsed_cycles = 0;
 	while (nTicks > elapsed_cycles) {
-		timer();
-		interrupts();
 		decode();
-		elapsed_cycles += CYCLES_COUNT;
+		timer();
+		interrupts();		
+		elapsed_cycles += instr_cycles;
 	}
 }
 //-----------------------------------------
 //
 //-----------------------------------------
-FAST_CODE
 void runOneFrame(void) {
-
-	prepareFrame();
 
 	IOSTAT &= ~(V_MODE_MASK);
 
@@ -50,7 +48,6 @@ void runOneFrame(void) {
 		if (IOSTAT & HB_IE)			// check H-Blank IE
 			IOIF |= LCDC_IF;
 		runCpu(V_M0_CYCLE);
-
 	}
 
 	IOSTAT |= V_M1;  		// Change to Mode 1
@@ -65,37 +62,39 @@ void runOneFrame(void) {
 	}
 }
 
-FAST_CODE
-void cgbmu(void) {
+void cgbmu(const uint8_t *rom) {
 	uint32_t ticks;
-	uint8_t mode = 0;
+	uint8_t mode = SINGLE_STEP;
 	
-	initCpu();
+	if(rom == NULL){
+		bootCpu();
+	}else{
+		initCpu();
+		cartridgeInit(rom);
+	}
 
-	if (mode) {			// instruction loop
+	if (mode == SINGLE_STEP) {			// instruction loop
 		ticks = GetTick();
-		while (readJoyPad() != 255) {
+		while (readButtons() != 255) {
 			decode();
-			interrupts();
 			timer();
-			if (video() == ON) {
+			interrupts();
+			if (video() == true) {
 				ticks = GetTick() - ticks;
 				if (ticks < FRAME_TIME)
 					DelayMs(FRAME_TIME - ticks);
 				ticks = GetTick();
 				DBG_Fps();
-				//DBG_PIN_TOGGLE;
 			}
 		}
 	}
 	else {				// frame loop
-		while (readJoyPad() != 255) {
+		while (readButtons() != 255) {
 #if defined(__EMU__)
 		int startTicks = GetTick();
 #endif
 			runOneFrame();
 			DBG_Fps();
-			DBG_PIN_TOGGLE;
 
 #if defined(__EMU__)			
 			int delta = GetTick() - startTicks;

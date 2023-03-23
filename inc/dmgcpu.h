@@ -29,18 +29,14 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 #define _dmgcpu_h_
 
 #include <stdint.h>
-#include "board.h"
 
-#define ONE_CYCLE	    1
-#define TWO_CYCLE	    2
-#define THREE_CYCLE     3
-#define FOUR_CYCLE	    4
-#define FIVE_CYCLE	    5
-#define SIX_CYCLE	    6
-
-#define RESET_CYCLES    cycles = 0
-#define INC_CYCLES(x)   cycles += x // Note one machine cycle = 4 clock cycles
-#define CYCLES_COUNT    cycles
+#define CLOCK_CYCLE     4
+#define ONE_CYCLE	    (1 * CLOCK_CYCLE)
+#define TWO_CYCLE	    (2 * CLOCK_CYCLE)
+#define THREE_CYCLE     (3 * CLOCK_CYCLE)
+#define FOUR_CYCLE	    (4 * CLOCK_CYCLE)
+#define FIVE_CYCLE	    (5 * CLOCK_CYCLE)
+#define SIX_CYCLE	    (6 * CLOCK_CYCLE)
 
 //Flags
 #define FZ              (1<<7)
@@ -186,7 +182,7 @@ extern uint8_t vram[VRAM_SIZE];     // 0x8000-0x9FFF
 extern uint8_t oam[OAM_SIZE];       // 0xFE00-0xFEBF
 //extern uint8_t hram[256];         // 0xFF80-0xFFFE
 
-extern uint8_t cycles;
+extern uint8_t instr_cycles;
 extern uint8_t halted, stopped;
 extern uint8_t IME;                 // interrupt master enable  Set and reset by DI,EI instructions
 
@@ -220,4 +216,5 @@ void initCpu(void);
 void interrupts(void);
 void timer(void);
 uint8_t joyPad(void);
+void bootCpu(void);
 #endif
