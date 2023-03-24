@@ -112,9 +112,14 @@ $(BUILD_DIR)/extbin.o : ../../../roms/mario.gb #tests/cpu_instrs.gb
 $(CHECKSUM):
 	@gcc $@.c -o $@
 
-$(TARGET).cfg:
+blueboard.cfg:
 	@echo "---- Generating opencod configuration file ----"
-	@echo 'interface jlink\ntransport select swd\nsource [find target/lpc17xx.cfg]\nadapter_khz 4000' > $(TARGET).cfg
+	@echo "adapter driver st-link" > $@
+	@echo "transport select dapdirect_swd" >> $@
+	@echo "st-link vid_pid 0x0483 0x3748" >> $@
+	@echo "adapter speed 4000" >> $@
+	@echo "source [find target/lpc17xx.cfg]" >> $@
+	
 
 list: $(TARGET).elf
 	@echo "---- Listing ----"

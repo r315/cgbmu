@@ -268,7 +268,7 @@ uint8_t memoryRead(uint16_t address)
 	switch(address)
 	{
 		case 0xFF00: return joyPad();
-		case 0xFF04: return (uint8_t)(machine_cycles>>6);  // = Fosc/256 ~ 16384Hz
+		case 0xFF04: return IODIV;
 		case 0xFF05: return IOTIMA;
 		case 0xFF06: return IOTMA;
 		case 0xFF07: return IOTAC;
