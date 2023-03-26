@@ -95,6 +95,8 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 
 #define IOP1_MASK   0xCF
 
+enum halt_states {HALT_INACTIVE, HALT_ACTIVE};
+
 /*
  15..8  7..0
 +-----+-----+
@@ -183,7 +185,7 @@ extern uint8_t oam[OAM_SIZE];       // 0xFE00-0xFEBF
 //extern uint8_t hram[256];         // 0xFF80-0xFFFE
 
 extern uint8_t instr_cycles;
-extern uint8_t halted, stopped;
+extern uint8_t halt_state, stopped;
 extern uint8_t IME;                 // interrupt master enable  Set and reset by DI,EI instructions
 
 

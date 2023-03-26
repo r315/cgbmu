@@ -1,5 +1,6 @@
 #include "debug.h"
 #include "dmgcpu.h"
+#include "decoder.h"
 #include "instrs.h"
 
 #if TABLE_DECODER
@@ -48,6 +49,15 @@ static const uint8_t (*opcodes[])(void) = {
 
 void decode(void)
 {
+	if (halt_state == HALT_ACTIVE) {
+		if (IOIF || !IME) {
+			halt_state = HALT_INACTIVE;
+		}else{
+			SET_INSTR_CYCLES(ONE_CYCLE);
+			return;
+		}
+	}
+
 	uint8_t opcode = memoryRead(REG_PC++);
 	instr_cycles = opcodes[opcode]();
 }
@@ -73,12 +83,14 @@ uint16_t aux16;
 
 	instr_cycles = 0;
 
-	if(halted){	
-		if (IOIF & (JOYPAD_IF | SERIAL_IF | TIMER_IF | LCDC_IF | V_BLANK_IF)) {
-			halted = 0;
+	if(halt_state == HALT_ACTIVE){
+		if (IOIF || !IME) {
+			halt_state = HALT_INACTIVE;
 		}
-		SET_INSTR_CYCLES(ONE_CYCLE);
-		return;
+		else {
+			SET_INSTR_CYCLES(ONE_CYCLE);
+			return;
+		}
 	}
     
     opcode = memoryRead(REG_PC++);
@@ -501,7 +513,7 @@ uint16_t aux16;
 			break;
 			
 		case 0x76: // HALT
-			halted = 1;
+			halt_state = HALT_ACTIVE;
 			SET_INSTR_CYCLES(ONE_CYCLE);         
 			break;	
 			

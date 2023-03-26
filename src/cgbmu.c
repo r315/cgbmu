@@ -6,7 +6,7 @@
 #include "debug.h"
 #include "decoder.h"
 
-enum{ RUN_FRAME, SINGLE_STEP};
+enum{ SINGLE_FRAME, SINGLE_STEP};
 //----------------------------------------------------*/
 //
 //------------------------------------------------------
@@ -64,7 +64,7 @@ void runOneFrame(void) {
 
 void cgbmu(const uint8_t *rom) {
 	uint32_t ticks;
-	uint8_t mode = SINGLE_STEP;
+	uint8_t mode = !SINGLE_FRAME;
 	
 	if(rom == NULL){
 		bootCpu();
@@ -78,7 +78,6 @@ void cgbmu(const uint8_t *rom) {
 		while (readButtons() != 255) {
 			decode();
 			timer();
-			interrupts();
 			if (video() == true) {
 				ticks = GetTick() - ticks;
 				if (ticks < FRAME_TIME)
@@ -86,6 +85,7 @@ void cgbmu(const uint8_t *rom) {
 				ticks = GetTick();
 				DBG_Fps();
 			}
+			interrupts();
 		}
 	}
 	else {				// frame loop
@@ -94,6 +94,7 @@ void cgbmu(const uint8_t *rom) {
 		int startTicks = GetTick();
 #endif
 			runOneFrame();
+			//VIDEO_Update();
 			DBG_Fps();
 
 #if defined(__EMU__)			

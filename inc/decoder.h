@@ -3,5 +3,7 @@
 
 typedef uint8_t(*opcode_t)(void);
 
+#define TABLE_DECODER 1
+
 void decode(void);
 #endif /* _decoder_h_ */

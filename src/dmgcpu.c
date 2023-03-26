@@ -45,7 +45,7 @@ uint8_t *rombank;                        // 0x4000-0x7FFF
 uint8_t  instr_cycles;
 uint32_t machine_cycles = 0;
 uint16_t timer_prescaler;
-uint8_t halted, stopped;
+uint8_t halt_state, stopped;
 uint8_t IME;  	// Reset by DI and set by EI instructions
 
 Regs regs;
@@ -87,9 +87,8 @@ void setTimerPrescaler(void);
 void jumpVector(uint16_t vector)
 {
 	IME = 0;
-	halted = 0;
     PUSH(REG_PC);
-    REG_PC = vector;  
+    REG_PC = vector;
 }
 //-----------------------------------------
 //
@@ -104,31 +103,23 @@ uint8_t irq;
 	}
 
 	irq = IOIE & IOIF;
-	
-	if(irq & V_BLANK_IF){
+
+	if(irq & V_BLANK_IF){ // Priority 1
 		IOIF &= ~(V_BLANK_IF);
 		jumpVector(0x0040);
-	}
-	
-	if(irq & LCDC_IF){ 	
+	}else if(irq & LCDC_IF){ // Priority 2
 		IOIF &= ~(LCDC_IF);
 		jumpVector(0x0048);
-	}	
-		
-	if(irq & TIMER_IF){		
+	}else if(irq & TIMER_IF){ // Priority 3
 		IOIF &= ~TIMER_IF;
 		jumpVector(0x0050);
-	}	
-		
-	if(irq & SERIAL_IF){ 		
+	}else if(irq & SERIAL_IF){ // Priority 4
 		IOIF &= ~(SERIAL_IF);
 		jumpVector(0x0058);
-	}	
-		
-	if(irq & JOYPAD_IF){
+	}else if(irq & JOYPAD_IF){ // Priority 5
 		IOIF &= ~(JOYPAD_IF);
 		jumpVector(0x0060);
-	}			
+	}
 }
 //-----------------------------------------
 //
@@ -418,7 +409,7 @@ void initCpu(void)
 	IOSTAT = 0x81;
 	IOLY   = 0x94; 	 
 	IODIV  = 0xAB;
-	halted = 0;
+	halt_state = HALT_INACTIVE;
 }
 
 void bootCpu(void)

@@ -115,8 +115,6 @@ void scanOAM() {
 	n = 0;
 	m = (IOLCDC & OBJ_SIZE) ? 1 : 0; // 8x16 objs
 
-	memset(visible_objs, 0, sizeof(visible_objs));
-
 	for (int i = 0; i < MAX_OBJECTS; i++, pobj++) {
 		if (pobj->x >= SPRITE_W && pobj->x < SCREEN_W + SPRITE_W) {			
 			if (objline >= pobj->y && objline < (pobj->y + (SPRITE_H << m))) {				
@@ -128,7 +126,7 @@ void scanOAM() {
 			break;
 	}
 
-	//visible_objs[n] = NULL;
+	visible_objs[n] = NULL;
 }
 //-----------------------------------------
 //
@@ -163,15 +161,24 @@ void scanline() {
 	pushScanLine(scanlinedata);
 }
 //-----------------------------------------
-// Clear/set Coincidence flag on STAT
-// activate STAT IF if Coincedence or OAM
+// Increment line count
+// Set coincidence on STAT if  LY = LYC
+// and set LCDC_IF if IME and interrupt is enabled on STAT
 //-----------------------------------------
 void nextLine(void) {
-	IOLY++;
-	IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & (~LYC_LY_FLAG));	
-	//if ((IOSTAT & LYC_LY_IE) && (IOSTAT & LYC_LY_FLAG))
-	if (IOSTAT & LYC_LY_FLAG)
-		IOIF |= LCDC_IF;
+	uint8_t stat = IOSTAT & (~LYC_LY_FLAG);
+	uint8_t ly = IOLY;
+
+	ly++;
+
+	if(ly == IOLYC){
+		stat |= LYC_LY_FLAG;
+		//if(IME && (stat & LYC_LY_IE))
+			IOIF |= LCDC_IF;
+	}
+
+	IOSTAT = stat;
+	IOLY = ly;
 }
 //-----------------------------------------
 // return true if frame is starting
@@ -183,42 +190,45 @@ uint8_t video(void) {
 
 	video_cycles += instr_cycles;
 
-	switch (IOSTAT & V_MODE_MASK)
+	uint8_t stat = IOSTAT;
+
+	switch (stat & V_MODE_MASK)
 	{
 	case V_M2: 							// Mode 2 oam access start scanline	
-		if (video_cycles > V_M2_CYCLE)
+		if (video_cycles >= V_M2_CYCLE)
 		{
 			video_cycles -= V_M2_CYCLE;
-			IOSTAT |= V_M3;				// Next, Mode 3 vram access				
+			stat |= V_M3;				// Next, Mode 3 vram access				
 			scanOAM();
 		}
 		break;
 
 	case V_M3: 							// Mode 3 vram access
-		if (video_cycles > V_M3_CYCLE)
+		if (video_cycles >= V_M3_CYCLE)
 		{
 			video_cycles -= V_M3_CYCLE;
-			IOSTAT &= ~(V_MODE_MASK);  // Next, Mode 0 H-blank				 
-			if (IOSTAT & HB_IE) 		// LCD STAT & H-Blank IE
+			stat &= ~(V_MODE_MASK);     // Next, Mode 0 H-blank				 
+			if (stat & HB_IE) 		    // LCD STAT & H-Blank IE
 				IOIF |= LCDC_IF;
 			scanline();
 		}
 		break;
 
 	case V_M0: 							// Mode 0 H-Blank
-		if (video_cycles > V_M0_CYCLE) {
+		if (video_cycles >= V_M0_CYCLE) {
 			video_cycles -= V_M0_CYCLE;
-			nextLine();			// Finish processing scanline, go to next one
+			nextLine();			        // Finish processing scanline, go to next one
 			if (IOLY < SCREEN_H) {
-				IOSTAT |= V_M2;     	// Next, Mode 2 searching oam
-				if (IOSTAT & OAM_IE)
+				stat |= V_M2;     	    // Next, Mode 2 searching oam
+				if (stat & OAM_IE)
 					IOIF |= LCDC_IF;
 			}
 			else {
-				IOSTAT |= V_M1;     	// Next, Mode 1 V-blank
+				stat |= V_M1;     	    // Next, Mode 1 V-blank
 				IOIF |= V_BLANK_IF;
-				if (IOSTAT & VB_IE)
+				if (stat & VB_IE)
 					IOIF |= LCDC_IF;
+				vblankdelay = 1;
 			}
 		}
 		break;
@@ -231,14 +241,13 @@ uint8_t video(void) {
 			if (IOLY < (SCREEN_H + VBLANK_LINES))
 				return false;
 
-			IOSTAT &= ~(V_MODE_MASK); 	// Next, Mode 2 searching oam
-			IOSTAT |= V_M2;
-
+			IOSTAT = (stat & ~V_MODE_MASK) | V_M2; 	// Next, Mode 2 searching oam
 			IOLY = 0;
 			return true;
 		}
 		break;
 	}
 
+	IOSTAT = stat;
 	return false;
 }

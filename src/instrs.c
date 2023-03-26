@@ -235,23 +235,7 @@ uint8_t cpl(void){ REG_A = ~REG_A; PSW |= FN | FH; return ONE_CYCLE; }
 uint8_t ccf(void){ PSW &= ~( FN | FH); PSW ^= FC; return ONE_CYCLE; }
 uint8_t di(void){ IME = 0; return ONE_CYCLE; }
 uint8_t ei(void){ IME = 1; return ONE_CYCLE; }
-uint8_t halt(void){ 
-
-	if (halted) {
-		if (IOIF & (JOYPAD_IF | SERIAL_IF | TIMER_IF | LCDC_IF | V_BLANK_IF)) {
-			halted = 0;
-		}
-		else {
-			REG_PC--;
-		}
-	}
-	else {
-		halted = 1;
-			REG_PC--; // keep PC halted
-	}
-
-	return ONE_CYCLE; 
-}
+uint8_t halt(void){ halt_state = HALT_ACTIVE; return ONE_CYCLE; }
 
 /**
  * @brief 16bit arithmetic/logical instructions

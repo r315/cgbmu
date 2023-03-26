@@ -2,11 +2,11 @@
 #define _instrs_h_
 
 #include <stdint.h>
-
-#define TABLE_DECODER 1
+#include "decoder.h"
 
 #define PUSH(value) {REG_SP -= 2; memoryWrite16(REG_SP, value);}
 #define POP(dst)	{dst = memoryRead16(REG_SP); REG_SP += 2;}
+#define SET_INSTR_CYCLES(x)   instr_cycles += x
 
 #if TABLE_DECODER
 uint8_t nop(void);
@@ -253,7 +253,6 @@ uint8_t cp_h(void);
 uint8_t cp_l(void);
 uint8_t cp_d8(void);
 uint8_t cp_ind_hl(void);
-
 uint8_t rlc_a(void);
 uint8_t rlc_b(void);
 uint8_t rlc_c(void);
@@ -318,7 +317,6 @@ uint8_t srl_e(void);
 uint8_t srl_h(void);
 uint8_t srl_l(void);
 uint8_t srl_ind_hl(void);
-
 uint8_t bit_0_a(void);
 uint8_t bit_0_b(void);
 uint8_t bit_0_c(void);
@@ -512,8 +510,6 @@ uint8_t set_7_h(void);
 uint8_t set_7_l(void);
 uint8_t set_7_ind_hl(void);
 #else
-
-#define SET_INSTR_CYCLES(x)   instr_cycles += x
 
 uint8_t daa(void);
 void alu(uint8_t op, uint8_t opb);
