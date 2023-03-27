@@ -50,12 +50,11 @@ static const uint8_t (*opcodes[])(void) = {
 void decode(void)
 {
 	if (halt_state == HALT_ACTIVE) {
-		if (IOIF || !IME) {
-			halt_state = HALT_INACTIVE;
-		}else{
-			SET_INSTR_CYCLES(ONE_CYCLE);
+		if (!IOIF && IME) {// having IME fails tests but games work properly
+			instr_cycles = ONE_CYCLE;
 			return;
-		}
+		}		
+		halt_state = HALT_INACTIVE;
 	}
 
 	uint8_t opcode = memoryRead(REG_PC++);
