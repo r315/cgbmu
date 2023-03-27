@@ -109,20 +109,19 @@ void blitTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8
 // read OBJECT Attribute Memory for one line
 //-----------------------------------------
 void scanOAM() {
-	uint8_t m, n, objline = IOLY + 16;	// Y position has a offset of 16pixels
+	uint8_t h, n, curline = IOLY + 16;	// Y position has a offset of 16pixels
 	Object *pobj = (Object*)oam;
 
 	n = 0;
-	m = (IOLCDC & OBJ_SIZE) ? 1 : 0; // 8x16 objs
+	h = (IOLCDC & OBJ_SIZE) ? SPRITE_H << 1 : SPRITE_H; // 8x16 objs
 
 	for (int i = 0; i < MAX_OBJECTS; i++, pobj++) {
-		if (pobj->x >= SPRITE_W && pobj->x < SCREEN_W + SPRITE_W) {			
-			if (objline >= pobj->y && objline < (pobj->y + (SPRITE_H << m))) {				
-				visible_objs[n] = pobj;
-				n++;
-			}					
-		}
-		if (n >= MAX_LINE_OBJECTS)
+		if (pobj->x == 0 || pobj->y == 0) continue;
+		if (pobj->y > curline || (pobj->y + h) < curline) continue;
+		if (pobj->x >= SCREEN_W + SPRITE_W)continue;		
+		
+		visible_objs[n] = pobj;	
+		if (++n >= MAX_LINE_OBJECTS)
 			break;
 	}
 
@@ -173,7 +172,7 @@ void nextLine(void) {
 
 	if(ly == IOLYC){
 		stat |= LYC_LY_FLAG;
-		//if(IME && (stat & LYC_LY_IE))
+		if(IME)
 			IOIF |= LCDC_IF;
 	}
 
@@ -228,7 +227,6 @@ uint8_t video(void) {
 				IOIF |= V_BLANK_IF;
 				if (stat & VB_IE)
 					IOIF |= LCDC_IF;
-				vblankdelay = 1;
 			}
 		}
 		break;
