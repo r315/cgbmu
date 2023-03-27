@@ -36,6 +36,7 @@ void BOARD_Init(void);
 void LCD_Window(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 void LCD_Data(uint16_t data);
 void Error_Handler(void);
+uint8_t vc_getCharNonBlocking(char *c);
 
 #define SAI1_FSA_Pin GPIO_PIN_4
 #define SAI1_FSA_GPIO_Port GPIOE
