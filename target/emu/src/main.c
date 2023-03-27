@@ -202,13 +202,13 @@ printf("Available options:\n\n"
 				"\t -d   Debug on\n"
 				"\t -r   <romfile>\n"
 				"\t -t   tests\n"
-				"\t -i   Instruction mode loop");
+				"\t -i   Instruction mode loop\n");
 }
 
 int loadTestRom(uint8_t nr) {
 	char *path = malloc(128);
 
-	strcpy(path, ROM_PATH); // Defined on project properties
+	strcpy(path, (const char*)ROM_PATH); // Defined on project properties
 
 	int len = strlen(path);
 	*(path + len) = '\\';
@@ -254,10 +254,10 @@ opt_t options[] = {
 	
 	parseOptions(argc, argv, sizeof(options)/sizeof(opt_t), options);
 
-#if 1
+#if 0
 	if(loadRom(romfile) > 0) {
 #else
-	if(loadTestRom(14) > 0){
+	if(loadTestRom(0) > 0){
 #endif
 		//dry_run();		// Generic run
 

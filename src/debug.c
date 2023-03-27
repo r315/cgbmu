@@ -48,7 +48,7 @@ void DBG_SingleStep(void) {
 void DBG_run(void){	
 	uint8_t key, skey;
 	uint32_t ticks = 0, dticks;
-	uint8_t dbg_state = DBG_STEP;
+	uint8_t dbg_state = DBG_RUNNING;
 
 	LIB2D_SetFcolor(LCD_YELLOW); 
 	initCpu();
@@ -104,7 +104,6 @@ void DBG_run(void){
 #if 0
 			DBG_SingleStep();
 #else
-			ticks = SDL_GetTicks();
 			decode();
 			timer();
 			if (video()) { 
@@ -113,6 +112,7 @@ void DBG_run(void){
 					SDL_Delay(FRAME_TIME - dticks);
 				}
 				DBG_Fps(); 
+				ticks = SDL_GetTicks();
 			}
 			interrupts();
 #endif
