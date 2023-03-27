@@ -10,6 +10,7 @@
 #include "debug.h"
 #include "decoder.h"
 #include "tests.h"
+#include "lib2d.h"
 
 
 typedef struct _opt{
@@ -57,7 +58,7 @@ char **dst = (char**)(((opt_t*)opt)->ctx);
 
 void parseOptions(int argc, char **argv, int optc, opt_t *options) {
 	while(argc--){
-        for(uint32_t i = 0; i < optc; i++){
+        for(int i = 0; i < optc; i++){
             if(memcmp(argv[argc], options[i].opt, strlen(argv[argc])) == 0){				
                 options[i].optv = argv[argc + 1];
                 options[i].parse(&options[i]);
@@ -248,7 +249,7 @@ opt_t options[] = {
 		return 0;
 	}
 
-	LCD_Init();
+	LCD_Init(NULL);
 	LIB2D_Init();
 	
 	parseOptions(argc, argv, sizeof(options)/sizeof(opt_t), options);

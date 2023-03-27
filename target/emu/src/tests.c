@@ -10,7 +10,7 @@
 #include "decoder.h"
 #include "tests.h"
 #include "liblcd.h"
-
+#include "lib2d.h"
 
 char filename[100];
 extern const char TEST_bg_map[32 * 32];
@@ -130,7 +130,7 @@ void TEST_BGmap(void) {
 
 	while (1) {
 		//DBG_BGmap();
-		LCD_Window(0, 0, SCREEN_W, SCREEN_H);
+		//LCD_Window(0, 0, SCREEN_W, SCREEN_H);
 		for (IOLY = 0; IOLY < SCREEN_H; IOLY++) {
 			memset(scanlinedata, 0, sizeof(scanlinedata));
 			scanline();
@@ -165,7 +165,7 @@ void TEST_Sprites(char flags) {
 
 	while (1) {
 		//DBG_BGmap();
-		LCD_Window(0, 0, SCREEN_W, SCREEN_H);
+		//LCD_Window(0, 0, SCREEN_W, SCREEN_H);
 		for (IOLY = 0; IOLY < SCREEN_H; IOLY++) {
 			scanOAM();
 			scanline();
@@ -184,8 +184,8 @@ void TEST_Sprites(char flags) {
 
 
 void TEST_main(void) {
-	LCD_Window(0, 0, LCD_W, LCD_H);
-	LCD_Fill(LCD_SIZE, LCD_RED);
+	//LCD_Window(0, 0, LCD_W, LCD_H);
+	LCD_FillRect(0, 0, LCD_W, LCD_H, LCD_RED);
 	TEST_buttons();
 	//TEST_dumpSpriteDataLine();
 	//TEST_dumpBgDataLine();

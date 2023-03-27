@@ -259,11 +259,10 @@ _sp = regs.SP;
 //available debug commands
 //bp <addr hex>
 //------------------------------------------------------
-#if defined(_WIN32) || defined(linux)
+#if defined(_WIN32)
 #include <string.h>
 #include <stdlib.h>
-#pragma warning(disable : 4996)
-#elif defined(LINUX)
+#elif defined(linux)
 #include <string.h>
 #endif
 void debugCommans(uint8_t *st){
