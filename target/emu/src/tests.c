@@ -70,7 +70,7 @@ void TEST_buttons(void) {
 			printf("%u %s\n", scanned,name);
 		}
 
-		#if defined(__EMU__)
+		#if defined(_WIN32) || defined(linux)
 		//LCD_Update();		
 		SDL_Delay(20);
 		#endif

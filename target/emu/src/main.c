@@ -34,7 +34,8 @@ const char *test_roms[] = {
 	"10-bit ops.gb",
 	"11-op a,(hl).gb",
 	"instr_timing.gb",	// https://github.com/retrio/gb-test-roms/tree/master/instr_timing
-	"interrupt_time.gb"
+	"interrupt_time.gb",  // 13
+	"phys.gb"             // 14
 };
 
 const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
@@ -252,10 +253,10 @@ opt_t options[] = {
 	
 	parseOptions(argc, argv, sizeof(options)/sizeof(opt_t), options);
 
-#if 0
-	if (loadRom(romfile) > 0) {
+#if 1
+	if(loadRom(romfile) > 0) {
 #else
-	if(loadTestRom(12) > 0){
+	if(loadTestRom(14) > 0){
 #endif
 		//dry_run();		// Generic run
 

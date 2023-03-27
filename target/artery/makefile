@@ -170,19 +170,19 @@ OBJECTS = $(addprefix $(BUILD_DIR)/, $(notdir $(CSRCS:.c=.o))) $(BUILD_DIR)/extb
 
 VPATH +=$(sort $(dir $(CSRCS)))
 
-$(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR)
+$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	@echo "[CC]  $<"
 	$(VERBOSE)$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/%.obj: %.cpp Makefile | $(BUILD_DIR)
+$(BUILD_DIR)/%.obj: %.cpp | $(BUILD_DIR)
 	@echo "[CP]  $<"
 	$(VERBOSE)$(CPP) -c $(CPPFLAGS)  -fno-exceptions -fno-unwind-tables -fno-rtti $< -o $@
 
-$(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
+$(BUILD_DIR)/%.o: %.s | $(BUILD_DIR)
 	@echo "[AS]  $<"
 	$(VERBOSE)$(AS) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) #Makefile
+$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS)
 	@echo "[LD]  $@"
 	$(VERBOSE)$(LD) -T$(LDSCRIPT) $(LDFLAGS) $(LDOBJECTS) $^ -o $@
 

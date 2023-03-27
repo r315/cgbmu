@@ -90,14 +90,14 @@ void cgbmu(const uint8_t *rom) {
 	}
 	else {				// frame loop
 		while (readButtons() != 255) {
-#if defined(__EMU__)
+#if defined(_WIN32) || defined(linux)
 		int startTicks = GetTick();
 #endif
 			runOneFrame();
 			//VIDEO_Update();
 			DBG_Fps();
 
-#if defined(__EMU__)			
+#if defined(_WIN32) || defined(linux)
 			int delta = GetTick() - startTicks;
 			if (delta < FRAME_TIME) {
 				DelayMs(FRAME_TIME - delta);

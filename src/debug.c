@@ -9,19 +9,19 @@
 #include "liblcd.h"
 #include "lib2d.h"
 
-#if defined(__EMU__)	
+#if defined(_WIN32) || defined(linux)
 	#include "disassembler.h"
 	#define FRAME_TIME 16
 
-	#define BREAK_CONDITION(_cond_) if((_cond_)){ printf("break hit\n"); state = STEP; break; } 
+	#define BREAK_CONDITION(_cond_) if((_cond_)){ printf("break hit\n"); dbg_state = DBG_STEP; break; } 
 #endif
 
-enum {
-	RUNNING = 0,
-	STEP,
-	PAUSE,
-	SINGLE,
-	CONTINUE,
+enum debug_state{
+	DBG_RUNNING = 0,
+	DBG_STEP,
+	DBG_PAUSE,
+	DBG_SINGLE,
+	DBG_CONTINUE,
 };
 
 uint16_t breakpoint = 0x100;
@@ -35,7 +35,7 @@ uint8_t readButtons(void);
 void disassemble(void);
 void disassembleHeader(void);
 
-#if defined(__EMU__)
+#if defined(_WIN32) || defined(linux)
 
 void DBG_SingleStep(void) {
 	// execute one instruction
@@ -48,7 +48,7 @@ void DBG_SingleStep(void) {
 void DBG_run(void){	
 	uint8_t key, skey;
 	uint32_t ticks = 0, dticks;
-	uint8_t state = STEP;
+	uint8_t dbg_state = DBG_STEP;
 
 	LIB2D_SetFcolor(LCD_YELLOW); 
 	initCpu();
@@ -58,16 +58,16 @@ void DBG_run(void){
 	DBG_DumpRegisters();
 
 	while((key = readButtons()) != 255){			
-		switch (state) {
-		case STEP:
-			state = PAUSE;
+		switch (dbg_state) {
+		case DBG_STEP:
+			dbg_state = DBG_PAUSE;
 			disassemble();
 			DBG_DumpRegisters();
 			continue;
 
-		case PAUSE:
+		case DBG_PAUSE:
 			if (key == J_A || key == J_B) {
-				state = CONTINUE;
+				dbg_state = DBG_CONTINUE;
 				skey = key;
 				break;
 			}
@@ -75,40 +75,47 @@ void DBG_run(void){
 			SDL_Delay(30);
 			continue;
 
-		case CONTINUE:
+		case DBG_CONTINUE:
 			if (skey & J_A && key != J_A) {
-				state = SINGLE;
+				dbg_state = DBG_SINGLE;
 				break;
 			}
 
 			if (skey & J_B && key != J_B) {
-				state = RUNNING;
+				dbg_state = DBG_RUNNING;
 				break;
 			}
 
 			SDL_Delay(30);
 			continue;
 
-		case SINGLE:
+		case DBG_SINGLE:
 			DBG_SingleStep();
-			state = STEP;
+			dbg_state = DBG_STEP;
 			break;
 
-		case RUNNING:
+		case DBG_RUNNING:
 			// Place here breakpoints
 			BREAK_CONDITION(key == J_A);			
 			//BREAK_CONDITION(memoryRead(REG_PC) == 0xD9);
 			//BREAK_CONDITION(memoryRead(REG_PC) == 0xFB);
-			//BREAK_CONDITION(REG_PC== 0xc2c5);
+			//BREAK_CONDITION(halt_state == HALT_ACTIVE);
 
-			//ticks = SDL_GetTicks();
+#if 0
 			DBG_SingleStep();
-			//dticks = SDL_GetTicks() - ticks;
-			//if (dticks < FRAME_TIME) {
-			//	SDL_Delay(FRAME_TIME - dticks);
-			//}
-			//DBG_Fps();
-			//DBG_DumpRegisters();
+#else
+			ticks = SDL_GetTicks();
+			decode();
+			timer();
+			if (video()) { 
+				dticks = SDL_GetTicks() - ticks;
+				if (dticks < FRAME_TIME) {
+					SDL_Delay(FRAME_TIME - dticks);
+				}
+				DBG_Fps(); 
+			}
+			interrupts();
+#endif
 			break;
 
 		default:
@@ -252,7 +259,7 @@ _sp = regs.SP;
 //available debug commands
 //bp <addr hex>
 //------------------------------------------------------
-#ifdef WIN32
+#if defined(_WIN32) || defined(linux)
 #include <string.h>
 #include <stdlib.h>
 #pragma warning(disable : 4996)
@@ -260,13 +267,13 @@ _sp = regs.SP;
 #include <string.h>
 #endif
 void debugCommans(uint8_t *st){
-#ifdef __EMU__
+#if defined(_WIN32) || defined(linux)
 	static char line[10];
 	char *cmd;
 	if(readLine(line, 10)){
 		
 		if(*line == '\0' || *line == ' ' ){ //cartridge return pressed
-			*st = STEP;
+			*st = DBG_STEP;
 			return;
 		}
 
@@ -277,12 +284,12 @@ void debugCommans(uint8_t *st){
 		if(!strcmp(cmd, "bp")){
 			cmd = (char*)strtok(NULL, " ");
 			breakpoint = (uint16_t)strtol(cmd, &cmd, 16);
-			*st = CONTINUE;
+			*st = DBG_CONTINUE;
 			return;
 		}
 
 		if(!strcmp(cmd, "run")){
-			*st = CONTINUE; 
+			*st = DBG_CONTINUE; 
 			return;
 		}
 	}
