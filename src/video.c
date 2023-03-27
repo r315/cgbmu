@@ -44,13 +44,13 @@ void blitObjectData(Object *obj, uint8_t *dst) {
 		do{
 			color = (msb & 0x1) ? 2 : 0;
 			color |= (lsb & 0x1) ? 1 : 0;
-			msb >>= 1;
-			lsb >>= 1;
-			color = (pal >> (color << 1)) & 3;
 			if (color) {
+				color = (pal >> (color << 1)) & 3;
 				if(!(obj->flags & OBJECT_FLAG_PRIO) || !*dst)
 					*dst = color;
 			}
+			msb >>= 1;
+			lsb >>= 1;
 			dst++;
 		}while (--npixels);
 	}
@@ -58,13 +58,13 @@ void blitObjectData(Object *obj, uint8_t *dst) {
 		do{
 			color = (msb & 0x80) ? 2 : 0;
 			color |= (lsb & 0x80) ? 1 : 0;
-			msb <<= 1;
-			lsb <<= 1;
-			color = (pal >> (color << 1)) & 3;
-			if (color) {
+			if (color) { // Color index 0 is transparent
+				color = (pal >> (color << 1)) & 3;
 				if (!(obj->flags & OBJECT_FLAG_PRIO) || !*dst)
 					*dst = color;
 			}
+			msb <<= 1;
+			lsb <<= 1;
 			dst++;
 		}while(--npixels);
 	}
@@ -106,18 +106,27 @@ void blitTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8
 }
 
 //-----------------------------------------
-// read OBJECT Attribute Memory for one line
+// Scan for visible objects
 //-----------------------------------------
 void scanOAM() {
-	uint8_t h, n, curline = IOLY + 16;	// Y position has a offset of 16pixels
+	uint8_t h, n, curline, lcdc;
 	Object *pobj = (Object*)oam;
 
+	lcdc = IOLCDC;
+
+	if (!(lcdc & OBJ_DISPLAY)) {
+		visible_objs[0] = NULL;
+		return;
+	}
+
+	curline = IOLY + 16;	// Y position has a offset of 16pixels
+
 	n = 0;
-	h = (IOLCDC & OBJ_SIZE) ? SPRITE_H << 1 : SPRITE_H; // 8x16 objs
+	h = (lcdc & OBJ_SIZE) ? SPRITE_H << 1 : SPRITE_H; // 8x16 objs
 
 	for (int i = 0; i < MAX_OBJECTS; i++, pobj++) {
 		if (pobj->x == 0 || pobj->y == 0) continue;
-		if (pobj->y > curline || (pobj->y + h) < curline) continue;
+		if (pobj->y > curline || (pobj->y + h) <= curline) continue;
 		if (pobj->x >= SCREEN_W + SPRITE_W)continue;		
 		
 		visible_objs[n] = pobj;	
@@ -166,9 +175,7 @@ void scanline() {
 //-----------------------------------------
 void nextLine(void) {
 	uint8_t stat = IOSTAT & (~LYC_LY_FLAG);
-	uint8_t ly = IOLY;
-
-	ly++;
+	uint8_t ly = IOLY + 1;
 
 	if(ly == IOLYC){
 		stat |= LYC_LY_FLAG;
@@ -197,7 +204,7 @@ uint8_t video(void) {
 		if (video_cycles >= V_M2_CYCLE)
 		{
 			video_cycles -= V_M2_CYCLE;
-			stat |= V_M3;				// Next, Mode 3 vram access				
+			stat |= V_M3;				// Next, Mode 3 vram access
 			scanOAM();
 		}
 		break;
