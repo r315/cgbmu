@@ -342,10 +342,22 @@ void memoryWrite(uint16_t address, uint8_t data)
 					 setTimerPrescaler(); 
 		             return;
 		case 0xFF0F: IOIF = data; return;
-	    case 0xFF40: IOLCDC = data;
-					 if(!(data&0x80)){ IOLY= 0; IOSTAT = 0x00;} // reset LY, mode0
-			 		 return;
-        case 0xFF41: IOSTAT = data; return;
+	    case 0xFF40:
+				if(IOLCDC & 0x80 && !(data & 0x80)){ 
+					// LCD Off
+					IOLY= 0; 
+					IOSTAT = IOSTAT & 0xFC;  // reset LY, mode0
+				}
+				else if (!(IOLCDC & 0x80) && (data & 0x80)) {
+					checkLine(IOLY);
+				}
+				video_cycles = 0;
+				IOLCDC = data;
+			 	return;
+        case 0xFF41: 
+			data &= ~7;
+			IOSTAT = (IOSTAT & 7) | data; 
+			return;
         case 0xFF42: IOSCY = data;	return;
         case 0xFF43: IOSCX = data; 	return;
         case 0xFF44: IOLY = data; return;
