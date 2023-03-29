@@ -6,7 +6,9 @@
 #if TABLE_DECODER
 #define NOP nop
 
-uint8_t cb_decode(void);
+uint8_t  instr_cycles;
+
+static uint8_t cb_decode(void);
 
 static const uint8_t (*cb_opcodes[])(void) = {
 	rlc_b, rlc_c, rlc_d, rlc_e, rlc_h, rlc_l, rlc_ind_hl, rlc_a, rrc_b, rrc_c, rrc_d, rrc_e, rrc_h, rrc_l, rrc_ind_hl, rrc_a,
@@ -49,19 +51,16 @@ static const uint8_t (*opcodes[])(void) = {
 
 void decode(void)
 {
-	if (halt_state == HALT_ACTIVE) {
-		if (!IOIF && IME) {// having IME fails tests but games work properly
-			instr_cycles = ONE_CYCLE;
-			return;
-		}		
-		halt_state = HALT_INACTIVE;
+	if (halt_state == HALT_ACTIVE) {	
+		instr_cycles = ONE_CYCLE;
+		return;			
 	}
 
 	uint8_t opcode = memoryRead(REG_PC++);
 	instr_cycles = opcodes[opcode]();
 }
 
-uint8_t cb_decode(void)
+static uint8_t cb_decode(void)
 { 
 	return cb_opcodes[memoryRead(REG_PC++)]();
 }
@@ -82,14 +81,9 @@ uint16_t aux16;
 
 	instr_cycles = 0;
 
-	if(halt_state == HALT_ACTIVE){
-		if (IOIF || !IME) {
-			halt_state = HALT_INACTIVE;
-		}
-		else {
-			SET_INSTR_CYCLES(ONE_CYCLE);
-			return;
-		}
+	if(halt_state == HALT_ACTIVE){		
+		SET_INSTR_CYCLES(ONE_CYCLE);
+		return;
 	}
     
     opcode = memoryRead(REG_PC++);

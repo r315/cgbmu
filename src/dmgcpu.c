@@ -42,7 +42,6 @@ uint8_t hram[128];                       // 0xFF80-0xFFFE
 uint8_t *rom0;                           // 0x0000-0x3FFF
 uint8_t *rombank;                        // 0x4000-0x7FFF
 
-uint8_t  instr_cycles;
 uint32_t machine_cycles = 0;
 uint16_t timer_prescaler;
 uint8_t halt_state, stopped;

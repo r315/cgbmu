@@ -184,10 +184,8 @@ extern uint8_t vram[VRAM_SIZE];     // 0x8000-0x9FFF
 extern uint8_t oam[OAM_SIZE];       // 0xFE00-0xFEBF
 //extern uint8_t hram[256];         // 0xFF80-0xFFFE
 
-extern uint8_t instr_cycles;
 extern uint8_t halt_state, stopped;
 extern uint8_t IME;                 // interrupt master enable  Set and reset by DI,EI instructions
-
 
 extern uint8_t IOP1;                // 0xFF00 P1
 extern uint8_t IODIV;               // 0xFF04 timer divider

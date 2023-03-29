@@ -51,6 +51,7 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 
 #define SCREEN_W			160
 #define SCREEN_H			144
+#define SCREEN_VBLANK_LINES 10
 #define SCREEN_H_TILES		SCREEN_W/8		// Horizontal Tiles
 #define SCREEN_V_TILES		SCREEN_H/8		// Vertical Tiles
 
@@ -58,13 +59,14 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 #define V_M1				1
 #define V_M2				2
 #define V_M3				3
+#define V_MODE_MASK			(V_M3)
 
 #define V_M0_CYCLE			204
 #define V_M2_CYCLE			80
 #define V_M3_CYCLE			172
-#define V_LINE_CYCLE		(V_M0_CYCLE + V_M2_CYCLE + V_M3_CYCLE)
+#define V_M1_CYCLE			(V_M0_CYCLE + V_M2_CYCLE + V_M3_CYCLE)
+#define V_FRAME_CYCLE		(V_M1_CYCLE * (SCREEN_H + SCREEN_VBLANK_LINES))
 
-#define V_MODE_MASK			3
 
 #define VBLANK_LINES		8
 
@@ -116,6 +118,8 @@ typedef struct _Tile {
 		uint8_t msb;
 	}line[8];
 }TileData;
+
+extern uint32_t video_cycles;
 
 uint8_t video(void);
 void nextLine(void);

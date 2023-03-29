@@ -57,7 +57,7 @@ void runOneFrame(void) {
 
 	while (IOLY < (SCREEN_H + VBLANK_LINES)) {
 		IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & ~LYC_LY_FLAG);
-		runCpu(V_LINE_CYCLE);
+		runCpu(V_M1_CYCLE);
 		IOLY++;
 	}
 }

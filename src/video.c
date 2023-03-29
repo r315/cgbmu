@@ -2,14 +2,12 @@
 #include <string.h>
 #include "dmgcpu.h"
 #include "video.h"
-#include "board.h"
-#include "liblcd.h"
 #include "cgbmu.h"
+#include "decoder.h"
 
-
-static uint16_t video_cycles = 0;
+uint32_t video_cycles = 0;
 static Object *visible_objs[MAX_LINE_OBJECTS];
-uint8_t scanlinedata[SCREEN_W];		// one line of pixels
+static uint8_t scanlinedata[SCREEN_W];		// one line of pixels
 
 //-----------------------------------------
 //put one line of Sprite data into scanlinedata
