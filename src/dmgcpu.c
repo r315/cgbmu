@@ -78,21 +78,15 @@ static const uint8_t boot_rom [] = {
 	0x8E,0x27,0x77,0x3E,0x01,0xE0,0xE0,0xD0,0x3E,0x99,0x32,0x32,0x77,0xC9,0xF5,0xE5,
 };
 
-void setTimerPrescaler(void);
-
 //-----------------------------------------
 //
 //-----------------------------------------
-
-void jumpVector(uint16_t vector)
-{
-	IME = 0;
-    PUSH(REG_PC);
-    REG_PC = vector;
+void setInt(uint8_t irq) {
+	IOIF |= irq;
+	if (IOIE & irq) {
+		halt_state = HALT_INACTIVE;
+	}
 }
-//-----------------------------------------
-//
-//-----------------------------------------
 
 void interrupts(void)
 {
@@ -164,9 +158,9 @@ void timer(void)
 
 	while (timer_cycles >= timer_prescaler) {
 		IOTIMA++;
-		if(!IOTIMA){			
+		if(!IOTIMA){
 			IOTIMA = IOTMA;		// on overflow TIMA is reloaded with TMA
-			IOIF |= TIMER_IF;	// and TIMER_IF is set
+			setInt(TIMER_IF);	// and TIMER_IF is set
 		}
 		timer_cycles -= timer_prescaler;
 	}

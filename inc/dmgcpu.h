@@ -95,7 +95,7 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 
 #define IOP1_MASK   0xCF
 
-enum halt_states {HALT_INACTIVE, HALT_ACTIVE};
+enum halt_states {HALT_INACTIVE, HALT_ACTIVE, HALT_SKIP};
 
 /*
  15..8  7..0
@@ -219,4 +219,5 @@ void interrupts(void);
 void timer(void);
 uint8_t joyPad(void);
 void bootCpu(void);
+void setInt(uint8_t irq);
 #endif
