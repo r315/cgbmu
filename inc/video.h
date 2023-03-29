@@ -122,7 +122,7 @@ typedef struct _Tile {
 extern uint32_t video_cycles;
 
 uint8_t video(void);
-void nextLine(void);
+uint8_t checkLine(uint8_t ly);
 void scanline(void);
 void scanOAM(void);
 
