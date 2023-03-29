@@ -90,7 +90,7 @@ void setInt(uint8_t irq) {
 
 void interrupts(void)
 {
-uint8_t irq;
+	uint8_t irq;
 	
 	if(!IME){
 		return;
@@ -98,21 +98,28 @@ uint8_t irq;
 
 	irq = IOIE & IOIF;
 
+	if (!irq) {
+		return;
+	}
+
+	IME = 0;
+	PUSH(REG_PC);
+
 	if(irq & V_BLANK_IF){ // Priority 1
 		IOIF &= ~(V_BLANK_IF);
-		jumpVector(0x0040);
+		REG_PC = 0x0040;
 	}else if(irq & LCDC_IF){ // Priority 2
 		IOIF &= ~(LCDC_IF);
-		jumpVector(0x0048);
+		REG_PC = 0x0048;
 	}else if(irq & TIMER_IF){ // Priority 3
 		IOIF &= ~TIMER_IF;
-		jumpVector(0x0050);
+		REG_PC = 0x0050;
 	}else if(irq & SERIAL_IF){ // Priority 4
 		IOIF &= ~(SERIAL_IF);
-		jumpVector(0x0058);
+		REG_PC = 0x0048;
 	}else if(irq & JOYPAD_IF){ // Priority 5
 		IOIF &= ~(JOYPAD_IF);
-		jumpVector(0x0060);
+		REG_PC = 0x0060;
 	}
 }
 //-----------------------------------------
