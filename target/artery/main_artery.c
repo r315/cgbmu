@@ -20,6 +20,25 @@ static const uint8_t *cartridge = &_binary_rom_start;
 const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
 static uint16_t tft_line[SCREEN_W];
 
+int drawInt(int x, int y, unsigned int v, char radix, char digitos)
+{
+	unsigned char i = 0, c, dig[16];
+	do {
+		c = (unsigned char)(v % radix);
+		if (c >= 10)c += 7;
+		c += '0';
+		v /= radix;
+		dig[i++] = c;
+	} while (v);
+
+	for (c = i; c < digitos; c++)
+		x = LIB2D_Char(x, y, '0');
+
+	while (i--)
+		x = LIB2D_Char(x, y, dig[i]);
+	return x;
+}
+
 void pushScanLine(uint8_t *scanline){
 
     uint8_t *end = scanline + SCREEN_W;

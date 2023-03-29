@@ -19,18 +19,33 @@ extern "C" {
 
 enum {false = 0, true, OFF = false, ON = true};
 
-static inline uint16_t __DISPLAY_Char(uint16_t x, uint16_t y, uint8_t c){
-	BSP_LCD_DisplayChar(x,y,c);
-	return x + 14;
-}
 
+
+#define SCREEN_OFFSET_X     200
+#define SCREEN_OFFSET_Y     200
+
+#define LIB2D_Print 
 #define LIB2D_Char __DISPLAY_Char
 #define LIB2D_SetFcolor BSP_LCD_SetTextColor
+
+#define DMA2D_CR_M2M (0 << 16)
+#define DMA2D_CR_M2M_PFC (1 << 16)
+#define DMA2D_CR_M2M_BLEND (2 << 16)
+#define DMA2D_CR_R2M (3 << 16)
+#define DMA2D_FGPFCCR_SET_ALPHA(a) ((a << 24) | (1 << 16))
+#define DMA2D_FGPFCCR_SET_CS(cs) ((cs) << 8)	// CLUT size
+#define DMA2D_FGPFCCR_SET_CM(cm) ((cm) << 0)  // Input Color mode
+#define DMA2D_OPFCCR_SET_CM(cm) ((cm) << 0)	// Output Color mode
+#define DMA2D_NLR_PLNL(pl, nl) (((pl) << 16) | nl)
+
 static inline uint16_t LIB2D_Text(uint16_t x, uint16_t y, char *text) {
 	return BSP_LCD_DisplayStringAt(x, y, (uint8_t*)text, LEFT_MODE);
 }
 
-#define LIB2D_Print 
+static inline uint16_t __DISPLAY_Char(uint16_t x, uint16_t y, uint8_t c){
+	BSP_LCD_DisplayChar(x,y,c);
+	return x + 14;
+}
 
 void BOARD_Init(void);
 void LCD_Window(uint16_t x, uint16_t y, uint16_t w, uint16_t h);

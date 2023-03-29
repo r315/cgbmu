@@ -3,14 +3,29 @@
 #include "cgbmu.h"
 #include "video.h"
 #include "dmgcpu.h"
-#include "debug.h"
 #include "decoder.h"
 
 enum{ SINGLE_FRAME, SINGLE_STEP};
-//----------------------------------------------------*/
-//
-//------------------------------------------------------
-void runCpu(uint32_t nTicks) {
+
+
+void updateFps(void) {
+	static uint32_t fpsupdatetick = 0;
+	static uint16_t fps = 0;
+	fps++;
+
+	if (GetTick() > fpsupdatetick)
+	{
+		drawInt(SCREEN_W + 1, 0, fps, 10, 4);
+		fps = 0;
+		fpsupdatetick = GetTick() + 1000;
+	}
+}
+/**
+ * @brief 
+ * 
+ * @param nTicks 
+ */
+static void runCpu(uint32_t nTicks) {
 uint32_t elapsed_cycles = 0;
 	while (nTicks > elapsed_cycles) {
 		decode();
@@ -19,9 +34,11 @@ uint32_t elapsed_cycles = 0;
 		elapsed_cycles += instr_cycles;
 	}
 }
-//-----------------------------------------
-//
-//-----------------------------------------
+
+/**
+ * @brief 
+ * 
+ */
 void runOneFrame(void) {
 
 	IOSTAT &= ~(V_MODE_MASK);
@@ -62,6 +79,25 @@ void runOneFrame(void) {
 	}
 }
 
+/**
+ * @brief 
+ * 
+ */
+void runOneStep(void) {
+	decode();
+	if (video()) {
+		updateFps();
+	}
+	timer();
+	// serial
+	interrupts();
+}
+
+/**
+ * @brief 
+ * 
+ * @param rom 
+ */
 void cgbmu(const uint8_t *rom) {
 	uint32_t ticks;
 	uint8_t mode = !SINGLE_FRAME;
@@ -83,7 +119,7 @@ void cgbmu(const uint8_t *rom) {
 				if (ticks < FRAME_TIME)
 					DelayMs(FRAME_TIME - ticks);
 				ticks = GetTick();
-				DBG_Fps();
+				updateFps();
 			}
 			interrupts();
 		}
@@ -95,7 +131,7 @@ void cgbmu(const uint8_t *rom) {
 #endif
 			runOneFrame();
 			//VIDEO_Update();
-			DBG_Fps();
+			updateFps();
 
 #if defined(_WIN32) || defined(linux)
 			int delta = GetTick() - startTicks;

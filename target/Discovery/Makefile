@@ -22,7 +22,6 @@ EMU_PATH 	:=../../
 # source
 ######################################
 C_SOURCES =  \
-Src/video_stm32.c \
 Src/main_discovery.c \
 Src/board_discovery.c \
 Src/fifo.c \
@@ -95,7 +94,7 @@ $(EMU_PATH)/src/cartridge.c \
 $(EMU_PATH)/src/dmgcpu.c \
 $(EMU_PATH)/src/decoder.c \
 $(EMU_PATH)/src/cgbmu.c \
-$(EMU_PATH)/src/debug.c \
+$(EMU_PATH)/src/video.c \
 
 C_SOURCES +=$(CGBEMU_SOURCES) $(BSP_C_SOURCES)
 #######################################
@@ -172,8 +171,8 @@ aslist: $(BUILD_DIR)/$(TARGET).elf
 test:
 	 @echo $(OBJECTS)
 
-$(BUILD_DIR)/extbin.o : ../../../roms/mario.gb 
-#$(BUILD_DIR)/extbin.o : ../../../roms/tests/cpu_instrs.gb
+#$(BUILD_DIR)/extbin.o : ../../../roms/mario.gb 
+$(BUILD_DIR)/extbin.o : ../../../roms/tests/cpu_instrs.gb
 	$(CP) -I binary -O elf32-littlearm -B arm --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0 $< $@
 	$(DP) -t $@
 #######################################

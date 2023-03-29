@@ -6,12 +6,13 @@
 #include "dmgcpu.h"
 #include "video.h"
 #include "cartridge.h"
-#include "debug.h"
+#include "debugger.h"
 #include "decoder.h"
 #include "tests.h"
 #include "liblcd.h"
 #include "lib2d.h"
 
+#if 0
 char filename[100];
 extern const char TEST_bg_map[32 * 32];
 extern const char TEST_tilesData[0x1000];
@@ -35,47 +36,6 @@ const char sprites[] = {
 	16 + 8,8,0,OBJECT_FLAG_YFLIP,
 	16 + 8,16,0,(OBJECT_FLAG_XFLIP | OBJECT_FLAG_YFLIP)
 };
-
-
-void TEST_buttons(void) {
-	char *name, scanned;
-
-	LIB2D_Text(0, 0, "Testing Buttons");
-	printf("Buttons Test\n");
-	
-	while (readButtons() != 255) {
-		name = "";
-
-		IOP1 = IOP14;
-		scanned = joyPad() & 0x0f;
-		switch (scanned) {
-			case 0x0e:  name = "  [ A ]   "; break;
-			case 0x0d:  name = "  [ B ]   "; break;
-			case 0x0b:  name = "[ SELECT ]"; break;
-			case 0x07:  name = "[ START ] "; break;			
-			default: 
-				IOP1 = IOP15;
-				scanned = joyPad() & 0x0f;
-				switch (scanned) {
-					case 0x0e:   name = "[ RIGHT ] "; break;
-					case 0x0d:   name = "[ LEFT  ] "; break;
-					case 0x0b:   name = "[  UP  ]  "; break;
-					case 0x07:   name = "[ DOWN ]  "; break;
-					default: break;
-				}
-				break;
-		}
-		if (*name != '\0'){
-			LIB2D_Print("%s\n", name);
-			printf("%u %s\n", scanned,name);
-		}
-
-		#if defined(_WIN32) || defined(linux)
-		//LCD_Update();		
-		SDL_Delay(20);
-		#endif
-	}
-}
 
 void dumpLine(uint8_t *buf, uint8_t size) {
 	uint8_t i;
@@ -181,9 +141,49 @@ void TEST_Sprites(char flags) {
 		DelayMs(100);
 	}
 }
+#endif
 
+void TEST_buttons(void) {
+	char *name, scanned;
 
-void TEST_main(void) {
+	LIB2D_Text(0, 0, "Testing Buttons");
+	printf("Buttons Test\n");
+
+	while (readButtons() != 255) {
+		name = "";
+
+		IOP1 = IOP14;
+		scanned = joyPad() & 0x0f;
+		switch (scanned) {
+		case 0x0e:  name = "  [ A ]   "; break;
+		case 0x0d:  name = "  [ B ]   "; break;
+		case 0x0b:  name = "[ SELECT ]"; break;
+		case 0x07:  name = "[ START ] "; break;
+		default:
+			IOP1 = IOP15;
+			scanned = joyPad() & 0x0f;
+			switch (scanned) {
+			case 0x0e:   name = "[ RIGHT ] "; break;
+			case 0x0d:   name = "[ LEFT  ] "; break;
+			case 0x0b:   name = "[  UP  ]  "; break;
+			case 0x07:   name = "[ DOWN ]  "; break;
+			default: break;
+			}
+			break;
+		}
+		if (*name != '\0') {
+			LIB2D_Print("%s\n", name);
+			printf("%u %s\n", scanned, name);
+		}
+
+#if defined(_WIN32) || defined(linux)
+		//LCD_Update();		
+		SDL_Delay(20);
+#endif
+	}
+}
+
+void TEST_run(void) {
 	//LCD_Window(0, 0, LCD_W, LCD_H);
 	LCD_FillRect(0, 0, LCD_W, LCD_H, LCD_RED);
 	TEST_buttons();

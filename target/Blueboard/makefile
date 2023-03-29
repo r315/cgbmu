@@ -17,7 +17,6 @@ $(LIB_PATH)/src/liblcd.c \
 $(LIB_PATH)/src/font.c \
 $(LIB_PATH)/src/libbutton.c \
 $(LIB_PATH)/src/lib2d.c \
-$(EMU_PATH)/src/debug.c \
 $(EMU_PATH)/src/instrs.c \
 $(EMU_PATH)/src/cartridge.c \
 $(EMU_PATH)/src/dmgcpu.c \

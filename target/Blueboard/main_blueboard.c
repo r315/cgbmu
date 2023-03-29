@@ -4,7 +4,6 @@
 #include "dmgcpu.h"
 #include "video.h"
 #include "cartridge.h"
-#include "debug.h"
 #include "decoder.h"
 #include "lib2d.h"
 
@@ -14,7 +13,34 @@ uint8_t *cartridge = &_binary_rom_start;
 #endif
 
 const unsigned short lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
+/**
+ * @brief 
+ * 
+ * @param x 
+ * @param y 
+ * @param v 
+ * @param radix 
+ * @param digitos 
+ * @return int 
+ */
+int drawInt(int x, int y, unsigned int v, char radix, char digitos)
+{
+	unsigned char i = 0, c, dig[16];
+	do {
+		c = (unsigned char)(v % radix);
+		if (c >= 10)c += 7;
+		c += '0';
+		v /= radix;
+		dig[i++] = c;
+	} while (v);
 
+	for (c = i; c < digitos; c++)
+		x = LIB2D_Char(x, y, '0');
+
+	while (i--)
+		x = LIB2D_Char(x, y, dig[i]);
+	return x;
+}
 // Dark - light
 // RGB(0,19, 25), RGB(60,127,38), RGB(170, 204, 71), RGB(248, 255, 178)
 //-----------------------------------------

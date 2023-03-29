@@ -57,7 +57,6 @@ $(EMU_PATH)/src/dmgcpu.c \
 $(EMU_PATH)/src/video.c \
 $(EMU_PATH)/src/decoder.c \
 $(EMU_PATH)/src/cgbmu.c \
-$(EMU_PATH)/src/debug.c \
 
 # ASM sources
 #ASM_SOURCES =startup_at32f415cbt7.s

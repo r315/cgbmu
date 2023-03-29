@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include "dmgcpu.h"
 #include "cartridge.h"
+#include "decoder.h"
 
-uint32_t clockcounter = 0;
 char rname[] = {"bcdehlfa"};
 
 void disassembleHeader(void) {
-	printf("\n\t\tInstruction\t\tcycles\n");
+	printf("\n\t\tInstruction\n");
 }
 
 void disassemble(void){
@@ -14,7 +14,6 @@ uint8_t src;
 uint8_t dst;
 uint8_t opcode;
 
-    clockcounter += instr_cycles;
     printf("PC: %04X\t", REG_PC);
 
     opcode = memoryRead(REG_PC);	
@@ -476,5 +475,5 @@ uint8_t opcode;
             }			
 			
     }
-    printf("\t%u\n", clockcounter);
+    printf("\n");
 }

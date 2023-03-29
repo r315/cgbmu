@@ -5,7 +5,6 @@
 #include <cgbmu.h>
 #include "cartridge.h"
 #include "dmgcpu.h"
-#include "debug.h"
 #include "board.h"
 
 static uint8_t bankselect;

@@ -1,13 +1,119 @@
+#include <stdlib.h>
 #include "board.h"
 #include "dmgcpu.h"
 #include "cartridge.h"
 #include "cgbmu.h"
+#include "video.h"
 
 #if !defined(USE_FS)
 extern uint8_t _binary_rom_start;
 uint8_t *cartridge = &_binary_rom_start;
 #endif
 
+static uint8_t *screen;
+uint8_t palette [256] = {230,248,215, 138,192,114, 55,106,87, 10,26,39};
+
+static void LCD_ConfigVideoDma(uint32_t dst, uint32_t src, uint16_t w, uint16_t h, uint32_t bgc)
+{
+    DMA2D->CR = DMA2D_CR_M2M_PFC;
+    DMA2D->FGMAR = src;
+    DMA2D->FGOR = 0;
+    DMA2D->FGPFCCR = DMA2D_FGPFCCR_SET_ALPHA(0xFF) |        // Replace alpha 
+                     DMA2D_FGPFCCR_SET_CS(256 - 1) |        // CLUT Size
+                     DMA2D_FGPFCCR_SET_CM(DMA2D_INPUT_L8) | // Input color format
+                     DMA2D_FGPFCCR_CCM;                     // RGB CLUT Mode
+    DMA2D->OPFCCR = DMA2D_OPFCCR_SET_CM(DMA2D_OUTPUT_ARGB8888) |
+                    //DMA2D_OPFCCR_RBS |                    // Swap Red Blue
+                    0;
+    DMA2D->OMAR = dst;  									// Absolute start memory of top left
+    DMA2D->OOR = BSP_LCD_GetXSize() - w;                    // Add offset to start of next line
+    DMA2D->NLR = DMA2D_NLR_PLNL(w, h);
+
+    LTDC->BCCR = bgc;
+}
+
+void videoInit(void)
+{    
+    BSP_LCD_Init();
+
+    BSP_LCD_LayerDefaultInit(DMA2D_FOREGROUND_LAYER, LCD_FB_START_ADDRESS);     
+    BSP_LCD_SelectLayer(DMA2D_FOREGROUND_LAYER);
+
+    BSP_LCD_Clear(LCD_COLOR_BLACK);
+
+    BSP_LED_On(LED2);
+
+    screen = (uint8_t *)malloc(SCREEN_W * SCREEN_H);
+
+    LCD_ConfigVideoDma(LCD_FB_START_ADDRESS + 200 + (200 * BSP_LCD_GetXSize()), (uint32_t)screen, 160, 144, 0);
+
+	uint8_t *pal = palette;
+	for (uint32_t i = 0; i < 256; ++i)
+    {
+        uint8_t r = *pal++;
+        uint8_t g = *pal++;
+        uint8_t b = *pal++;
+
+		((uint32_t*)DMA2D->FGCLUT)[i] = (r << 16) | (g << 8) | (b << 0);		
+    }
+}
+
+/**
+ * @brief 
+ * 
+ * @param x 
+ * @param y 
+ * @param v 
+ * @param radix 
+ * @param digitos 
+ * @return int 
+ */
+int drawInt(int x, int y, unsigned int v, char radix, char digitos)
+{
+	unsigned char i = 0, c, dig[16];
+	do {
+		c = (unsigned char)(v % radix);
+		if (c >= 10)c += 7;
+		c += '0';
+		v /= radix;
+		dig[i++] = c;
+	} while (v);
+
+	for (c = i; c < digitos; c++)
+		x = LIB2D_Char(x, y, '0');
+
+	while (i--)
+		x = LIB2D_Char(x, y, dig[i]);
+	return x;
+}
+
+/**
+ * @brief 
+ * 
+ * @param scanline 
+ */
+void pushScanLine(uint8_t *scanline){
+
+    uint8_t *end = scanline + SCREEN_W;
+    uint8_t *dst = screen + SCREEN_OFFSET_X + ((SCREEN_OFFSET_Y + IOLY) * BSP_LCD_GetXSize());
+
+	if(IOLY == 0){
+		DMA2D->CR |= DMA2D_CR_START;
+    	do{
+
+    	}while(DMA2D->CR & DMA2D_CR_START);
+	}
+
+    while(scanline < end){
+		*dst++ = *scanline++;
+    }
+}
+/**
+ * @brief 
+ * 
+ * @param fn 
+ * @return int 
+ */
 int loadRom(char *fn)
 {
     //cartridgeInit(cartridge);
@@ -15,9 +121,26 @@ int loadRom(char *fn)
     return 0;
 }
 
+/**
+ * @brief 
+ * 
+ * @return uint8_t 
+ */
+uint8_t readButtons(void)
+{
+uint8_t button = 0;
+
+    return button;
+}
+
+/**
+ * @brief 
+ * 
+ * @return int 
+ */
 int main(void){
     BOARD_Init();
-    VIDEO_Init();
+    videoInit();
 
     BSP_LCD_SetTextColor(LCD_COLOR_RED);
     BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
@@ -25,9 +148,3 @@ int main(void){
     cgbmu(cartridge);
 }
 
-uint8_t readButtons(void)
-{
-uint8_t button = 0;
-
-    return button;
-}

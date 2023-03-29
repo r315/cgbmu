@@ -1,13 +1,12 @@
 
 #include <string.h>
 #include <stdlib.h>
-//#include <pthread.h>
 #include "board.h"
 #include "cgbmu.h"
 #include "dmgcpu.h"
 #include "video.h"
 #include "cartridge.h"
-#include "debug.h"
+#include "debugger.h"
 #include "decoder.h"
 #include "tests.h"
 #include "lib2d.h"
@@ -39,15 +38,12 @@ const char *test_roms[] = {
 	"phys.gb"             // 14
 };
 
+static const char *card_types[] = { "ROM", "MBC1", "MBC1 + RAM" };
 const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
-static uint16_t tft_line[SCREEN_W];
 static uint8_t *MBC1_ROM = NULL;
 
 void optParseFlag(void *opt){
 	*((uint8_t*)(((opt_t*)opt)->ctx)) |= ((opt_t*)opt)->flag;
-}
-
-void optParseInt(void *opt){
 }
 
 void optParseStr(void *opt){
@@ -76,11 +72,6 @@ void parseOptions(int argc, char **argv, int optc, opt_t *options) {
 #include <unistd.h>
 #endif
 
-
-
-#define LOG_TAG "MAIN"
-static const char *card_types[] = { "ROM", "MBC1", "MBC1 + RAM" };
-
 int loadRom(char *file)
 {
 	char cwd[1024];
@@ -97,12 +88,12 @@ int loadRom(char *file)
 		return 0;
 	}
 
-	printf("%s: Loading File \"%s\"\n", LOG_TAG, file);
+	printf("Loading File \"%s\"\n", file);
 	fp = fopen(file, "rb");
 
 	if (fp == NULL)
 	{
-		printf("%s: File not found\n", LOG_TAG);
+		printf("File not found\n");
 		return 0;
 	}
 
@@ -110,7 +101,7 @@ int loadRom(char *file)
 	int sz = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
 
-	printf("%s: Reading %u bytes\n", LOG_TAG, sz);
+	printf("Reading %u bytes\n", sz);
 
 	MBC1_ROM = (uint8_t*)malloc(sz);
 
@@ -154,7 +145,7 @@ const Uint8 *keys;
 	    return button;
 	} 
 
-	if (ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP) {		
+	if (ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP) {
 		button = 0;
 	}
 	else
@@ -176,15 +167,8 @@ const Uint8 *keys;
 return button;
 }
 
-void *sdf(void *r){
-	while(1){
-		LCD_Update();
-		SDL_Delay(20);
-	}
-	return NULL;
-}
-
 void pushScanLine(uint8_t *scanline) {
+	uint16_t tft_line[SCREEN_W];
 	uint8_t *end = scanline + SCREEN_W;
 	uint8_t pixel = 0;
 
@@ -194,40 +178,57 @@ void pushScanLine(uint8_t *scanline) {
 
 	LCD_WriteArea(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + IOLY, SCREEN_W, 1, tft_line);
 }
-//-----------------------------------------------------------
-//
-//-----------------------------------------------------------
-void printHelp(void){
-printf("Available options:\n\n"
-				"\t -d   Debug on\n"
-				"\t -r   <romfile>\n"
-				"\t -t   tests\n"
-				"\t -i   Instruction mode loop\n");
+
+int drawInt(int x, int y, unsigned int v, char radix, char digitos)
+{
+	unsigned char i = 0, c, dig[16];
+	do {
+		c = (unsigned char)(v % radix);
+		if (c >= 10)c += 7;
+		c += '0';
+		v /= radix;
+		dig[i++] = c;
+	} while (v);
+
+	for (c = i; c < digitos; c++)
+		x = LIB2D_Char(x, y, '0');
+
+	while (i--)
+		x = LIB2D_Char(x, y, dig[i]);
+	return x;
 }
 
 int loadTestRom(uint8_t nr) {
 	char *path = malloc(128);
 
-	strcpy(path, (const char*)ROM_PATH); // Defined on project properties
+	strcpy(path, (const char*)ROM_PATH"/tests"); // Defined on project properties
 
 	int len = strlen(path);
-	*(path + len) = '\\';
+	*(path + len) = '/';
 	strcpy(path + len + 1, test_roms[nr]);
 	
 	return loadRom(path);
 }
-
 
 void dry_run(void) {
 	initCpu();
 	while (readButtons() != 255) {
 #if 1
 		// slow path
-		DBG_SingleStep();
+		runOneStep();
 #else
+		// Fastest run
 		runOneFrame();
 #endif
 	}
+}
+
+void printHelp(void) {
+	printf("Available options:\n\n"
+		"\t -d   Debug on\n"
+		"\t -r   <romfile>\n"
+		"\t -t   tests\n"
+		"\t -i   Instruction mode loop\n");
 }
 //-----------------------------------------------------------
 //instructions test
@@ -263,8 +264,7 @@ opt_t options[] = {
 
 		DBG_run();		// Run loaded rom in debug mode
 	
-		//cgbmu(MBC1_ROM);  // Run emulator in normal mode
-	
+		//cgbmu(MBC1_ROM);  // Run emulator in normal mode	
 	}
 	else {
 		LIB2D_Text(0, 4, "Fail to load rom");
