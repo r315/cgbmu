@@ -42,7 +42,6 @@ uint8_t hram[128];                       // 0xFF80-0xFFFE
 uint8_t *rom0;                           // 0x0000-0x3FFF
 uint8_t *rombank;                        // 0x4000-0x7FFF
 
-uint32_t machine_cycles = 0;
 uint16_t timer_prescaler;
 uint8_t halt_state, stopped;
 uint8_t IME;  	// Reset by DI and set by EI instructions
@@ -270,7 +269,7 @@ uint8_t memoryRead(uint16_t address)
         case 0xFF43: return IOSCX;
         case 0xFF44: return IOLY;
         case 0xFF45: return IOLYC;
-		case 0xFF46: return IODMA;
+		case 0xFF46: return 0xFF; //IODMA;
         case 0xFF47: return IOBGP;
         case 0xFF48: return IOOBP0;
         case 0xFF49: return IOOBP1;        
@@ -360,7 +359,7 @@ void memoryWrite(uint16_t address, uint8_t data)
 			return;
         case 0xFF42: IOSCY = data;	return;
         case 0xFF43: IOSCX = data; 	return;
-        case 0xFF44: IOLY = data; return;
+        case 0xFF44: return;
         case 0xFF45: IOLYC = data; return;
 		case 0xFF46: dma(data<<8); return;			
         case 0xFF47: IOBGP = data; return;
