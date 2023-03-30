@@ -10,22 +10,6 @@ void vc_putchar(char c);
 uint32_t memavail(void);
 void dumpBuf(uint8_t *buf, uint32_t off, uint32_t size);
 
-void I_InitGraphics(void);
-void I_SetPalette(uint8_t *palette);
-void I_FinishUpdate(void);
-
-void OnError_Handler(uint32_t condition)
-{
-    if (condition)
-    {
-        BSP_LED_On(LED1);
-        while (1)
-        {
-            ;
-        } /* Blocking on error */
-    }
-}
-
 FRESULT scan_files (char* path)
 {
     FRESULT res;
@@ -159,7 +143,7 @@ void BOARD_Init(void)
 
     printf("\e[2J\r");
 
-    SD_Init();
+    //SD_Init();
 
     //SD_DumpSector(0);
 
@@ -263,4 +247,9 @@ int access(char *file, int mode)
     return -1;
 }
 
-
+void __debugbreak(void){
+	 asm volatile
+    (
+        "bkpt #01 \n"
+    );
+}

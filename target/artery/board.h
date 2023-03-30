@@ -94,6 +94,7 @@ void DelayMs(uint32_t ms);
 uint32_t ElapsedTicks(uint32_t start_ticks);
 uint32_t GetTick(void);
 
+void __debugbreak(void);
 #ifdef __cplusplus
 }
 #endif

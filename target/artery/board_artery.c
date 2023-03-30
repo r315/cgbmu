@@ -66,3 +66,10 @@ void BOARD_Init(void)
     
 	LCD_Bkl(ON);
 }
+
+void __debugbreak(void){
+	 asm volatile
+    (
+        "bkpt #01 \n"
+    );
+}

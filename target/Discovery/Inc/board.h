@@ -9,8 +9,6 @@ extern "C" {
 #include "stm32f7xx_hal.h"
 #include "stm32f769i_discovery_lcd.h"
 #include "stm32f769i_discovery_sdram.h"
-#include "video_stm32.h"
-//#include <display.h>
 
 #define DBG_PIN_TOGGLE
 
@@ -18,8 +16,6 @@ extern "C" {
 #define GetTick HAL_GetTick
 
 enum {false = 0, true, OFF = false, ON = true};
-
-
 
 #define SCREEN_OFFSET_X     200
 #define SCREEN_OFFSET_Y     200
@@ -39,12 +35,12 @@ enum {false = 0, true, OFF = false, ON = true};
 #define DMA2D_NLR_PLNL(pl, nl) (((pl) << 16) | nl)
 
 static inline uint16_t LIB2D_Text(uint16_t x, uint16_t y, char *text) {
-	return BSP_LCD_DisplayStringAt(x, y, (uint8_t*)text, LEFT_MODE);
+    return BSP_LCD_DisplayStringAt(x, y, (uint8_t*)text, LEFT_MODE);
 }
 
 static inline uint16_t __DISPLAY_Char(uint16_t x, uint16_t y, uint8_t c){
-	BSP_LCD_DisplayChar(x,y,c);
-	return x + 14;
+    BSP_LCD_DisplayChar(x,y,c);
+    return x + 14;
 }
 
 void BOARD_Init(void);
@@ -52,6 +48,8 @@ void LCD_Window(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 void LCD_Data(uint16_t data);
 void Error_Handler(void);
 uint8_t vc_getCharNonBlocking(char *c);
+void __debugbreak(void);
+
 
 #define SAI1_FSA_Pin GPIO_PIN_4
 #define SAI1_FSA_GPIO_Port GPIOE

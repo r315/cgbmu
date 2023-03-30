@@ -15,6 +15,7 @@ DRIVERS_COSTUM_PATH =$(DRIVERS_PATH)/Drivers/Costum
 DRIVERS_COMPONENT_PATH =$(DRIVERS_PATH)/Drivers/Component
 EMU_PATH 		:=../..
 LIB_PATH    	=$(EMU_PATH)/lib
+ROM_PATH		=../../../roms
 
 C_INCLUDES = \
 $(BOARD_PATH) \
@@ -61,6 +62,7 @@ $(EMU_PATH)/src/cgbmu.c \
 # ASM sources
 #ASM_SOURCES =startup_at32f415cbt7.s
 
+ROM_FILE=$(ROM_PATH)/mario.gb
 #######################################
 # Misc files
 #######################################
@@ -145,6 +147,18 @@ ASFLAGS  =$(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffuncti
 LDFLAGS  =$(MCU) $(SPECS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref,--gc-sections
 
 #######################################
+# Objects
+#######################################
+ROM_OBJ=$(BUILD_DIR)/rom.o
+OBJECTS = $(addprefix $(BUILD_DIR)/, $(notdir $(CSRCS:.c=.o)))
+#vpath %.c $(sort $(dir $(CSRCS)))
+#OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(CPP_SOURCES:.cpp=.obj)))
+#vpath %.cpp $(sort $(dir $(CPP_SOURCES)))
+#OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
+#vpath %.s $(sort $(dir $(ASM_SOURCES)))
+
+VPATH +=$(sort $(dir $(CSRCS)))
+#######################################
 # Rules
 #######################################
 # default action: build all
@@ -155,19 +169,6 @@ bin: $(BUILD_DIR)/$(TARGET).bin
 
 program: $(BUILD_DIR)/$(TARGET).elf
 	openocd -f $(OCD_CONFIG) -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
-
-#######################################
-# build the application
-#######################################
-# list of objects
-OBJECTS = $(addprefix $(BUILD_DIR)/, $(notdir $(CSRCS:.c=.o))) $(BUILD_DIR)/extbin.o
-#vpath %.c $(sort $(dir $(CSRCS)))
-#OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(CPP_SOURCES:.cpp=.obj)))
-#vpath %.cpp $(sort $(dir $(CPP_SOURCES)))
-#OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
-#vpath %.s $(sort $(dir $(ASM_SOURCES)))
-
-VPATH +=$(sort $(dir $(CSRCS)))
 
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	@echo "[CC]  $<"
@@ -181,7 +182,7 @@ $(BUILD_DIR)/%.o: %.s | $(BUILD_DIR)
 	@echo "[AS]  $<"
 	$(VERBOSE)$(AS) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS)
+$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) $(ROM_OBJ)
 	@echo "[LD]  $@"
 	$(VERBOSE)$(LD) -T$(LDSCRIPT) $(LDFLAGS) $(LDOBJECTS) $^ -o $@
 
@@ -199,9 +200,7 @@ size: $(BUILD_DIR)/$(TARGET).elf
 	$(VERBOSE)$(SZ) -A -x $<
 	$(VERBOSE)$(SZ) -B $<
 
-#ROM =tests/cpu_instrs.gb
-ROM =mario.gb
-$(BUILD_DIR)/extbin.o : ../../../roms/$(ROM)
+$(ROM_OBJ): $(ROM_FILE) 
 	$(OBJCOPY) -I binary -O elf32-littlearm --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0  $< $@
 	@$(OBJDUMP) -t $@
 #--rename-section .data=.rodata
@@ -210,7 +209,9 @@ $(BUILD_DIR)/extbin.o : ../../../roms/$(ROM)
 #######################################
 clean:
 	$(VERBOSE)-rm -fR $(BUILD_DIR)
-  
+
+clean-rom:
+	$(VERBOSE)-rm -f $(ROM_OBJ)
 #######################################
 # dependencies
 #######################################

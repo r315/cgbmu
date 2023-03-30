@@ -147,7 +147,12 @@ uint32_t ElapsedTicks(uint32_t start_ticks){
 //-----------------------------------------------------		
 //
 //-----------------------------------------------------		
-
+void __debugbreak(void){
+	 asm volatile
+    (
+        "bkpt #01 \n"
+    );
+}
 
 #ifdef __cplusplus
 }

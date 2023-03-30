@@ -17,5 +17,6 @@
 
 void BOARD_Init(void);
 void BB_ConfigPLL(uint8_t fmhz);
+void __debugbreak(void);
 
 #endif

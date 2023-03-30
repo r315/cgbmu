@@ -15,9 +15,13 @@ OPT = -Og
 # paths
 #######################################
 # Build path
-BUILD_DIR := build
+BUILD_DIR  := build
 REPOSITORY_DIR =$(REPO_F769)
-EMU_PATH 	:=../../
+EMU_PATH   :=../..
+ROM_PATH   =../../../roms
+DRIVERS_PATH =$(CURDIR)/../Drivers
+DRIVERS_COMPONENT_PATH =$(DRIVERS_PATH)/Component
+LIB_PATH   =$(EMU_PATH)/lib
 ######################################
 # source
 ######################################
@@ -32,6 +36,8 @@ Src/system_stm32f7xx.c \
 Src/sd_diskio.c \
 Src/fatfs.c \
 Src/syscalls.c \
+$(DRIVERS_PATH)/Costum/src/i2c_disco.c \
+$(DRIVERS_COMPONENT_PATH)/src/pcf8574.c \
 $(REPOSITORY_DIR)/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cortex.c \
 $(REPOSITORY_DIR)/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma2d.c \
 $(REPOSITORY_DIR)/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dsi.c \
@@ -73,6 +79,16 @@ $(REPOSITORY_DIR)/Drivers/BSP/STM32F769I-Discovery/stm32f769i_discovery_sdram.c 
 $(REPOSITORY_DIR)/Drivers/BSP/STM32F769I-Discovery/stm32f769i_discovery_sd.c \
 $(REPOSITORY_DIR)/Drivers/BSP/Components/otm8009a/otm8009a.c \
 
+CGBEMU_SOURCES = \
+$(EMU_PATH)/src/instrs.c \
+$(EMU_PATH)/src/cartridge.c \
+$(EMU_PATH)/src/dmgcpu.c \
+$(EMU_PATH)/src/decoder.c \
+$(EMU_PATH)/src/cgbmu.c \
+$(EMU_PATH)/src/video.c \
+
+ROM_FILE=$(ROM_PATH)/mario.gb
+
 # AS includes
 AS_INCLUDES = 
 
@@ -86,15 +102,9 @@ $(REPOSITORY_DIR)/Drivers/CMSIS/Include \
 $(REPOSITORY_DIR)/Drivers/CMSIS/Include \
 $(REPOSITORY_DIR)/Drivers/BSP/STM32F769I-Discovery \
 $(REPOSITORY_DIR)/Middlewares/Third_Party/FatFs/src \
-$(EMU_PATH)/inc
-
-CGBEMU_SOURCES = \
-$(EMU_PATH)/src/instrs.c \
-$(EMU_PATH)/src/cartridge.c \
-$(EMU_PATH)/src/dmgcpu.c \
-$(EMU_PATH)/src/decoder.c \
-$(EMU_PATH)/src/cgbmu.c \
-$(EMU_PATH)/src/video.c \
+$(EMU_PATH)/inc \
+$(DRIVERS_COMPONENT_PATH)/inc \
+$(LIB_PATH)/inc \
 
 C_SOURCES +=$(CGBEMU_SOURCES) $(BSP_C_SOURCES)
 #######################################
@@ -159,6 +169,19 @@ LIBS = -lc -lm -lnosys
 LIBDIR = 
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,--gc-sections
 
+#######################################
+# Objects to be generated
+#######################################
+ROM_OBJ=$(BUILD_DIR)/rom.o
+
+OBJECTS = $(addprefix $(BUILD_DIR)/, $(notdir $(C_SOURCES:.c=.o))) $(ROM_OBJ)
+vpath %.c $(sort $(dir $(C_SOURCES)))
+OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
+vpath %.s $(sort $(dir $(ASM_SOURCES)))
+
+#######################################
+# Rules
+#######################################
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf 
 #$(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
@@ -171,19 +194,9 @@ aslist: $(BUILD_DIR)/$(TARGET).elf
 test:
 	 @echo $(OBJECTS)
 
-#$(BUILD_DIR)/extbin.o : ../../../roms/mario.gb 
-$(BUILD_DIR)/extbin.o : ../../../roms/tests/cpu_instrs.gb
+$(ROM_OBJ): $(ROM_FILE)
 	$(CP) -I binary -O elf32-littlearm -B arm --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0 $< $@
 	$(DP) -t $@
-#######################################
-# build the application
-#######################################
-# list of objects
-OBJECTS = $(addprefix $(BUILD_DIR)/, $(notdir $(C_SOURCES:.c=.o))) $(BUILD_DIR)/extbin.o
-vpath %.c $(sort $(dir $(C_SOURCES)))
-# list of ASM program objects
-OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
-vpath %.s $(sort $(dir $(ASM_SOURCES)))
 
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	@echo "[CC]  $<"
@@ -193,8 +206,8 @@ $(BUILD_DIR)/%.o: %.s | $(BUILD_DIR)
 	@echo "Assemble " $<
 	@$(AS) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) 
-	@$(CC) $(OBJECTS) $(LDFLAGS) -o $@
+$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) $(ROM_OBJ)
+	@$(CC) $^ $(LDFLAGS) -o $@
 	@$(SZ) $@ -A
 
 $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
@@ -211,7 +224,9 @@ $(BUILD_DIR):
 #######################################
 clean:
 	-rm -fR $(BUILD_DIR)
-  
+
+clean-rom:
+	-rm -f $(ROM_OBJ)
 #######################################
 # dependencies
 #######################################
