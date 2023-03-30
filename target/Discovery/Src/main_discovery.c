@@ -4,6 +4,7 @@
 #include "cartridge.h"
 #include "cgbmu.h"
 #include "video.h"
+#include "pcf8574.h"
 
 #if !defined(USE_FS)
 extern uint8_t _binary_rom_start;
@@ -95,7 +96,7 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 void pushScanLine(uint8_t *scanline){
 
     uint8_t *end = scanline + SCREEN_W;
-    uint8_t *dst = screen + SCREEN_OFFSET_X + ((SCREEN_OFFSET_Y + IOLY) * BSP_LCD_GetXSize());
+    uint8_t *dst = screen + (IOLY * SCREEN_W);
 
 	if(IOLY == 0){
 		DMA2D->CR |= DMA2D_CR_START;
@@ -128,7 +129,20 @@ int loadRom(char *fn)
  */
 uint8_t readButtons(void)
 {
-uint8_t button = 0;
+    uint8_t button = 0;
+
+    uint8_t io_val = 255;
+    io_drv_pcf8574.read(&io_val, 1);
+    io_val = ~io_val;
+
+    if((io_val & BUTTON_CENTER) || BSP_PB_GetState(BUTTON_USER)){ button |= J_START; }
+    if(io_val & BUTTON_UP){ button |= J_UP; }
+    if(io_val & BUTTON_DOWN){ button |= J_DOWN; }
+    if(io_val & BUTTON_LEFT){ button |= J_LEFT; }
+    if(io_val & BUTTON_RIGHT){ button |= J_RIGHT; }
+    if(io_val & BUTTON_A){ button |= J_SELECT; }
+    if(io_val & BUTTON_B){ button |= J_A; }
+    if(io_val & BUTTON_C){ button |= J_B; }
 
     return button;
 }

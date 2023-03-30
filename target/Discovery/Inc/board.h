@@ -34,6 +34,16 @@ enum {false = 0, true, OFF = false, ON = true};
 #define DMA2D_OPFCCR_SET_CM(cm) ((cm) << 0)	// Output Color mode
 #define DMA2D_NLR_PLNL(pl, nl) (((pl) << 16) | nl)
 
+#define BUTTON_DOWN 	(1<<0)
+#define BUTTON_UP	    (1<<1)
+#define BUTTON_RIGHT 	(1<<2)
+#define BUTTON_LEFT  	(1<<3)
+#define BUTTON_CENTER   (1<<4)
+#define BUTTON_A    	(1<<5)
+#define BUTTON_B    	(1<<6)
+#define BUTTON_C    	(1<<7)
+
+
 static inline uint16_t LIB2D_Text(uint16_t x, uint16_t y, char *text) {
     return BSP_LCD_DisplayStringAt(x, y, (uint8_t*)text, LEFT_MODE);
 }

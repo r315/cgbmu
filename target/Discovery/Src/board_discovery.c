@@ -3,6 +3,11 @@
 #include <errno.h>
 #include "fatfs.h"
 #include "board.h"
+#include "i2c.h"
+#include "pcf8574.h"
+
+
+static i2cbus_t i2cbus;
 
 static void SystemClock_Config(void);
 void Serial_Init(void);
@@ -148,6 +153,11 @@ void BOARD_Init(void)
     //SD_DumpSector(0);
 
     fatFs_Init();
+
+    BSP_PB_Init(BUTTON_USER, BUTTON_MODE_GPIO);
+
+    I2C_Init(&i2cbus);
+    io_drv_pcf8574.init(&i2cbus);
 
     printf("System clock: %luMHz\n",SystemCoreClock/1000000);
 
