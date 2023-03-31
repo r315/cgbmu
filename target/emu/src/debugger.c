@@ -13,10 +13,12 @@
 #if defined(_WIN32) || defined(linux)
 	#include <conio.h>
 	#include "disassembler.h"
-	#define FRAME_TIME 16
-
-	#define BREAK_CONDITION(_cond_) if((_cond_)){ printf("break hit\n"); dbg_state = DBG_BREAK; break; } 
+#else
+void disassembleHeader(void){}
+void disassemble(void){}
 #endif
+	#define FRAME_TIME 16
+	#define BREAK_CONDITION(_cond_) if((_cond_)){ printf("break hit\n"); dbg_state = DBG_BREAK; break; }
 
 enum debug_state {
 	DBG_PAUSE = 0,
@@ -27,8 +29,6 @@ enum debug_state {
 	DBG_CONTINUE,
 };
 
-
-#if defined(_WIN32) || defined(linux)
 static uint32_t frame_counter;
 static uint8_t dbg_state = DBG_FRAME;
 static uint32_t frame_counter = 0;
@@ -37,17 +37,16 @@ static uint16_t break_address = 0;
 static void debugCommand(void);
 
 void DBG_SingleStep(void) {
-	static uint32_t dtics;
 	decode();
 	if (video()) {
 		frame_counter++;
 		updateFps(); 
 #if 0
-		dtics = SDL_GetTicks() - dtics;
+		static uint32_t dtics = GetTick() - dtics;
 		if (dtics < FRAME_TIME) {
 			SDL_Delay(FRAME_TIME - dtics);
 		}
-		dtics = SDL_GetTicks();
+		dtics = GetTick();
 #endif
 	}
 	timer();
@@ -58,7 +57,7 @@ void DBG_SingleStep(void) {
 void DBG_FrameStep(void)
 {
 	static uint32_t cycles = 0;
-	uint32_t dtics = SDL_GetTicks();
+	uint32_t dtics = GetTick();
 
 	while (cycles < V_FRAME_CYCLE) {
 		decode();
@@ -72,9 +71,9 @@ void DBG_FrameStep(void)
 	frame_counter++;
 	updateFps();
 
-	dtics = SDL_GetTicks() - dtics;
+	dtics = GetTick() - dtics;
 	if (dtics < FRAME_TIME) {
-		SDL_Delay(FRAME_TIME - dtics);
+		DelayMs(FRAME_TIME - dtics);
 	}
 }
 
@@ -103,7 +102,7 @@ void DBG_run(void){
 			break;
 		
 		case DBG_PAUSE:
-			SDL_Delay(30);
+			DelayMs(30);
 			break;
 
 		case DBG_FRAME:
@@ -128,11 +127,6 @@ void DBG_run(void){
 		}
 	}
 }
-#endif
-//----------------------------------------------------*/
-//
-//------------------------------------------------------
-
 
 //----------------------------------------------------*/
 //
@@ -327,7 +321,7 @@ char readLine(char *dst, uint8_t max) {
 
 	return 0;
 }
-#else 
+#elif defined(linux)
 
 #include <termios.h>
 #include <unistd.h>    
