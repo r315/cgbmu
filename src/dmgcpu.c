@@ -123,9 +123,8 @@ void interrupts(void)
 //-----------------------------------------
 //
 //-----------------------------------------
-
-void setTimerPrescaler(void){
-	switch(IOTAC & 3)	{
+void writeTAC(uint8_t newtac){
+	switch(newtac & 3)	{
 		case 0: // 4096Hz		
 			timer_prescaler = 256 * CLOCK_CYCLE;
 			break;
@@ -139,6 +138,8 @@ void setTimerPrescaler(void){
 			timer_prescaler = 64 * CLOCK_CYCLE;
 			break;		
 	}
+
+	IOTAC = newtac;
 }
 //-----------------------------------------
 //
@@ -174,8 +175,9 @@ void timer(void)
 //
 //-----------------------------------------
 
-void dma(uint16_t src){
-uint8_t i, *pdst;
+void writeDMA(uint8_t newdma){
+	uint16_t src = newdma << 8;
+	uint8_t i, *pdst;
 	pdst = (uint8_t*)&oam[0];
     for(i = 0; i < DMA_SIZE; i++, pdst++)
 		*pdst = memoryRead(src++);           
@@ -334,34 +336,18 @@ void memoryWrite(uint16_t address, uint8_t data)
 	switch(address)
 	{
 		case 0xFF00: IOP1 = data; return;
-		case 0xFF04: IODIV = data; return;
+		case 0xFF04: IODIV = 0; return;		// any write clears it
 		case 0xFF05: IOTIMA = data; return;
 		case 0xFF06: IOTMA = data; return;
-		case 0xFF07: IOTAC = data; 
-					 setTimerPrescaler(); 
-		             return;
+		case 0xFF07: writeTAC(data); return;
 		case 0xFF0F: IOIF = data; return;
-	    case 0xFF40:
-				if(IOLCDC & 0x80 && !(data & 0x80)){ 
-					// LCD Off
-					IOLY= 0; 
-					IOSTAT = IOSTAT & 0xFC;  // reset LY, mode0
-				}
-				else if (!(IOLCDC & 0x80) && (data & 0x80)) {
-					checkLine(IOLY);
-				}
-				video_cycles = 0;
-				IOLCDC = data;
-			 	return;
-        case 0xFF41: 
-			data &= ~7;
-			IOSTAT = (IOSTAT & 7) | data; 
-			return;
+	    case 0xFF40: writeLCDC(data); return;
+        case 0xFF41: writeSTAT(data); return;
         case 0xFF42: IOSCY = data;	return;
         case 0xFF43: IOSCX = data; 	return;
-        case 0xFF44: return;
-        case 0xFF45: IOLYC = data; return;
-		case 0xFF46: dma(data<<8); return;			
+        case 0xFF44: return;				// read only
+        case 0xFF45: writeLYC(data); return;
+		case 0xFF46: writeDMA(data); return;			
         case 0xFF47: IOBGP = data; return;
         case 0xFF48: IOOBP0 = data; return;
         case 0xFF49: IOOBP1 = data; return;        
@@ -406,20 +392,25 @@ void initCpu(void)
 	
     IOTIMA = 0x00;
     IOTMA  = 0x00;
-    IOTAC  = 0x00;
+    IOTAC  = 0xF8;
+	IODIV  = 0xAB;
+
     IOLCDC = 0x91;
+	IOSTAT = 0x85;
     IOSCY  = 0x00;
     IOSCX  = 0x00;
+	IOLY   = 0x00; 	 
     IOLYC  = 0x00;
-    IOBGP  = 0xFC;
+	IODMA  = 0xFF;
+	IOBGP  = 0xFC;
     IOOBP0 = 0xFF;
     IOOBP1 = 0xFF;
     IOWY   = 0x00;
     IOWX   = 0x00;
-    IOIE   = 0x00;    
-	IOSTAT = 0x81;
-	IOLY   = 0x94; 	 
-	IODIV  = 0xAB;
+    
+	IOIF   = 0xE1;
+    IOIE   = 0x00;
+
 	halt_state = HALT_INACTIVE;
 }
 

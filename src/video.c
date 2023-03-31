@@ -5,7 +5,7 @@
 #include "cgbmu.h"
 #include "decoder.h"
 
-uint32_t video_cycles = 0;
+static uint32_t video_cycles;
 static Object *visible_objs[MAX_LINE_OBJECTS];
 static uint8_t scanlinedata[SCREEN_W];		// one line of pixels
 
@@ -166,11 +166,32 @@ void scanline() {
 
 	pushScanLine(scanlinedata);
 }
+
 //-----------------------------------------
 // 
-// 
-// 
 //-----------------------------------------
+void writeLCDC(uint8_t newlcdc){
+	if(IOLCDC & 0x80 && !(newlcdc & 0x80)){		
+		IOLY= 0; // LCD Off
+		IOSTAT = IOSTAT & 0xFC;  // reset LY, mode0
+	}
+	else if (!(IOLCDC & 0x80) && (newlcdc & 0x80)) {
+		checkLine(IOLY);
+	}
+
+	video_cycles = 0;
+	IOLCDC = newlcdc;
+}
+
+void writeSTAT(uint8_t newstat){
+	IOSTAT = (IOSTAT & 7) | (newstat & ~7); 
+}
+
+void writeLYC(uint8_t newlyc){
+	IOLYC = newlyc; 
+	checkLine(IOLY);
+}
+
 uint8_t checkLine(uint8_t ly) {
 	uint8_t stat = IOSTAT & (~LYC_LY_FLAG);
 

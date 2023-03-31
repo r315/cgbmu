@@ -119,11 +119,11 @@ typedef struct _Tile {
 	}line[8];
 }TileData;
 
-extern uint32_t video_cycles;
-
 uint8_t video(void);
 uint8_t checkLine(uint8_t ly);
 void scanline(void);
 void scanOAM(void);
-
+void writeLCDC(uint8_t newlcdc);
+void writeSTAT(uint8_t newstat);
+void writeLYC(uint8_t newstat);
 #endif

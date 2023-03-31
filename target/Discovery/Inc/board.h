@@ -17,12 +17,8 @@ extern "C" {
 
 enum {false = 0, true, OFF = false, ON = true};
 
-#define SCREEN_OFFSET_X     200
-#define SCREEN_OFFSET_Y     200
-
-#define LIB2D_Print 
-#define LIB2D_Char __DISPLAY_Char
-#define LIB2D_SetFcolor BSP_LCD_SetTextColor
+#define SCREEN_OFFSET_X     0
+#define SCREEN_OFFSET_Y     0
 
 #define DMA2D_CR_M2M (0 << 16)
 #define DMA2D_CR_M2M_PFC (1 << 16)
