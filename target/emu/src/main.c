@@ -42,6 +42,8 @@ static const char *card_types[] = { "ROM", "MBC1", "MBC1 + RAM" };
 const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
 static uint8_t *MBC1_ROM = NULL;
 
+extern uint8_t done;
+
 void optParseFlag(void *opt){
 	*((uint8_t*)(((opt_t*)opt)->ctx)) |= ((opt_t*)opt)->flag;
 }
@@ -134,14 +136,14 @@ const Uint8 *keys;
 	    return button;	    
 	    
 	if(ev.type == SDL_QUIT){
-		button = 255;
+		done = 1;
 	    return button;
 	}
 	
 	keys  = SDL_GetKeyboardState(NULL);
 
 	if(keys[SDL_SCANCODE_ESCAPE]){
-		button = 255;
+		done = 1;
 	    return button;
 	} 
 
@@ -255,16 +257,16 @@ opt_t options[] = {
 	
 	parseOptions(argc, argv, sizeof(options)/sizeof(opt_t), options);
 
-#if 0
+#if 1
 	if(loadRom(romfile) > 0) {
 #else
 	if(loadTestRom(0) > 0){
 #endif
 		//dry_run();		// Generic run
 
-		DBG_run();		// Run loaded rom in debug mode
+		//DBG_run();		// Run loaded rom in debug mode
 	
-		//cgbmu(MBC1_ROM);  // Run emulator in normal mode	
+		cgbmu(MBC1_ROM);  // Run emulator in normal mode	
 	}
 	else {
 		LIB2D_Text(0, 4, "Fail to load rom");

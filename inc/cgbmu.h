@@ -6,8 +6,8 @@
 #define FRAME_TIME 16
 
 void cgbmu(const uint8_t *rom);
-void runOneStep(void);
-void runOneFrame(void);
+uint8_t runOneStep(void);
+uint8_t runOneFrame(void);
 void updateFps(void);
 // Implemented by target
 int loadRom(char *fn);

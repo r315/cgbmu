@@ -7,6 +7,7 @@
 
 enum{ SINGLE_FRAME, SINGLE_STEP};
 
+uint8_t done;
 
 void updateFps(void) {
 	static uint32_t fpsupdatetick = 0;
@@ -15,7 +16,7 @@ void updateFps(void) {
 
 	if (GetTick() > fpsupdatetick)
 	{
-		drawInt(SCREEN_W + 1, 0, fps, 10, 4);
+		drawInt(SCREEN_W + 8, 0, fps, 10, 4);
 		fps = 0;
 		fpsupdatetick = GetTick() + 1000;
 	}
@@ -39,11 +40,9 @@ uint32_t elapsed_cycles = 0;
  * @brief 
  * 
  */
-void runOneFrame(void) {
+uint8_t runOneFrame(void) {
 
-	IOSTAT &= ~(V_MODE_MASK);
-
-	for (IOLY = 0; IOLY < SCREEN_H; IOLY++) {
+	for (; IOLY < SCREEN_H; IOLY++) {
 
 		IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & (~LYC_LY_FLAG));
 
@@ -77,20 +76,21 @@ void runOneFrame(void) {
 		runCpu(V_M1_CYCLE);
 		IOLY++;
 	}
+
+	return 1;
 }
 
 /**
  * @brief 
  * 
  */
-void runOneStep(void) {
+uint8_t runOneStep(void) {
+	uint8_t frame;
 	decode();
-	if (video()) {
-		updateFps();
-	}
+	frame = video();
 	timer();
-	// serial
 	interrupts();
+	return frame;
 }
 
 /**
@@ -99,8 +99,9 @@ void runOneStep(void) {
  * @param rom 
  */
 void cgbmu(const uint8_t *rom) {
-	uint32_t ticks;
-	uint8_t mode = !SINGLE_FRAME;
+	uint8_t mode = SINGLE_STEP;
+	uint32_t ticks = 0;
+	done = 0;
 	
 	if(rom == NULL){
 		bootCpu();
@@ -108,37 +109,22 @@ void cgbmu(const uint8_t *rom) {
 		initCpu();
 		cartridgeInit(rom);
 	}
-
-	if (mode == SINGLE_STEP) {			// instruction loop
-		ticks = GetTick();
-		while (readButtons() != 255) {
-			decode();
-			timer();
-			if (video() == true) {
+	
+	if (mode == SINGLE_STEP) {			// instruction loop		
+		while (!done) {
+			if(runOneStep()){			
 				ticks = GetTick() - ticks;
-				if (ticks < FRAME_TIME)
-					DelayMs(FRAME_TIME - ticks);
-				ticks = GetTick();
 				updateFps();
+				if (ticks < FRAME_TIME){
+					DelayMs(FRAME_TIME - ticks);
+				}
+				ticks = GetTick();
 			}
-			interrupts();
 		}
 	}
 	else {				// frame loop
-		while (readButtons() != 255) {
-#if defined(_WIN32) || defined(linux)
-		int startTicks = GetTick();
-#endif
+		while (!done) {
 			runOneFrame();
-			//VIDEO_Update();
-			updateFps();
-
-#if defined(_WIN32) || defined(linux)
-			int delta = GetTick() - startTicks;
-			if (delta < FRAME_TIME) {
-				DelayMs(FRAME_TIME - delta);
-			}
-#endif
 		}
 	}	
 }
