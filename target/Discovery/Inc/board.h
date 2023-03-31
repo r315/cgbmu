@@ -43,13 +43,20 @@ enum {false = 0, true, OFF = false, ON = true};
 #define BUTTON_B    	(1<<6)
 #define BUTTON_C    	(1<<7)
 
+#define LIB2D_Char __DISPLAY_Char
+static inline void LIB2D_SetFcolor(uint16_t color){
+    uint8_t r = color >> 11;
+    uint8_t g = color >> 5;
+    uint8_t b = color >> 0;
+    BSP_LCD_SetTextColor(0xFF000000 | (r << 16) | (g << 8) | b);
+}
 
-static inline uint16_t LIB2D_Text(uint16_t x, uint16_t y, char *text) {
-    return BSP_LCD_DisplayStringAt(x, y, (uint8_t*)text, LEFT_MODE);
+static inline uint16_t LIB2D_Text(uint16_t x, uint16_t y, const char *text) {
+    return BSP_LCD_DisplayStringAt(x * 2, y * 2, (uint8_t*)text, LEFT_MODE);
 }
 
 static inline uint16_t __DISPLAY_Char(uint16_t x, uint16_t y, uint8_t c){
-    BSP_LCD_DisplayChar(x,y,c);
+    BSP_LCD_DisplayChar(x, y * 2, c);
     return x + 14;
 }
 

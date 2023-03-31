@@ -15,7 +15,7 @@ OPT = -Og
 # paths
 #######################################
 # Build path
-BUILD_DIR  := build
+BUILD_DIR  :=build
 REPOSITORY_DIR =$(REPO_F769)
 EMU_PATH   :=../..
 ROM_PATH   =../../../roms
@@ -164,10 +164,10 @@ endif
 # link script
 LDSCRIPT = startup/STM32F769NIHx_FLASH.ld
 
-# libraries
-LIBS = -lc -lm -lnosys 
-LIBDIR = 
-LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,--gc-sections
+SPECS =-specs=nano.specs
+LIBS =-lc -lm -lnosys
+MAP =-Wl,-Map=$(BUILD_DIR)/$(TARGET).map
+LDFLAGS = $(MCU) $(SPECS) -T$(LDSCRIPT) $(LIBS) -Wl,--gc-sections $(MAP)
 
 #######################################
 # Objects to be generated
@@ -203,10 +203,11 @@ $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	@$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/%.o: %.s | $(BUILD_DIR)
-	@echo "Assemble " $<
+	@echo "[AS]  $<"
 	@$(AS) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) $(ROM_OBJ)
+	@echo "[LD]  $@"
 	@$(CC) $^ $(LDFLAGS) -o $@
 	@$(SZ) $@ -A
 

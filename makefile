@@ -1,5 +1,5 @@
-BUILD_DIR  	=$(PWD)/build
-EMU_PATH   	=$(PWD)
+BUILD_DIR  	=$(CURDIR)/build
+EMU_PATH   	=$(CURDIR)
 
 EMU_PARAM	=EMU_PATH=$(EMU_PATH)
 TARGET_EMU_PARAM =-C target/emu BUILD_DIR=$(BUILD_DIR)/emu
@@ -22,7 +22,7 @@ bb-program:
 	@"$(MAKE)" $(TARGET_BB_PARAM) program
 
 disco: 
-	@"$(MAKE)" $(TARGET_DISCO_PARAM) $(EMU_PARAM)
+	"$(MAKE)" $(TARGET_DISCO_PARAM) $(EMU_PARAM)
 disco-program: disco
 	@"$(MAKE)" $(TARGET_DISCO_PARAM) program
 disco-rebuild-rom:

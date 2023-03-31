@@ -5,6 +5,7 @@
 #include "cgbmu.h"
 #include "video.h"
 #include "pcf8574.h"
+#include "lib2d.h"
 
 #if !defined(USE_FS)
 extern uint8_t _binary_rom_start;
