@@ -13,9 +13,10 @@ static uint8_t scanlinedata[SCREEN_W];		// one line of pixels
 //put one line of Sprite data into scanlinedata
 //-----------------------------------------
 void blitObjectData(Object *obj, uint8_t *dst) {
-	uint8_t npixels, color, objline;
+	uint8_t pixel_mask, color, objline;
 	uint8_t pal = (obj->flags & OBJECT_FLAG_PAL) ? IOOBP1 : IOOBP0;
 	uint8_t pattern = obj->pattern;
+	uint8_t *end, *start;
 
 	//Get pattern, for 8x16 mode the extra data is on the next pattern index
 	if (IOLCDC & OBJ_SIZE) {
@@ -28,43 +29,66 @@ void blitObjectData(Object *obj, uint8_t *dst) {
 		objline = (obj->flags & OBJECT_FLAG_YFLIP) ? (SPRITE_H - 1 - objline) : objline;
 	}
 
-	//Each Tile has 16bytes and one line os pixels neads 2 bytes
+	//Each Tile has 16bytes and one line of pixels needs 2 bytes
 	TileData *td = (TileData*)vram + pattern;
-	
-	dst += obj->x - SPRITE_W;
-
 	uint8_t lsb = td->line[objline].lsb;
 	uint8_t msb = td->line[objline].msb;
-	
-	npixels = SPRITE_W;	
 
-	if (obj->flags & OBJECT_FLAG_XFLIP) {		
+	if (obj->flags & OBJECT_FLAG_XFLIP) {
+		if (obj->x < SPRITE_W) {
+			pixel_mask = 0x1 << (SPRITE_W - obj->x);
+			start = dst;
+			end = start + obj->x;
+		}
+		else if (obj->x > SCREEN_W) {
+			pixel_mask = 0x1;
+			start = dst + (obj->x - SPRITE_W);
+			end = dst + SCREEN_W;
+		}
+		else {
+			pixel_mask = 0x1;
+			start = dst + (obj->x - SPRITE_W);
+			end = start + SPRITE_W;
+		}
 		do{
-			color = (msb & 0x1) ? 2 : 0;
-			color |= (lsb & 0x1) ? 1 : 0;
+			color = (msb & pixel_mask) ? 2 : 0;
+			color |= (lsb & pixel_mask) ? 1 : 0;
 			if (color) {
 				color = (pal >> (color << 1)) & 3;
 				if(!(obj->flags & OBJECT_FLAG_PRIO) || !*dst)
-					*dst = color;
+					*start = color;
 			}
-			msb >>= 1;
-			lsb >>= 1;
-			dst++;
-		}while (--npixels);
+			pixel_mask <<= 1;
+			start++;
+		}while(start < end);
 	}
 	else {
+		if (obj->x < SPRITE_W) {
+			pixel_mask = 0x80 >> (SPRITE_W - obj->x);
+			start = dst;
+			end = start + obj->x;
+		}
+		else if(obj->x > SCREEN_W){
+			pixel_mask = 0x80;
+			start = dst + (obj->x - SPRITE_W);
+			end = dst + SCREEN_W;
+		}
+		else {
+			pixel_mask = 0x80;
+			start = dst + (obj->x - SPRITE_W);
+			end = start + SPRITE_W;
+		}
 		do{
-			color = (msb & 0x80) ? 2 : 0;
-			color |= (lsb & 0x80) ? 1 : 0;
+			color = (msb & pixel_mask) ? 2 : 0;
+			color |= (lsb & pixel_mask) ? 1 : 0;
 			if (color) { // Color index 0 is transparent
 				color = (pal >> (color << 1)) & 3;
 				if (!(obj->flags & OBJECT_FLAG_PRIO) || !*dst)
-					*dst = color;
+					*start = color;
 			}
-			msb <<= 1;
-			lsb <<= 1;
-			dst++;
-		}while(--npixels);
+			pixel_mask >>= 1;
+			start++;
+		}while(start < end);
 	}
 }
 /**-------------------------------------------------------
