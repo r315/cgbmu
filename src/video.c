@@ -55,7 +55,7 @@ void blitObjectData(Object *obj, uint8_t *dst) {
 			color |= (lsb & pixel_mask) ? 1 : 0;
 			if (color) {
 				color = (pal >> (color << 1)) & 3;
-				if(!(obj->flags & OBJECT_FLAG_PRIO) || !*dst)
+				if(!(obj->flags & OBJECT_FLAG_PRIO) || !*start)
 					*start = color;
 			}
 			pixel_mask <<= 1;
@@ -83,7 +83,7 @@ void blitObjectData(Object *obj, uint8_t *dst) {
 			color |= (lsb & pixel_mask) ? 1 : 0;
 			if (color) { // Color index 0 is transparent
 				color = (pal >> (color << 1)) & 3;
-				if (!(obj->flags & OBJECT_FLAG_PRIO) || !*dst)
+				if (!(obj->flags & OBJECT_FLAG_PRIO) || !*start)
 					*start = color;
 			}
 			pixel_mask >>= 1;
@@ -128,7 +128,7 @@ void blitTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8
 }
 
 //-----------------------------------------
-// Scan for visible objects
+// Scan OAM for visible objects
 //-----------------------------------------
 void scanOAM() {
 	uint8_t h, n, curline, lcdc;
