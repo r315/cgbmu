@@ -13,6 +13,7 @@ extern "C" {
 #include "gpio_at32f4xx.h"
 #include "ili9341.h"
 //#include "st7735.h"
+//#include "st7789.h"
 
 #define BOARD_ARTERY
 
@@ -21,14 +22,17 @@ extern "C" {
 #define LCD_IO_SET(port, pinmask) port->BSRE = pinmask
 #define LCD_IO_RESET(port, pinmask) port->BRE = pinmask
 
-#ifndef _ili9341_h_
+#ifdef TFT_ST7735S
 #define TFT_W   128
 #define TFT_H   160
 #define SCREEN_OFFSET_X     0
 #define SCREEN_OFFSET_Y     0
-#else
+#elif defined(TFT_ILI9341)
 #define SCREEN_OFFSET_X     80
 #define SCREEN_OFFSET_Y     48
+#else
+#define SCREEN_OFFSET_X     0
+#define SCREEN_OFFSET_Y     0
 #endif
 /**
 * @brief Lcd Pin configuration:

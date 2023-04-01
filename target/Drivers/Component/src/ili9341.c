@@ -50,16 +50,16 @@ static void LCD_InitSequence(const uint8_t *addr) {
 	uint8_t  numCommands, numArgs;
 	uint16_t ms;
 
-	numCommands = *addr++;                     
+	numCommands = *addr++;          // Get total number os commands
 	while(numCommands--) {                     
-		LCD_Command(*addr++);                  
-		numArgs  = *addr++;                    
-		ms       = numArgs;
-		numArgs &= ~DELAY;                     
-		SPI_Transfer(spidev, (uint8_t*)addr, numArgs);
-		addr += numArgs;
+		LCD_Command(*addr++);       // Send command
+		numArgs  = *addr++;         // Get number of args
+		ms       = numArgs;         // Get argument
+		numArgs &= ~DELAY;          // Clear delay flag           
+		SPI_Transfer(spidev, (uint8_t*)addr, numArgs); // Send arguments
+		addr += numArgs;            // Move to next command
 
-		if(ms & DELAY) {
+		if(ms & DELAY) {            // If argument was delay, do it
 			ms = *addr++;
 			if(ms == 255) ms = 500;
 			DelayMs(ms);

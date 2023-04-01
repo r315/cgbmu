@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 
-#define LCD_ILI9341
+#define TFT_ILI9341
 
 #define TFT_W 240
 #define TFT_H 320
