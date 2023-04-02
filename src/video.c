@@ -149,7 +149,7 @@ void scanOAM() {
 	for (int i = 0; i < MAX_OBJECTS; i++, pobj++) {
 		if (pobj->x == 0 || pobj->y == 0) continue;
 		if (pobj->y > curline || (pobj->y + h) <= curline) continue;
-		if (pobj->x >= SCREEN_W + SPRITE_W)continue;		
+		if (pobj->x >= SCREEN_W + SPRITE_W)continue;
 		
 		visible_objs[n] = pobj;	
 		if (++n >= MAX_LINE_OBJECTS)
@@ -166,20 +166,23 @@ void scanline() {
 	uint8_t pixel, line;
 	uint8_t *sld = scanlinedata;
 
+	uint8_t lcdc = IOLCDC;
+	uint8_t ly = IOLY;
+
 	// Get tile map base
-	tilemapline = (uint8_t*)(vram + ((IOLCDC & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
+	tilemapline = (uint8_t*)(vram + ((lcdc & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 	// Add line and scroll-y offset for getting tile pattern	
-	line = (uint8_t)(IOLY + IOSCY);
+	line = (uint8_t)(ly + IOSCY);
 	tilemapline += TILE_LINE_INDEX(line);
 
 	memset(sld, 0, SCREEN_W);
 	blitTileData(tilemapline, sld, IOSCX, line, SCREEN_W);	
 
-	if (IOLCDC & W_DISPLAY && IOLY >= IOWY && IOWX < SCREEN_W + 7) 
+	if (lcdc & W_DISPLAY && ly >= IOWY && IOWX < SCREEN_W + 7) 
 	{
-		line = IOLY - IOWY;					
+		line = ly - IOWY;					
 		sld = scanlinedata + IOWX - 7;				//destination offset given by IOWX, WX has an offset of 7
-		tilemapline = (uint8_t*)(vram + ((IOLCDC & W_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
+		tilemapline = (uint8_t*)(vram + ((lcdc & W_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 		tilemapline += TILE_LINE_INDEX(line);
 		blitTileData(tilemapline, sld, 0, line, SCREEN_W - IOWX + 7);
 	}
@@ -208,7 +211,8 @@ void writeLCDC(uint8_t newlcdc){
 }
 
 void writeSTAT(uint8_t newstat){
-	IOSTAT = (IOSTAT & 7) | (newstat & ~7); 
+	newstat = (newstat & ~7) | 0x80;
+	IOSTAT = (IOSTAT & 7) | newstat; 
 }
 
 void writeLYC(uint8_t newlyc){

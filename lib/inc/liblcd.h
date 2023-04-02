@@ -38,9 +38,9 @@ extern "C" {
 #define LCD_TEAL        0x0410
 
 #ifdef BGR_MODE
-    #define RGB565(r,g,b)  (uint16_t)(((b & 31) << 11) | ((g & 63) << 5) | (r & 31))
+    #define RGB565(r,g,b)  (uint16_t)(((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r & 0xF8) >> 3)
 #else
-    #define RGB565(r,g,b)  (uint16_t)(((r & 31) << 11) | ((g & 63) << 5) | (b & 31))
+    #define RGB565(r,g,b)  (uint16_t)(((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b & 0xF8) >> 3)
 #endif
 
 void LCD_Init(void *param);
