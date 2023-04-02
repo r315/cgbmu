@@ -13,7 +13,7 @@ const uint8_t st7789_240x240[] = {
     8,
     ST7789_SLPOUT, ST_CMD_DELAY, 120,
     ST7789_COLMOD, 1, COLOR_MODE_65K | COLOR_MODE_16BIT,
-    ST7789_MADCTL, 1, ST7789_MADCTL_BGR,
+    ST7789_MADCTL, 1, ST7789_MADCTL_RGB,
     ST7789_CASET, 4, 0,0,0, TFT_W,
     ST7789_RASET, 4, 0,0,0, TFT_H,
     ST7789_INVON, ST_CMD_DELAY, 10,      // Inversion ON
@@ -245,12 +245,12 @@ void LCD_SetOrientation(uint8_t m) {
         _height = TFT_H;
         break;
     case LCD_LANDSCAPE:
-        m = (ST7789_MADCTL_MY | ST7789_MADCTL_MV);
+        m = (ST7789_MADCTL_MV | ST7789_MADCTL_MY);
         _width  = TFT_H;
         _height = TFT_W;
         break;
     case LCD_REVERSE_PORTRAIT:
-        m = (ST7789_MADCTL_MY | ST7789_MADCTL_BGR);
+        m = (ST7789_MADCTL_MY);
         _width  = TFT_W;
         _height = TFT_H;
         break;
