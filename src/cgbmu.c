@@ -89,6 +89,7 @@ uint8_t runOneStep(void) {
 	decode();
 	frame = video();
 	timer();
+	serial();
 	interrupts();
 	return frame;
 }

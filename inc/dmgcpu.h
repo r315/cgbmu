@@ -37,6 +37,7 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 #define FOUR_CYCLE	    (4 * CLOCK_CYCLE)
 #define FIVE_CYCLE	    (5 * CLOCK_CYCLE)
 #define SIX_CYCLE	    (6 * CLOCK_CYCLE)
+#define SERIAL_CYCLE	512
 
 //Flags
 #define FZ              (1<<7)
@@ -94,6 +95,10 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 #define J_START     (1<<7)
 
 #define IOP1_MASK   0xCF
+
+// SC bits
+#define SC_TRF		(1<<7)
+#define SC_CLKI		(1<<0)
 
 enum halt_states {HALT_INACTIVE, HALT_ACTIVE, HALT_SKIP};
 
@@ -218,4 +223,5 @@ void timer(void);
 uint8_t joyPad(void);
 void bootCpu(void);
 void setInt(uint8_t irq);
+void serial(void);
 #endif

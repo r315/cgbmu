@@ -16,6 +16,8 @@ http://meatfighter.com/gameboy
 
 // IO Registers
 uint8_t IOP1;   // 0xFF00 P1
+uint8_t IOSB;   // 0xFF01 Serial transfer data
+uint8_t IOSC;   // 0xFF02 SIO Control
 uint8_t IODIV;  // 0xFF04 timer divider
 uint8_t IOTIMA; // 0xFF05 timer counter
 uint8_t IOTMA;  // 0xFF06 timer modulo
@@ -42,12 +44,11 @@ uint8_t hram[128];                       // 0xFF80-0xFFFE
 uint8_t *rom0;                           // 0x0000-0x3FFF
 uint8_t *rombank;                        // 0x4000-0x7FFF
 
-uint16_t timer_prescaler;
-uint8_t halt_state, stopped;
-uint8_t IME;  	// Reset by DI and set by EI instructions
-
 Regs regs;
-
+uint8_t halt_state, stopped;
+uint8_t IME;
+static uint16_t timer_prescaler;
+static uint8_t serial_bit;
 
 static const uint8_t boot_rom [] = {
 	0x31,0xFE,0xFF,0xAF,0x21,0xFF,0x9F,0x32,0xCB,0x7C,0x20,0xFB,0x21,0x26,0xFF,0x0E,
@@ -114,7 +115,7 @@ void interrupts(void)
 		REG_PC = 0x0050;
 	}else if(irq & SERIAL_IF){ // Priority 4
 		IOIF &= ~(SERIAL_IF);
-		REG_PC = 0x0048;
+		REG_PC = 0x0058;
 	}else if(irq & JOYPAD_IF){ // Priority 5
 		IOIF &= ~(JOYPAD_IF);
 		REG_PC = 0x0060;
@@ -171,6 +172,38 @@ void timer(void)
 		timer_cycles -= timer_prescaler;
 	}
 }
+
+void serial(void)
+{
+	static uint16_t serial_cycles;
+	if ((IOSC & (SC_TRF | SC_CLKI)) != (SC_CLKI | SC_TRF)) {
+		return;
+	}
+
+	serial_cycles += instr_cycles;
+
+	if (serial_cycles >= SERIAL_CYCLE) {
+		if (!(serial_bit--)) {
+			IOSC &= ~SC_TRF;
+			setInt(SERIAL_IF);
+			serial_cycles = 0;
+			return;
+		}
+
+		serial_cycles -= SERIAL_CYCLE;
+		IOSB = (IOSB << 1) | 1;
+	}
+}
+
+void writeSC(uint8_t new_sc) {
+	new_sc |= ~(SC_TRF | SC_CLKI);
+
+	if (new_sc & SC_TRF) {
+		serial_bit = 8;
+	}
+
+	IOSC = new_sc;
+}
 //-----------------------------------------
 //
 //-----------------------------------------
@@ -198,17 +231,17 @@ void writeDMA(uint8_t newdma){
 
 uint8_t joyPad(void) {
 	uint8_t buttons;
+	uint8_t p1;
 
 	buttons = ~readButtons();   // read buttons, 0 means button pressed
-
-	if (!(IOP1 & IOP14)) {		// Check which row was selected
-		buttons &= 0x0F;		// joy pad
+	p1 = IOP1;					// Old key presses are cleared on IOP1 write
+	if (!(p1 & IOP15)) {
+		buttons >>= 4;			// shift nible when P15 is active, filters dpad keys
 	}
-	else {
-		buttons >>= 4;          // select, start, A, B
-	}
-
-	IOP1 = (IOP1 & 0xF0) | buttons;
+	
+	buttons |= 0xF0;            // create mask
+	
+	IOP1 = p1 & buttons;		// Filter pressed keys
 	
 	return IOP1;
 }
@@ -245,14 +278,14 @@ uint8_t memoryRead(uint16_t address)
 		case 0x0D:
 			return iram[address & 0x1FFF];  // 8kB internal ram 0xC000 - 0xDFFF
 			
-	//	default: break;
+		default: break;
 	}	
 		
 	if((address > 0xDFFF) && (address < 0xFE00))
 		return iram[address & 0x1FFF]; // ram fold 8k
 	
-	if((address > 0xFDFF) && (address < 0xFEA0))
-		return oam[address & 0xFF]; // atribute ram 160 bytes	
+	if ((address > 0xFDFF) && (address < 0xFEA0))
+		return oam[address & 0xFF]; // atribute ram 160 bytes
 		
 	if((address > 0xFF7F) && (address < 0xFFFF))		
 		return hram[address & 0x7f];  // high ram 127 bytes				
@@ -260,6 +293,8 @@ uint8_t memoryRead(uint16_t address)
 	switch(address)
 	{
 		case 0xFF00: return joyPad();
+		case 0xFF01: return IOSB;
+		case 0xFF02: return IOSC;
 		case 0xFF04: return IODIV;
 		case 0xFF05: return IOTIMA;
 		case 0xFF06: return IOTMA;
@@ -335,7 +370,9 @@ void memoryWrite(uint16_t address, uint8_t data)
 		
 	switch(address)
 	{
-		case 0xFF00: IOP1 = data; return;
+		case 0xFF00: IOP1 = (data | 0xCF); 	return;
+		case 0xFF01: IOSB = data;
+		case 0xFF02: writeSC(data); return;
 		case 0xFF04: IODIV = 0; return;		// any write clears it
 		case 0xFF05: IOTIMA = data; return;
 		case 0xFF06: IOTMA = data; return;
@@ -410,6 +447,11 @@ void initCpu(void)
     
 	IOIF   = 0xE1;
     IOIE   = 0x00;
+
+	IOP1   = 0xCF;
+
+	IOSC = 0x7E;
+	IOSB = 0x00;
 
 	halt_state = HALT_INACTIVE;
 }
