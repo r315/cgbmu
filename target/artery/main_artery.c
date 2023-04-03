@@ -17,7 +17,8 @@ static const uint8_t *cartridge = &_binary_rom_start;
 
 // Dark - light
 // RGB(0,19, 25), RGB(60,127,38), RGB(170, 204, 71), RGB(248, 255, 178)
-const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
+//const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
+const uint16_t lcd_pal[] = {RGB565(0x9C, 0xBD, 0x10), RGB565(0x8C, 0xAD, 0x10), RGB565(0x31, 0x63, 0x31), RGB565(0x10, 0x39, 0x10)};
 static uint16_t tft_line[SCREEN_W];
 
 int drawInt(int x, int y, unsigned int v, char radix, char digitos)
@@ -78,7 +79,7 @@ int main(void)
 {
     BOARD_Init();
 
-    LCD_SetOrientation(LCD_LANDSCAPE);
+    LCD_SetOrientation(LCD_REVERSE_LANDSCAPE);
     
     LIB2D_Init();
     LIB2D_Print("CPU %uMHz\n", SystemCoreClock/1000000);

@@ -11,9 +11,9 @@ extern "C" {
 #include "at32f4xx.h"
 #include "gpio.h"
 #include "gpio_at32f4xx.h"
-#include "ili9341.h"
+//#include "ili9341.h"
 //#include "st7735.h"
-//#include "st7789.h"
+#include "st7789.h"
 
 #define BOARD_ARTERY
 
@@ -31,8 +31,8 @@ extern "C" {
 #define SCREEN_OFFSET_X     80
 #define SCREEN_OFFSET_Y     48
 #else
-#define SCREEN_OFFSET_X     0
-#define SCREEN_OFFSET_Y     0
+#define SCREEN_OFFSET_X     ((TFT_W - SCREEN_W) / 2)
+#define SCREEN_OFFSET_Y     ((TFT_H - SCREEN_H) / 2)
 #endif
 /**
 * @brief Lcd Pin configuration:

@@ -42,7 +42,8 @@ $(DRIVERS_STD_PATH)/src/at32f4xx_rcc.c \
 $(DRIVERS_COSTUM_PATH)/src/spi_at32f4xx.c \
 $(DRIVERS_COSTUM_PATH)/src/dma_at32f4xx.c \
 $(DRIVERS_COSTUM_PATH)/src/gpio_at32f4xx.c \
-$(DRIVERS_COMPONENT_PATH)/src/ili9341.c \
+$(DRIVERS_COMPONENT_PATH)/src/st7789.c \
+#$(DRIVERS_COMPONENT_PATH)/src/ili9341.c \
 #$(DRIVERS_COMPONENT_PATH)/src/st7735.c \
 
 
@@ -62,7 +63,7 @@ $(EMU_PATH)/src/cgbmu.c \
 # ASM sources
 #ASM_SOURCES =startup_at32f415cbt7.s
 
-ROM_FILE=$(ROM_PATH)/mario.gb
+ROM_FILE=$(ROM_PATH)/Alleyway.gb
 #######################################
 # Misc files
 #######################################
@@ -118,7 +119,7 @@ DEBUG =0
 OPT   =-O2
 else
 DEBUG =1
-OPT   =-Og -g -gdwarf-2 -Wall
+OPT   =-Og -g -gdwarf-2
 endif
 
 
@@ -141,7 +142,7 @@ LDLIBS_PATH =
 # Generate dependency information
 #CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst))
 
-CFLAGS   =$(MCU) $(OPT) $(addprefix -D, $(C_DEFS)) $(addprefix -I, $(C_INCLUDES)) -fdata-sections -ffunction-sections -std=gnu11
+CFLAGS   =$(MCU) $(OPT) $(addprefix -D, $(C_DEFS)) $(addprefix -I, $(C_INCLUDES)) -fdata-sections -ffunction-sections -std=gnu11 -Wall
 CPPFLAGS =$(CFLAGS)
 ASFLAGS  =$(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 LDFLAGS  =$(MCU) $(SPECS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref,--gc-sections
