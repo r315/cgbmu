@@ -243,15 +243,13 @@ uint8_t video(void) {
 
 	video_cycles += instr_cycles;
 
-	uint8_t stat = IOSTAT;
-
-	switch (stat & V_MODE_MASK)
+	switch (IOSTAT & V_MODE_MASK)
 	{
 	case V_M2: 							// Mode 2 oam access start scanline	
 		if (video_cycles >= V_M2_CYCLE)
 		{
 			video_cycles -= V_M2_CYCLE;
-			stat |= V_M3;				// Next, Mode 3 vram access
+			IOSTAT |= V_M3;				// Next, Mode 3 vram access
 			scanOAM();
 		}
 		break;
@@ -260,8 +258,8 @@ uint8_t video(void) {
 		if (video_cycles >= V_M3_CYCLE)
 		{
 			video_cycles -= V_M3_CYCLE;
-			stat &= ~(V_MODE_MASK);     // Next, Mode 0 H-blank
-			if (stat & HB_IE) 		    // LCD STAT & H-Blank IE
+			IOSTAT &= ~(V_MODE_MASK);     // Next, Mode 0 H-blank
+			if (IOSTAT & HB_IE) 		    // LCD STAT & H-Blank IE
 				setInt(LCDC_IF);
 			scanline();
 		}
@@ -272,14 +270,14 @@ uint8_t video(void) {
 			video_cycles -= V_M0_CYCLE;
 			IOLY = checkLine(IOLY + 1); // Finish processing scanline, go to next one
 			if (IOLY < SCREEN_H) {
-				stat |= V_M2;     	    // Next, Mode 2 searching oam
-				if (stat & OAM_IE)
+				IOSTAT |= V_M2;     	    // Next, Mode 2 searching oam
+				if (IOSTAT & OAM_IE)
 					setInt(LCDC_IF);
 			}
 			else {
-				stat |= V_M1;           // Next, Mode 1 V-blank
+				IOSTAT |= V_M1;           // Next, Mode 1 V-blank
 				setInt(V_BLANK_IF);
-				if (stat & VB_IE)
+				if (IOSTAT & VB_IE)
 					setInt(LCDC_IF);
 			}
 		}
@@ -291,7 +289,7 @@ uint8_t video(void) {
 			video_cycles -= V_M1_CYCLE;			
 			if (IOLY > (SCREEN_H + VBLANK_LINES)) {
 				IOLY = checkLine(0);
-				IOSTAT = (stat & ~V_MODE_MASK) | V_M2; 	// Next, Mode 2 searching oam
+				IOSTAT = (IOSTAT & ~V_MODE_MASK) | V_M2; 	// Next, Mode 2 searching oam
 				return 1;
 			}
 
@@ -301,6 +299,5 @@ uint8_t video(void) {
 		break;
 	}
 
-	IOSTAT = stat;
 	return 0;
 }
