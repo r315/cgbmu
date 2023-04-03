@@ -13,7 +13,8 @@ uint8_t *cartridge = &_binary_rom_start;
 #endif
 
 static uint8_t *screen;
-uint8_t palette [256] = {230,248,215, 138,192,114, 55,106,87, 10,26,39};
+uint8_t rgb_pal [256] = {230,248,215, 138,192,114, 55,106,87, 10,26,39};
+static const uint32_t argb_pal[] = {0xFFE6F8D7, 0xFF8AC072, 0xFF376A57, 0xFF0A1A27};
 
 static void LCD_ConfigVideoDma(uint32_t dst, uint32_t src, uint16_t w, uint16_t h, uint32_t bgc)
 {
@@ -45,11 +46,11 @@ void videoInit(void)
 
     BSP_LED_On(LED2);
 
-    screen = (uint8_t *)malloc(SCREEN_W * SCREEN_H);
+    //screen = (uint8_t *)malloc(SCREEN_W * SCREEN_H);
+    //LCD_ConfigVideoDma(LCD_FB_START_ADDRESS + SCREEN_OFFSET_X + (SCREEN_OFFSET_Y * BSP_LCD_GetXSize()), (uint32_t)screen, 160, 144, 0);
+    screen = (uint8_t*)(LCD_FB_START_ADDRESS + SCREEN_OFFSET_X + (SCREEN_OFFSET_Y * BSP_LCD_GetXSize() * 4));
 
-    LCD_ConfigVideoDma(LCD_FB_START_ADDRESS + 200 + (200 * BSP_LCD_GetXSize()), (uint32_t)screen, 160, 144, 0);
-
-	uint8_t *pal = palette;
+	uint8_t *pal = rgb_pal;
 	for (uint32_t i = 0; i < 256; ++i)
     {
         uint8_t r = *pal++;
@@ -97,18 +98,20 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 void pushScanLine(uint8_t *scanline){
 
     uint8_t *end = scanline + SCREEN_W;
-    uint8_t *dst = screen + (IOLY * SCREEN_W);
+    uint32_t *dst = (uint32_t*)(screen + (IOLY * BSP_LCD_GetXSize() * 4));
 
 	if(IOLY == 0){
-		DMA2D->CR |= DMA2D_CR_START;
-    	do{
-
-    	}while(DMA2D->CR & DMA2D_CR_START);
+		//DMA2D->CR |= DMA2D_CR_START;
+        BSP_LED_Toggle(LED2);
 	}
 
-    while(scanline < end){
-		*dst++ = *scanline++;
+    while(scanline < end){        
+		*dst++ = argb_pal[*scanline++];
     }
+
+    //do{
+
+    //}while(DMA2D->CR & DMA2D_CR_START);
 }
 /**
  * @brief 
