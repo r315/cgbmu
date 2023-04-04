@@ -167,12 +167,14 @@ uint8_t readButtons(void)
 	    return button;	    
 	    
 	if(ev.type == SDL_QUIT){
+		cgbmuExit();
 	    return 255;
 	}
 	
 	keys  = SDL_GetKeyboardState(NULL);
 
 	if(keys[SDL_SCANCODE_ESCAPE]){
+		cgbmuExit();
 	    return 255;
 	} 
 

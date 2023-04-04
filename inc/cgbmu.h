@@ -5,6 +5,7 @@
 
 #define FRAME_TIME 16
 
+void cgbmuExit(void);
 void cgbmu(const uint8_t *rom);
 uint8_t runOneStep(void);
 uint8_t runOneFrame(void);

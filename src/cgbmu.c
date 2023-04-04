@@ -7,7 +7,11 @@
 
 enum{ SINGLE_FRAME, SINGLE_STEP};
 
-uint8_t done;
+static uint8_t done;
+
+void cgbmuExit(void){
+	done = true;
+}
 
 void updateFps(void) {
 	static uint32_t fpsupdatetick = 0;
@@ -104,7 +108,7 @@ uint8_t runOneStep(void) {
 void cgbmu(const uint8_t *rom) {
 	uint8_t mode = SINGLE_STEP;
 	uint32_t ticks = 0;
-	done = 0;
+	done = false;
 	
 	if(rom == NULL){
 		bootCpu();
