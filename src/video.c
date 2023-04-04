@@ -4,13 +4,12 @@
 #include "video.h"
 #include "cgbmu.h"
 
-static Object *visible_objs[MAX_LINE_OBJECTS + 1];
-static uint8_t scanlinedata[SCREEN_W];		// one line of pixels
+
 
 //-----------------------------------------
 //put one line of Sprite data into scanlinedata
 //-----------------------------------------
-void blitObjectData(cpu_t *cpu, Object *obj, uint8_t *dst) {
+void blitObjectData(cpu_t *cpu, obj_t *obj, uint8_t *dst) {
 	uint8_t pixel_mask, color, objline;
 	uint8_t pal = (obj->flags & OBJECT_FLAG_PAL) ? cpu->IOOBP1 : cpu->IOOBP0;
 	uint8_t pattern = obj->pattern;
@@ -28,7 +27,7 @@ void blitObjectData(cpu_t *cpu, Object *obj, uint8_t *dst) {
 	}
 
 	//Each Tile has 16bytes and one line of pixels needs 2 bytes
-	TileData *td = (TileData*)cpu->vram + pattern;
+	tile_t *td = (tile_t*)cpu->vram + pattern;
 	uint8_t lsb = td->line[objline].lsb;
 	uint8_t msb = td->line[objline].msb;
 
@@ -100,13 +99,13 @@ void blitObjectData(cpu_t *cpu, Object *obj, uint8_t *dst) {
 *---------------------------------------------------------*/
 void blitTileData(cpu_t *cpu, uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint8_t size) {
 	uint8_t tileindex, msb, lsb, color;
-	TileData *td;
+	tile_t *td;
 
 	line = TILE_LINE(line);				// Mask line in tile 
 
 	while (size) {
 		tileindex = *(tilemapline + TILE_INDEX(pixeloffset));  // add pixel offset with wraparround
-		td = (cpu->IOLCDC & BG_W_DATA) ? (TileData*)(cpu->vram) + tileindex : (TileData*)(cpu->vram + TILE_DATA1_SIGNED_BASE) + (int8_t)tileindex;
+		td = (cpu->IOLCDC & BG_W_DATA) ? (tile_t*)(cpu->vram) + tileindex : (tile_t*)(cpu->vram + TILE_DATA1_SIGNED_BASE) + (int8_t)tileindex;
 		msb = td->line[line].msb;
 		lsb = td->line[line].lsb;
 		msb <<= TILE_LINE(pixeloffset);
@@ -130,12 +129,12 @@ void blitTileData(cpu_t *cpu, uint8_t *tilemapline, uint8_t *dst, uint8_t pixelo
 //-----------------------------------------
 void scanOAM(cpu_t *cpu) {
 	uint8_t h, n, curline, lcdc;
-	Object *pobj = (Object*)cpu->oam;
+	obj_t *pobj = (obj_t*)cpu->oam;
 
 	lcdc = cpu->IOLCDC;
 
 	if (!(lcdc & OBJ_DISPLAY)) {
-		visible_objs[0] = NULL;
+		cpu->visible_objs[0] = NULL;
 		return;
 	}
 
@@ -149,12 +148,12 @@ void scanOAM(cpu_t *cpu) {
 		if (pobj->y > curline || (pobj->y + h) <= curline) continue;
 		if (pobj->x >= SCREEN_W + SPRITE_W)continue;
 		
-		visible_objs[n] = pobj;	
+		cpu->visible_objs[n] = pobj;	
 		if (++n >= MAX_LINE_OBJECTS)
 			break;
 	}
 
-	visible_objs[n] = NULL;
+	cpu->visible_objs[n] = NULL;
 }
 //-----------------------------------------
 //
@@ -162,7 +161,7 @@ void scanOAM(cpu_t *cpu) {
 void scanline(cpu_t *cpu) {
 	uint8_t *tilemapline;
 	uint8_t pixel, line;
-	uint8_t *sld = scanlinedata;
+	uint8_t *sld = cpu->screen_line;
 
 	uint8_t lcdc = cpu->IOLCDC;
 	uint8_t ly = cpu->IOLY;
@@ -179,17 +178,17 @@ void scanline(cpu_t *cpu) {
 	if (lcdc & W_DISPLAY && ly >= cpu->IOWY && cpu->IOWX < SCREEN_W + 7)
 	{
 		line = ly - cpu->IOWY;
-		sld = scanlinedata + cpu->IOWX - 7;				//destination offset given by IOWX, WX has an offset of 7
+		sld = cpu->screen_line + cpu->IOWX - 7;				//destination offset given by IOWX, WX has an offset of 7
 		tilemapline = (uint8_t*)(cpu->vram + ((lcdc & W_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 		tilemapline += TILE_LINE_INDEX(line);
 		blitTileData(cpu, tilemapline, sld, 0, line, SCREEN_W - cpu->IOWX + 7);
 	}
 
 	pixel = 0;
-	while (visible_objs[pixel] != NULL)
-		blitObjectData(cpu, visible_objs[pixel++], scanlinedata);
+	while (cpu->visible_objs[pixel] != NULL)
+		blitObjectData(cpu, cpu->visible_objs[pixel++], cpu->screen_line);
 
-	pushScanLine(cpu->IOLY, scanlinedata);
+	pushScanLine(cpu);
 }
 
 //-----------------------------------------

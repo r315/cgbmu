@@ -7,8 +7,6 @@ static uint8_t cb_decode(cpu_t*);
 #if TABLE_DECODER
 #define NOP nop
 
-uint8_t  instr_cycles;
-
 static const uint8_t (*cb_opcodes[])(cpu_t*) = {
 	rlc_b, rlc_c, rlc_d, rlc_e, rlc_h, rlc_l, rlc_ind_hl, rlc_a, rrc_b, rrc_c, rrc_d, rrc_e, rrc_h, rrc_l, rrc_ind_hl, rrc_a,
 	rl_b, rl_c, rl_d, rl_e, rl_h, rl_l, rl_ind_hl, rl_a, rr_b, rr_c, rr_d, rr_e, rr_h, rr_l, rr_ind_hl, rr_a,

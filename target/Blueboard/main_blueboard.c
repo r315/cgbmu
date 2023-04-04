@@ -46,11 +46,13 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 //-----------------------------------------
 //
 //-----------------------------------------
-void pushScanLine(uint8_t ly, uint8_t *scanline){
-    uint8_t *end = scanline + SCREEN_W;
-    LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + ly, SCREEN_W, 1);
-    while(scanline < end){
-		LCD_Data(lcd_pal[*scanline++]);
+void pushScanLine(cpu_t *cpu){
+    uint8_t *pixel = cpu->screen_line;
+	uint8_t *end = cpu->screen_line + SCREEN_W;
+    
+    LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + cpu->IOLY, SCREEN_W, 1);
+    while(pixel < end){
+		LCD_Data(lcd_pal[*pixel++]);
     }
 }
 
@@ -112,7 +114,7 @@ void fsInit(void)
 //--------------------------------------------------
 //
 //--------------------------------------------------
-int loadRom(const uint8_t **dst, char *fn)
+int loadRom(const uint8_t **dst, const char *fn)
 {
 #if defined(USE_FS)
     WORD n;

@@ -1,7 +1,7 @@
 #include "dmgcpu.h"
 #include "instrs.h"
 
-enum {
+enum aluops_e{
 	ALU_ADD = 0,
 	ALU_ADC,
 	ALU_SUB,

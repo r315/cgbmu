@@ -129,6 +129,21 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 #define REG_PC          cpu->PC
 #define PSW             cpu->F
 
+
+typedef struct obj_s{
+    uint8_t y;
+    uint8_t x;
+    uint8_t pattern;
+    uint8_t flags;      // |priority | Y Flip | X Flip | Palette number | - | - | - | - | 
+}obj_t;
+
+typedef struct tile_s {
+	struct {
+		uint8_t lsb;
+		uint8_t msb;
+	}line[8];
+}tile_t;
+
 /*
  15..8  7..0
 +-----+-----+
@@ -223,7 +238,8 @@ typedef struct cpu_s{
     uint8_t iram[IRAM_SIZE];     // 0xC000-0xBFFF
     uint8_t oam[OAM_SIZE];       // 0xFE00-0xFEBF
     uint8_t hram[256];           // 0xFF80-0xFFFE
-
+    obj_t *visible_objs[11 + 1];
+    uint8_t screen_line[160];    // one line of pixels
 }cpu_t;
 
 

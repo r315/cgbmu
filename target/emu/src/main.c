@@ -1,6 +1,13 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#ifdef _WIN32
+#include <direct.h>
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 #include "board.h"
 #include "cgbmu.h"
 #include "dmgcpu.h"
@@ -11,6 +18,12 @@
 #include "tests.h"
 #include "lib2d.h"
 
+#define MULTIPLE_CPUS	0
+
+typedef struct threadparam_s {
+	cpu_t *cpu;
+	const char *romfile;
+}threadparam_t;
 
 typedef struct _opt{
 	const char *opt;
@@ -72,7 +85,10 @@ const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
 
 extern uint8_t done;
 static uint8_t *mbc1_rom;
-static cpu_t test_cpu;
+static cpu_t cpu_1, cpu_2, cpu_3, cpu_4;
+#if _WIN32 && MULTIPLE_CPUS
+HANDLE ghMutex;
+#endif
 
 uint32_t GetTick(void) {
 	return SDL_GetTicks();
@@ -102,16 +118,7 @@ void parseOptions(int argc, char **argv, int optc, opt_t *options) {
     }
 }
 
-#include <stdio.h>
-#include <stdlib.h>
-#ifdef _WIN32
-#pragma warning(disable : 4996)
-#include <direct.h>
-#else
-#include <unistd.h>
-#endif
-
-int loadRom(const uint8_t **dst, char *file)
+int loadRom(const uint8_t **dst, const char *file)
 {
 	char cwd[1024];
 	FILE *fp;
@@ -216,16 +223,36 @@ uint8_t readButtons(void)
 	return button;
 }
 
-void pushScanLine(uint8_t ly, uint8_t *scanline) {
-	uint16_t tft_line[SCREEN_W];
-	uint8_t *end = scanline + SCREEN_W;
-	uint8_t pixel = 0;
 
-	while (scanline < end) {
-		tft_line[pixel++] = lcd_pal[*scanline++];
+void pushScanLine(cpu_t *cpu) {
+	uint8_t *pixel = cpu->screen_line;
+	uint8_t *end = cpu->screen_line + SCREEN_W;
+#if _WIN32 && MULTIPLE_CPUS
+	WaitForSingleObject(
+		ghMutex,    // handle to mutex
+		INFINITE);  // no
+	
+	if(cpu->id == 2) {
+		LCD_Window(SCREEN_OFFSET_X + SCREEN_W, SCREEN_OFFSET_Y + cpu->IOLY, SCREEN_W, 1);
 	}
-
-	LCD_WriteArea(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + ly, SCREEN_W, 1, tft_line);
+	else if (cpu->id == 3) {
+		LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + SCREEN_H + cpu->IOLY, SCREEN_W, 1);
+	}
+	else if (cpu->id == 4) {
+		LCD_Window(SCREEN_OFFSET_X + SCREEN_W, SCREEN_OFFSET_Y + SCREEN_H + cpu->IOLY, SCREEN_W, 1);
+	}
+	else 
+#endif
+	{
+		LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + cpu->IOLY, SCREEN_W, 1);
+	}
+	
+	while (pixel < end) {
+		LCD_Data(lcd_pal[*pixel++]);
+	}
+#if _WIN32 && MULTIPLE_CPUS
+	ReleaseMutex(ghMutex);
+#endif
 }
 
 int drawInt(int x, int y, unsigned int v, char radix, char digitos)
@@ -239,12 +266,33 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 		dig[i++] = c;
 	} while (v);
 
+#if _WIN32 && MULTIPLE_CPUS
+	WaitForSingleObject(
+		ghMutex,    // handle to mutex
+		INFINITE);  // no
+#endif
 	for (c = i; c < digitos; c++)
 		x = LIB2D_Char(x, y, '0');
 
 	while (i--)
 		x = LIB2D_Char(x, y, dig[i]);
+#if _WIN32 && MULTIPLE_CPUS
+	ReleaseMutex(ghMutex);
+#endif
 	return x;
+}
+
+void drawFps(cpu_t *cpu) {
+	static uint32_t fpsupdatetick = 0;
+	static uint16_t fps = 0;
+	fps++;
+
+	if (GetTick() > fpsupdatetick)
+	{
+		drawInt(SCREEN_W * 2 + 8, cpu->id * 10, fps, 10, 4);
+		fps = 0;
+		fpsupdatetick = GetTick() + 1000;
+	}
 }
 
 int loadTestRom(uint8_t nr) {
@@ -259,18 +307,36 @@ int loadTestRom(uint8_t nr) {
 	return loadRom(&mbc1_rom, path);
 }
 
-void dry_run(const uint8_t *rom) {
-	cartridgeInit(&test_cpu, rom);
-	initCpu(&test_cpu);
+
+#if _WIN32 && MULTIPLE_CPUS
+DWORD WINAPI threadRun(LPVOID ptr){
+#else
+void threadRun(void *ptr) {
+#endif
+
+	const uint8_t *rom_data;
+	threadparam_t *run = (threadparam_t*)ptr;
+	cpu_t *cpu, cpu_x;
+
+	if(loadRom(&rom_data, run->romfile) == 0){
+		return;
+	}
+
+	cpu = run->cpu;
+
+	cartridgeInit(cpu, rom_data);
+	initCpu(cpu);
+	
 	while (readButtons() != 255) {
 #if 1
 		// slow path
-		uint8_t frame;
-		decode(&test_cpu);
-		frame = video(&test_cpu);
-		timer(&test_cpu);
-		serial(&test_cpu);
-		interrupts(&test_cpu);
+		decode(cpu);
+		if (video(cpu)) {
+			drawFps(cpu);
+		}
+		timer(cpu);
+		serial(cpu);
+		interrupts(cpu);
 #else
 		// Fastest run
 		runOneFrame();
@@ -310,16 +376,38 @@ int main (int argc, char *argv[])
 	
 	parseOptions(argc, argv, sizeof(options)/sizeof(opt_t), options);
 
+#if _WIN32 && MULTIPLE_CPUS
+	ghMutex = CreateMutex(
+		NULL,              // default security attributes
+		FALSE,             // initially not owned
+		NULL);             // unnamed mutex
+
+	HANDLE threads[4];
+	cpu_1.id = 1;
+	cpu_2.id = 2;
+	cpu_3.id = 3;
+	cpu_4.id = 4;
+	threadparam_t thread1_param = { &cpu_1, (const char*)ROM_PATH"/dkl.gb" };
+	threadparam_t thread2_param = { &cpu_2, (const char*)ROM_PATH"/mario.gb" };
+	threadparam_t thread3_param = { &cpu_3, (const char*)ROM_PATH"/Alleyway.gb" };
+	threadparam_t thread4_param = { &cpu_4, (const char*)ROM_PATH"/tetris.gb" };
+
+	threads[0] = CreateThread(NULL, 0, threadRun, &thread1_param, 0, NULL);
+	threads[1] = CreateThread(NULL, 0, threadRun, &thread2_param, 0, NULL);
+	threads[2] = CreateThread(NULL, 0, threadRun, &thread3_param, 0, NULL);
+	threads[3] = CreateThread(NULL, 0, threadRun, &thread4_param, 0, NULL);
+
+	WaitForMultipleObjects(4, threads, true, INFINITE);
+#endif
+	
 #if 1
 	if(loadRom(&mbc1_rom, romfile) > 0) {
 #else
 	if(loadTestRom(0) > 0){
 #endif
-		//dry_run(MBC1_ROM);		// Generic run
-
-		DBG_run(mbc1_rom);		// Run loaded rom in debug mode
+		//DBG_run(mbc1_rom);		// Run loaded rom in debug mode
 	
-		//cgbmu(MBC1_ROM);  // Run emulator in normal mode	
+		cgbmu(mbc1_rom);  // Run emulator in normal mode	
 	}
 	else {
 		LIB2D_Text(0, 4, "Fail to load rom");

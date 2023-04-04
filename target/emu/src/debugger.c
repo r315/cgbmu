@@ -297,7 +297,7 @@ void DBG_DrawTileLine(uint8_t msb, uint8_t lsb) {
 	}
 }
 
-void DBG_DrawTile(uint8_t x, uint8_t y, TileData *td) {
+void DBG_DrawTile(uint8_t x, uint8_t y, tile_t *td) {
 	uint8_t i;
 	//LCD_Window(x * 8, y * 8, 8, 8);
 	for (i = 0; i < 8; i++) {
@@ -308,7 +308,7 @@ void DBG_DrawTile(uint8_t x, uint8_t y, TileData *td) {
 void DBG_BGmap(void) {
 	uint8_t w, h;
 	uint8_t *bgmapbase;
-	TileData *td;
+	tile_t *td;
 	uint8_t offset;
 
 	bgmapbase = (uint8_t*)(DBG_CPU.vram + ((DBG_CPU.IOLCDC & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
@@ -318,10 +318,10 @@ void DBG_BGmap(void) {
 			offset = *(bgmapbase + w + (h * 32));
 
 			if (DBG_CPU.IOLCDC & BG_W_DATA) {
-				td = (TileData*)(DBG_CPU.vram)+offset;
+				td = (tile_t*)(DBG_CPU.vram)+offset;
 			}
 			else {
-				td = (TileData*)(DBG_CPU.vram + TILE_DATA1_SIGNED_BASE) + (int8_t)(offset);
+				td = (tile_t*)(DBG_CPU.vram + TILE_DATA1_SIGNED_BASE) + (int8_t)(offset);
 			}
 			DBG_DrawTile(w, h, td);
 		}

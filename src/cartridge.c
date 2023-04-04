@@ -75,23 +75,25 @@ static void mbc1Write(cpu_t *cpu, uint16_t address, uint8_t data) {
 //
 //----------------------------------------------------
 void cartridgeInit(cpu_t *cpu, const uint8_t *rom) {
+	mbc1_t *mbc1;
 	cpu->rom0 = (uint8_t *)rom;
 	cpu->rombank = (uint8_t *)rom + CARTRIDGE_ROM_SIZE;
-	cpu->cartridge_data = &_mbc1;
 
 	switch (cpu->rom0[CARTRIDGE_TYPE_OFFSET]) {
 	case CARTRIDGE_ROM:
 	case CARTRIDGE_MBC1:
 	case CARTRIDGE_MBC1_RAM:
 	case CARTRIDGE_MBC1_RAM_BAT:
+		mbc1 = &_mbc1; //(mbc1_t *)malloc(sizeof(mbc1_t)); // use for multiple cpu instances
+		cpu->cartridge_data = mbc1;
 		cpu->cartridgeRead = mbc1Read;
 		cpu->cartridgeWrite = mbc1Write;
-		_mbc1.ram_en = 0;
-		_mbc1.mode = 0;  // Default 16Mbit/8k
-		_mbc1.bank = 1;
+		mbc1->ram_en = 0;
+		mbc1->mode = 0;  // Default 16Mbit/8k
+		mbc1->bank = 1;
 		break;
 
-	default:  // crashes
+	default:  // crash and burn
 		cpu->cartridgeRead = NULL;
 		cpu->cartridgeWrite = NULL;
 	}

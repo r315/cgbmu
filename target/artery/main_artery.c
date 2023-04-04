@@ -40,19 +40,22 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 	return x;
 }
 
-void pushScanLine(uint8_t ly, uint8_t *scanline){
+void pushScanLine(cpu_t *cpu){
+    uint8_t *pixel = cpu->screen_line;
+	uint8_t *end = pixel + SCREEN_W;
+    
+    uint16_t *dst;
 
-    uint8_t *end = scanline + SCREEN_W;
-    uint8_t pixel = 0;
+    dst = tft_line;
 
-    while(scanline < end){
-		tft_line[pixel++] = lcd_pal[*scanline++];
+    while(pixel < end){
+		*dst++ = lcd_pal[*pixel++];
     }
     
-    LCD_WriteArea(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + ly, SCREEN_W, 1, tft_line);
+    LCD_WriteArea(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + cpu->IOLY, SCREEN_W, 1, tft_line);
 }
 
-int loadRom(const uint8_t **dst, char *fn)
+int loadRom(const uint8_t **dst, const char *fn)
 {
     //load from SD Card here
     //cartridgeInit(&CARTRIDGE_NAME);

@@ -95,18 +95,20 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
  * 
  * @param scanline 
  */
-void pushScanLine(uint8_t ly, uint8_t *scanline){
+void pushScanLine(cpu_t *cpu){
 
-    uint8_t *end = scanline + SCREEN_W;
-    uint32_t *dst = (uint32_t*)(screen + (ly * BSP_LCD_GetXSize() * 4));
+    uint8_t *pixel = cpu->screen_line;
+	uint8_t *end = cpu->screen_line + SCREEN_W;
 
-	if(ly == 0){
+    uint32_t *dst = (uint32_t*)(screen + (cpu->IOLY * BSP_LCD_GetXSize() * 4));
+
+	if(cpu->IOLY == 0){
 		//DMA2D->CR |= DMA2D_CR_START;
         BSP_LED_Toggle(LED2);
 	}
 
-    while(scanline < end){        
-		*dst++ = argb_pal[*scanline++];
+    while(pixel < end){        
+		*dst++ = argb_pal[*pixel++];
     }
 
     //do{
@@ -119,7 +121,7 @@ void pushScanLine(uint8_t ly, uint8_t *scanline){
  * @param fn 
  * @return int 
  */
-int loadRom(const uint8_t **dst, char *fn)
+int loadRom(const uint8_t **dst, const char *fn)
 {
     //cartridgeInit(cartridge);
     //return ROM_SIZE;
