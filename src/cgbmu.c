@@ -21,60 +21,62 @@ void updateFps(void) {
 		fpsupdatetick = GetTick() + 1000;
 	}
 }
+
 /**
  * @brief 
  * 
  * @param nTicks 
  */
 static void runCpu(uint32_t nTicks) {
-uint32_t elapsed_cycles = 0;
-	while (nTicks > elapsed_cycles) {
+	static uint32_t elapsed_cycles = 0;
+	while (elapsed_cycles < nTicks) {
 		decode();
 		timer();
+		serial();
 		interrupts();		
 		elapsed_cycles += instr_cycles;
 	}
+	elapsed_cycles -= nTicks;
 }
 
 /**
- * @brief 
+ * @brief should be faster, however does not work
+ * properly
  * 
  */
 uint8_t runOneFrame(void) {
 
-	for (; IOLY < SCREEN_H; IOLY++) {
+	IOSTAT &= 0xFC;
 
-		IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & (~LYC_LY_FLAG));
+	for (IOLY = 0; IOLY < SCREEN_H; IOLY++) {
 
-		//if ((IOSTAT & LYC_LY_IE) && (IOSTAT & LYC_LY_FLAG))
-		if (IOSTAT & LYC_LY_FLAG)
-			IOIF |= LCDC_IF;
+		checkLine(IOLY);
 
-		IOSTAT |= V_M2;  			// Change to Mode2 scan OAM
-		if (IOSTAT & OAM_IE)			// check OAM IE
-			IOIF |= LCDC_IF;
+		IOSTAT |= V_M2;  			// Mode2 scan OAM
+		if (IOSTAT & OAM_IE)
+			setInt(LCDC_IF);
+
 		runCpu(V_M2_CYCLE);
 		scanOAM();
 
-		IOSTAT |= V_M3;  			// Change to Mode3 scan VRAM
+		IOSTAT |= V_M3;  			// Mode3 scan VRAM
 		runCpu(V_M3_CYCLE);
 		scanline();
 
 		IOSTAT &= ~(V_MODE_MASK); 	// Change to Mode0 H-Blank
 		if (IOSTAT & HB_IE)			// check H-Blank IE
-			IOIF |= LCDC_IF;
+			setInt(LCDC_IF);
 		runCpu(V_M0_CYCLE);
 	}
 
 	IOSTAT |= V_M1;  		// Change to Mode 1
 	IOIF |= V_BLANK_IF;		// V-Blank Flag is Always activated
 	if (IOSTAT & VB_IE)		// LCD Flag is activated if IE is enabled
-		IOIF |= LCDC_IF;
+		setInt(LCDC_IF);
 
 	while (IOLY < (SCREEN_H + VBLANK_LINES)) {
-		IOSTAT = (IOLY == IOLYC) ? (IOSTAT | LYC_LY_FLAG) : (IOSTAT & ~LYC_LY_FLAG);
+		IOLY = checkLine(IOLY + 1);
 		runCpu(V_M1_CYCLE);
-		IOLY++;
 	}
 
 	return 1;
@@ -126,6 +128,7 @@ void cgbmu(const uint8_t *rom) {
 	else {				// frame loop
 		while (!done) {
 			runOneFrame();
+			updateFps();
 		}
 	}	
 }

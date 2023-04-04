@@ -41,8 +41,8 @@ uint8_t vram[0x2000];                    // 0x8000-0x9FFF
 uint8_t iram[0x2000];                    // 0xC000-0xBFFF
 uint8_t oam[sizeof(Object)*MAX_OBJECTS]; // 0xFE00-0xFEBF
 uint8_t hram[128];                       // 0xFF80-0xFFFE
-uint8_t *rom0;                           // 0x0000-0x3FFF
-uint8_t *rombank;                        // 0x4000-0x7FFF
+const uint8_t *rom0;                     // 0x0000-0x3FFF
+const uint8_t *rombank;                  // 0x4000-0x7FFF
 
 Regs regs;
 uint8_t halt_state, stopped;
@@ -254,41 +254,41 @@ uint8_t memoryRead(uint16_t address)
 {	
 	switch(address>>12)
 	{
-		case 0:
+		case 0: // 0000-3FFF, 16k Rom bank #0
 		case 1:
 		case 2:
 		case 3:
-			return rom0[address]; // 16k Rom bank #0  0x0000 - 0x3FFF 
+			return rom0[address];
 			
-		case 4:
+		case 4: // 4000-7FFF, 16kB switchable ROM bank
 		case 5:
 		case 6:
 		case 7:
-			return rombank[address & 0x3FFF]; //16kB switchable ROM bank 4000 - 7FFF
+			return rombank[address & 0x3FFF]; 
 			
-		case 8:
+		case 8: // 8000-9FFF, 8k video ram
 		case 9:
-			return vram[address & 0x1FFF];   // 8k 0x8000 - 0x9FFF
+			return vram[address & 0x1FFF];  
 			
-		case 0x0A:
+		case 0x0A: // A000-BFFF, 8kB switchable RAM bank
 		case 0x0B:
-			return cartridgeRead(address);  // 8kB switchable RAM bank 0xA000 - 0xBFFF
+			return cartridgeRead(address);  
 		
-		case 0x0C:
+		case 0x0C: // C000-DFFF, kB internal ram
 		case 0x0D:
-			return iram[address & 0x1FFF];  // 8kB internal ram 0xC000 - 0xDFFF
+			return iram[address & 0x1FFF];  
 			
 		default: break;
 	}	
-		
+	// E000-EDFF, 8k ram fold
 	if((address > 0xDFFF) && (address < 0xFE00))
-		return iram[address & 0x1FFF]; // ram fold 8k
-	
+		return iram[address & 0x1FFF];
+	// FE00-FE9F, 160bytes oam
 	if ((address > 0xFDFF) && (address < 0xFEA0))
-		return oam[address & 0xFF]; // atribute ram 160 bytes
-		
+		return oam[address & 0xFF];
+	// FF80-FFFE, 127 Bytes hram	
 	if((address > 0xFF7F) && (address < 0xFFFF))		
-		return hram[address & 0x7f];  // high ram 127 bytes				
+		return hram[address & 0x7f];
 
 	switch(address)
 	{
@@ -335,34 +335,34 @@ void memoryWrite(uint16_t address, uint8_t data)
 			cartridgeWrite(address,data);
 			return;
 			
-		case 8:
+		case 8:     // 8000-9FFF, 8k
 		case 9:
-			vram[address & 0x1FFF] = data; // 8K
+			vram[address & 0x1FFF] = data;
 			return;
 			
-		case 0x0A:
+		case 0x0A:	// A000-BFFF, 8k
 		case 0x0B:
 			cartridgeWrite(address,data);
 			return; 
 		
-		case 0x0C:
+		case 0x0C:  // C000-DFFF, 8k
 		case 0x0D:
-			iram[address & 0x1FFF] = data; // 8k
+			iram[address & 0x1FFF] = data;
 			return; 
 			
 		default: break;
 	}
-		
+	// E000-EDFF, 8k ram fold
 	if((address > 0xDFFF) && (address < 0xFE00)){
-		iram[address - 0xE000]=data; // ram fold
+		iram[address - 0xE000]=data;
 		return;
 	}
-	
+	// FE00-FE9F, 160bytes oam
 	if((address > 0xFDFF) && (address < 0xFEA0)){
-		oam[address & 0xFF ] = data; // atribute ram
+		oam[address & 0xFF ] = data;
 		return;
 	}
-	
+	// FF80-FFFE, 127 Bytes hram
 	if((address > 0xFF7F) && (address < 0xFFFF)){
 		hram[address & 0x7F] = data;
 		return ;
