@@ -15,7 +15,7 @@ DRIVERS_COSTUM_PATH =$(DRIVERS_PATH)/Drivers/Costum
 DRIVERS_COMPONENT_PATH =$(DRIVERS_PATH)/Drivers/Component
 EMU_PATH 		:=../..
 LIB_PATH    	=$(EMU_PATH)/lib
-ROM_PATH		=../../../roms
+ROMS_PATH		:=roms
 
 C_INCLUDES = \
 $(BOARD_PATH) \
@@ -63,7 +63,7 @@ $(EMU_PATH)/src/cgbmu.c \
 # ASM sources
 #ASM_SOURCES =startup_at32f415cbt7.s
 
-ROM_FILE=$(ROM_PATH)/Alleyway.gb
+ROM_FILE=$(ROMS_PATH)/tests/cpu_instrs.gb
 #######################################
 # Misc files
 #######################################

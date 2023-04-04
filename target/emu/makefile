@@ -30,7 +30,7 @@ $(EMU_PATH)/src/video.c \
 $(EMU_PATH)/src/cgbmu.c
 
 LIBS     =-lSDL2main -lSDL2 -lGL
-SYMBOLS  =-D__DEBUG__ -D__EMU__ -DROM_PATH=\"../../../roms\"
+SYMBOLS  =-D__DEBUG__ -D__EMU__
 CFLAGS  =-Og -g -Wall -gdwarf-2 -gstrict-dwarf  $(addprefix -I, $(C_INCLUDES)) $(SYMBOLS) $(shell sdl2-config --cflags)
 LDFLAGS =-LSDL2/lib/x64
 OBJS    =$(addprefix $(BUILD_DIR)/, $(notdir $(CSRCS:.c=.o)))

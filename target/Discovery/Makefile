@@ -18,7 +18,7 @@ OPT = -Og
 BUILD_DIR  :=build
 REPOSITORY_DIR =$(REPO_F769)
 EMU_PATH   :=../..
-ROM_PATH   =../../../roms
+ROMS_PATH   :=roms
 DRIVERS_PATH =$(CURDIR)/../Drivers
 DRIVERS_COMPONENT_PATH =$(DRIVERS_PATH)/Component
 LIB_PATH   =$(EMU_PATH)/lib
@@ -87,7 +87,7 @@ $(EMU_PATH)/src/decoder.c \
 $(EMU_PATH)/src/cgbmu.c \
 $(EMU_PATH)/src/video.c \
 
-ROM_FILE=$(ROM_PATH)/mario.gb
+ROM_FILE=$(ROMS_PATH)/tests/cpu_instrs.gb
 
 # AS includes
 AS_INCLUDES = 

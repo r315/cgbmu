@@ -29,6 +29,8 @@ $(BSP_PATH)/src/spi.c \
 $(FATFS_PATH)/pff.c \
 $(FATFS_PATH)/mmc.c \
 
+ROM_FILE=$(ROMS_PATH)/tests/cpu_instrs.gb
+
 C_INCLUDES  = \
 $(BOARD_PATH) \
 $(BOARD_PATH)/Drivers/Costum/inc \
@@ -42,8 +44,8 @@ C_DEFS  =__BB__ NO_LCD_HW_SCROLL SCREEN_OFFSET_X=80 SCREEN_OFFSET_Y=48 USE_FAST_
 #########################################################################
 #  List of the objects files to be compiled/assembled
 # system sources and common includes and directories
-
-OBJECTS = $(addprefix $(BUILD_DIR)/, $(notdir $(CSRCS:.c=.o))) $(BUILD_DIR)/extbin.o
+ROM_OBJ=$(BUILD_DIR)/rom.o
+OBJECTS = $(addprefix $(BUILD_DIR)/, $(notdir $(CSRCS:.c=.o)))
 #$(addprefix $(BUILD_DIR)/, $(CPPSRCS:.cpp=.o)) 
 LSCRIPT =$(BOARD_PATH)/lpc1768_gb.ld
 
@@ -79,7 +81,7 @@ VPATH +=$(sort $(dir $(CSRCS)))
 #########################################################################
 #  Compiler/Assembler/Linker Paths
 
-GCC_EXEC_PREFIX = arm-none-eabi-
+GCC_EXEC_PREFIX =arm-none-eabi-
 GCC = $(GCC_EXEC_PREFIX)gcc
 GPP = $(GCC_EXEC_PREFIX)g++
 AS = $(GCC_EXEC_PREFIX)as
@@ -93,7 +95,7 @@ CHECKSUM =$(LIBEMB_PATH)/bsp/tools/checksum
 
 all: $(TARGET).elf size
 
-$(TARGET).elf: $(OBJECTS)
+$(TARGET).elf: $(OBJECTS) $(ROM_OBJ)
 	@echo "[LD]  $@"
 	$(VERBOSE)$(LD) $(LDFLAGS) -T $(LSCRIPT) $^ -o $@
 
@@ -104,8 +106,8 @@ $(TARGET).bin: $(TARGET).elf
 	@$(CHECKSUM) $@
 
 #https://balau82.wordpress.com/2012/02/19/linking-a-binary-blob-with-gcc
-$(BUILD_DIR)/extbin.o : ../../../roms/mario.gb #tests/cpu_instrs.gb
-	$(OBJCOPY) -I binary -O elf32-littlearm $(EXTBIN_ARCH) --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0 $< $@
+$(ROM_OBJ): $(ROM_FILE) 
+	$(OBJCOPY) -I binary -O elf32-littlearm --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0 $< $@
 	@$(OBJDUMP) -t $@
 	
 $(CHECKSUM):
@@ -131,7 +133,10 @@ size: $(TARGET).elf
 clean:
 	$(REMOVE) $(BUILD_DIR) 
 
-program: $(CHECKSUM) $(TARGET).bin $(TARGET).cfg
+clean-rom:
+	$(VERBOSE)-rm -f $(ROM_OBJ)
+
+program: $(TARGET).bin $(TARGET).cfg $(CHECKSUM)
 	openocd -f $(TARGET).cfg -c "program $(TARGET).bin 0x00000000 verify reset exit"
 
 $(BUILD_DIR):
