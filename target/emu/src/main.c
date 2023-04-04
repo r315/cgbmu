@@ -38,7 +38,36 @@ const char *test_roms[] = {
 	"phys.gb"             // 14
 };
 
-static const char *card_types[] = { "ROM", "MBC1", "MBC1 + RAM" };
+static const char *card_types[] = { 
+	"ROM", 
+	"MBC1", 
+	"MBC1 + RAM", 
+	"MBC1 + RAM + BATT",
+	"",
+	"MBC2",
+	"MBC2 + BATT",
+	"",
+	"ROM + RAM",
+	"ROM + RAM + BATT",
+	"",
+	"ROM + MMMO1",
+	"ROM + MMMO1 + SRAM",
+	"ROM + MMMO1 + SRAM + BATT",
+	"",
+	"ROM + MBC3 + TIMER + BATT",
+	"ROM + MBC3 + TIMER + RAM + BATT", // 10
+	"ROM + MBC3",
+	"MBC3 + RAM",
+	"MBC3 + RAM + BATT",
+	"", "", "", "", "",
+	"MBC5",
+	"MBC5 + RAM",
+	"MBC5 + RAM + BATT",
+	"MBC5 + RUMBLE",
+	"MBC5 + RUMBLE + SRAM",
+	"MBC5 + RUMBLE + SRAM + BAT",
+	"CAMERA",
+};
 const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
 static uint8_t *MBC1_ROM = NULL;
 
@@ -113,12 +142,14 @@ int loadRom(char *file)
 
 	printf("Card type: %s\n", card_types[card_type]);
 
+	printf("Game Title: %s\n", (char*)&MBC1_ROM[CARTRIDGE_TITLE_OFFSET]);
+
 	if (card_type > CARTRIDGE_MBC1) {
 		printf("Warning ONLY CARTRIDGE MBC1 SUPPORTED \n");
 	
 	}
 
-	printf("Rom size %uKbit\n", MBC1_ROM[CARTRIDGE_TYPE_OFFSET] * 256);
+	printf("Rom size %ukByte\n", 32 << MBC1_ROM[CARTRIDGE_SIZE_OFFSET]);
 	cartridgeInit(MBC1_ROM);	
 	fclose(fp);
 	return n;
@@ -128,31 +159,36 @@ int loadRom(char *file)
 //-----------------------------------------
 uint8_t readButtons(void)
 {
-static uint8_t button = 0;	
-SDL_Event ev;
-const Uint8 *keys;
+	static uint8_t button = 0;	
+	SDL_Event ev;
+	const Uint8 *keys;
 
 	if(!SDL_PollEvent( &ev )) 
 	    return button;	    
 	    
 	if(ev.type == SDL_QUIT){
-		done = 1;
-	    return button;
+	    return 255;
 	}
 	
 	keys  = SDL_GetKeyboardState(NULL);
 
 	if(keys[SDL_SCANCODE_ESCAPE]){
-		done = 1;
-	    return button;
+	    return 255;
 	} 
 
-	if (ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP) {
+	if (ev.type == SDL_KEYUP || ev.type == SDL_KEYDOWN)
 		button = 0;
-	}
 	else
-	{
 		return button;
+
+	if (keys[SDL_SCANCODE_X]) {
+		button = 0;
+		return 'x';
+	}
+
+	if (keys[SDL_SCANCODE_C]) {
+		button = 0;
+		return 'c';
 	}
 
 	button |= keys[SDL_SCANCODE_DOWN] ? J_DOWN : 0;
@@ -166,7 +202,8 @@ const Uint8 *keys;
     button |= keys[SDL_SCANCODE_S ] ? J_A : 0;
 
     button |= keys[SDL_SCANCODE_SPACE ] ? J_A : 0;
-return button;
+	
+	return button;
 }
 
 void pushScanLine(uint8_t *scanline) {

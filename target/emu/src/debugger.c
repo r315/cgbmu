@@ -18,7 +18,7 @@ void disassembleHeader(void){}
 void disassemble(void){}
 #endif
 	#define FRAME_TIME 16
-	#define BREAK_CONDITION(_cond_) if((_cond_)){ printf("break hit\n"); dbg_state = DBG_BREAK; break; }
+	#define BREAK_CONDITION(_cond_) if((_cond_)){ printf("break hit %d\n", ++break_count); dbg_state = DBG_BREAK; break; }
 
 enum debug_state {
 	DBG_PAUSE = 0,
@@ -29,10 +29,10 @@ enum debug_state {
 	DBG_CONTINUE,
 };
 
-static uint32_t frame_counter;
-static uint8_t dbg_state = DBG_FRAME;
+static uint8_t break_count = 0;
+static uint8_t dbg_state = DBG_SINGLE;
 static uint32_t frame_counter = 0;
-static uint16_t break_address = 0;
+static uint16_t break_address = 0xBEFF;
 
 static void debugCommand(void);
 
@@ -82,18 +82,18 @@ void DBG_run(void){
 	initCpu();
 
 	disassembleHeader();
-	printf(">");
+	//printf(">");
 	DBG_DumpRegisters();
 
 	while((key = readButtons()) != 255){
-		debugCommand();
+		//debugCommand(); // very slow
 		switch (dbg_state) {
 
 		case DBG_BREAK:			
 			dbg_state = DBG_PAUSE;
 			disassemble();			
 			DBG_DumpRegisters();
-			printf(">");
+			//printf(">");
 			continue;
 
 		case DBG_STEP:
@@ -102,6 +102,13 @@ void DBG_run(void){
 			break;
 		
 		case DBG_PAUSE:
+			if (key == 'x') {
+				dbg_state = DBG_STEP;
+			}
+			else if (key == 'c') {
+				dbg_state = DBG_SINGLE;
+			}
+
 			DelayMs(30);
 			break;
 
@@ -112,7 +119,7 @@ void DBG_run(void){
 			break;
 
 		case DBG_SINGLE:
-			DBG_SingleStep();			
+			DBG_SingleStep();
 			//BREAK_CONDITION(key == J_A);
 			BREAK_CONDITION(REG_PC == break_address);
 			//BREAK_CONDITION(IOIF & JOYPAD_IF);
@@ -415,14 +422,21 @@ static void debugCommand(void){
 				break_address = (uint16_t)strtol(cmd, &cmd, 16);
 			}
 			else if (!strcmp(cmd, "run")) {
-				if ((cmd = (char*)strtok(NULL, " ")) != NULL) {
-					if (cmd[0] == 's') {
+				cmd = (char*)strtok(NULL, " ");
+				if (cmd != NULL) {
+					if (cmd[0] == 'f') {
+						dbg_state = DBG_FRAME;
+					}
+					else {
 						dbg_state = DBG_SINGLE;
 					}
 				}
 				else {
-					dbg_state = DBG_FRAME;
+					dbg_state = DBG_SINGLE;
 				}
+			}
+			else if (!strcmp(cmd, "reset")) {
+				initCpu();
 			}
 		}
 
@@ -432,8 +446,13 @@ static void debugCommand(void){
 		// break on space bar
 		if (line[0] == ' ') {
 			line[0] = '\0';
-			dbg_state = DBG_BREAK;
-			printf("\r");
+			if (dbg_state == DBG_SINGLE || dbg_state == DBG_FRAME) {
+				dbg_state = DBG_BREAK;
+				printf("\r");
+			}
+			else if (dbg_state == DBG_PAUSE) {
+				dbg_state = DBG_STEP;
+			}
 		}
 	}
 
