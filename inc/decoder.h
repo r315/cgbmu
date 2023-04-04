@@ -1,11 +1,11 @@
 #ifndef _decoder_h_
 #define _decoder_h_
 
+#include "dmgcpu.h"
+
 #define TABLE_DECODER 1
 
-typedef uint8_t(*opcode_t)(void);
+typedef uint8_t(*opcode_t)(cpu_t *cpu);
 
-extern uint8_t instr_cycles;
-
-void decode(void);
+void decode(cpu_t *cpu);
 #endif /* _decoder_h_ */

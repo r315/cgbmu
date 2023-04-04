@@ -40,7 +40,7 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 	return x;
 }
 
-void pushScanLine(uint8_t *scanline){
+void pushScanLine(uint8_t ly, uint8_t *scanline){
 
     uint8_t *end = scanline + SCREEN_W;
     uint8_t pixel = 0;
@@ -49,7 +49,7 @@ void pushScanLine(uint8_t *scanline){
 		tft_line[pixel++] = lcd_pal[*scanline++];
     }
     
-    LCD_WriteArea(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + IOLY, SCREEN_W, 1, tft_line);
+    LCD_WriteArea(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + ly, SCREEN_W, 1, tft_line);
 }
 
 int loadRom(char *fn)

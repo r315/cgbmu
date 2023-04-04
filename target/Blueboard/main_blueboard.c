@@ -46,9 +46,9 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 //-----------------------------------------
 //
 //-----------------------------------------
-void pushScanLine(uint8_t *scanline){
+void pushScanLine(uint8_t ly, uint8_t *scanline){
     uint8_t *end = scanline + SCREEN_W;
-    LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + IOLY, SCREEN_W, 1);
+    LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + ly, SCREEN_W, 1);
     while(scanline < end){
 		LCD_Data(lcd_pal[*scanline++]);
     }
@@ -138,11 +138,12 @@ int loadRom(char *fn)
 
 void testButtons(void) {
     char *b, t;
+    cpu_t cpu;
     //printf("Buttons Test\n");
     while (readButtons() != 255) {
         b = "";
-        IOP1 = IOP14;
-        t = joyPad() & 0x0f;
+        cpu.IOP1 = IOP14;
+        t = joyPad(&cpu) & 0x0f;
         switch (t) {
         case 0x0e:  b = "  [ A ]   "; break;
         case 0x0d:  b = "  [ B ]   "; break;
@@ -153,8 +154,8 @@ void testButtons(void) {
             LIB2D_Print("%u\n", t);
             break;
         }
-        IOP1 = IOP15;
-        switch (joyPad() & 0x0f) {
+        cpu.IOP1 = IOP15;
+        switch (joyPad(&cpu) & 0x0f) {
         case 0x0e:   b = "[ RIGHT ] "; break;
         case 0x0d:   b = "[ LEFT  ] "; break;
         case 0x0b:   b = "[  UP  ]  "; break;

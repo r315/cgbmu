@@ -8,6 +8,7 @@
 enum{ SINGLE_FRAME, SINGLE_STEP};
 
 static uint8_t done;
+static cpu_t dmgcpu;
 
 void cgbmuExit(void){
 	done = true;
@@ -26,6 +27,7 @@ void updateFps(void) {
 	}
 }
 
+#if 0
 /**
  * @brief 
  * 
@@ -34,11 +36,11 @@ void updateFps(void) {
 static void runCpu(uint32_t nTicks) {
 	static uint32_t elapsed_cycles = 0;
 	while (elapsed_cycles < nTicks) {
-		decode();
-		timer();
-		serial();
-		interrupts();		
-		elapsed_cycles += instr_cycles;
+		decode(&dmgcpu);
+		timer(&dmgcpu);
+		serial(&dmgcpu);
+		interrupts(&dmgcpu);
+		elapsed_cycles += dmgcpu.instr_cycles;
 	}
 	elapsed_cycles -= nTicks;
 }
@@ -50,13 +52,13 @@ static void runCpu(uint32_t nTicks) {
  */
 uint8_t runOneFrame(void) {
 
-	IOSTAT &= 0xFC;
+	dmgcpu.IOSTAT &= 0xFC;
 
-	for (IOLY = 0; IOLY < SCREEN_H; IOLY++) {
+	for (dmgcpu.IOLY = 0; dmgcpu.IOLY < SCREEN_H; IOLY++) {
 
-		checkLine(IOLY);
+		checkLine(dmgcpu.IOLY);
 
-		IOSTAT |= V_M2;  			// Mode2 scan OAM
+		dmgcpu.IOSTAT |= V_M2;  			// Mode2 scan OAM
 		if (IOSTAT & OAM_IE)
 			setInt(LCDC_IF);
 
@@ -85,18 +87,18 @@ uint8_t runOneFrame(void) {
 
 	return 1;
 }
-
+#endif
 /**
  * @brief 
  * 
  */
 uint8_t runOneStep(void) {
 	uint8_t frame;
-	decode();
-	frame = video();
-	timer();
-	serial();
-	interrupts();
+	decode(&dmgcpu);
+	frame = video(&dmgcpu);
+	timer(&dmgcpu);
+	serial(&dmgcpu);
+	interrupts(&dmgcpu);
 	return frame;
 }
 
@@ -111,10 +113,10 @@ void cgbmu(const uint8_t *rom) {
 	done = false;
 	
 	if(rom == NULL){
-		bootCpu();
+		bootCpu(&dmgcpu);
 	}else{
-		initCpu();
-		cartridgeInit(rom);
+		initCpu(&dmgcpu);
+		cartridgeInit(&dmgcpu, rom);
 	}
 	
 	if (mode == SINGLE_STEP) {			// instruction loop		
@@ -131,8 +133,8 @@ void cgbmu(const uint8_t *rom) {
 	}
 	else {				// frame loop
 		while (!done) {
-			runOneFrame();
-			updateFps();
+			//runOneFrame();
+			//updateFps();
 		}
 	}	
 }

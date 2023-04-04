@@ -3,34 +3,32 @@
 #include "dmgcpu.h"
 #include "video.h"
 #include "cgbmu.h"
-#include "decoder.h"
 
-static uint32_t video_cycles;
 static Object *visible_objs[MAX_LINE_OBJECTS];
 static uint8_t scanlinedata[SCREEN_W];		// one line of pixels
 
 //-----------------------------------------
 //put one line of Sprite data into scanlinedata
 //-----------------------------------------
-void blitObjectData(Object *obj, uint8_t *dst) {
+void blitObjectData(cpu_t *cpu, Object *obj, uint8_t *dst) {
 	uint8_t pixel_mask, color, objline;
-	uint8_t pal = (obj->flags & OBJECT_FLAG_PAL) ? IOOBP1 : IOOBP0;
+	uint8_t pal = (obj->flags & OBJECT_FLAG_PAL) ? cpu->IOOBP1 : cpu->IOOBP0;
 	uint8_t pattern = obj->pattern;
 	uint8_t *end, *start;
 
 	//Get pattern, for 8x16 mode the extra data is on the next pattern index
-	if (IOLCDC & OBJ_SIZE) {
-		objline = SPRITE_8x16_LINE_MASK(IOLY - (obj->y - SPRITE_Y_OFFSET));		
+	if (cpu->IOLCDC & OBJ_SIZE) {
+		objline = SPRITE_8x16_LINE_MASK(cpu->IOLY - (obj->y - SPRITE_Y_OFFSET));
 		objline = (obj->flags & OBJECT_FLAG_YFLIP) ? (SPRITE_8x16_H_MASK - 1 - objline) : objline;
 	}
 	else {
 		// Add line offset, 2byte per line
-		objline = TILE_LINE((IOLY - (obj->y - SPRITE_Y_OFFSET)));
+		objline = TILE_LINE((cpu->IOLY - (obj->y - SPRITE_Y_OFFSET)));
 		objline = (obj->flags & OBJECT_FLAG_YFLIP) ? (SPRITE_H - 1 - objline) : objline;
 	}
 
 	//Each Tile has 16bytes and one line of pixels needs 2 bytes
-	TileData *td = (TileData*)vram + pattern;
+	TileData *td = (TileData*)cpu->vram + pattern;
 	uint8_t lsb = td->line[objline].lsb;
 	uint8_t msb = td->line[objline].msb;
 
@@ -100,7 +98,7 @@ void blitObjectData(Object *obj, uint8_t *dst) {
 * @param line           the line to put
 * @param size			SCREEN_W for background, WX for window (not implemented yet)
 *---------------------------------------------------------*/
-void blitTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint8_t size) {
+void blitTileData(cpu_t *cpu, uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint8_t size) {
 	uint8_t tileindex, msb, lsb, color;
 	TileData *td;
 
@@ -108,7 +106,7 @@ void blitTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8
 
 	while (size) {
 		tileindex = *(tilemapline + TILE_INDEX(pixeloffset));  // add pixel offset with wraparround
-		td = (IOLCDC & BG_W_DATA) ? (TileData*)(vram) + tileindex : (TileData*)(vram + TILE_DATA1_SIGNED_BASE) + (int8_t)tileindex;		
+		td = (cpu->IOLCDC & BG_W_DATA) ? (TileData*)(cpu->vram) + tileindex : (TileData*)(cpu->vram + TILE_DATA1_SIGNED_BASE) + (int8_t)tileindex;
 		msb = td->line[line].msb;
 		lsb = td->line[line].lsb;
 		msb <<= TILE_LINE(pixeloffset);
@@ -119,7 +117,7 @@ void blitTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8
 			color |= (lsb & 0x80) ? 1 : 0;
 			msb <<= 1;
 			lsb <<= 1;
-			color = (IOBGP >> (color << 1)) & 3;
+			color = (cpu->IOBGP >> (color << 1)) & 3;
 			*(dst++) = color;	
 			pixeloffset++;
 			size--;
@@ -130,18 +128,18 @@ void blitTileData(uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8
 //-----------------------------------------
 // Scan OAM for visible objects
 //-----------------------------------------
-void scanOAM() {
+void scanOAM(cpu_t *cpu) {
 	uint8_t h, n, curline, lcdc;
-	Object *pobj = (Object*)oam;
+	Object *pobj = (Object*)cpu->oam;
 
-	lcdc = IOLCDC;
+	lcdc = cpu->IOLCDC;
 
 	if (!(lcdc & OBJ_DISPLAY)) {
 		visible_objs[0] = NULL;
 		return;
 	}
 
-	curline = IOLY + 16;	// Y position has a offset of 16pixels
+	curline = cpu->IOLY + 16;	// Y position has a offset of 16pixels
 
 	n = 0;
 	h = (lcdc & OBJ_SIZE) ? SPRITE_H << 1 : SPRITE_H; // 8x16 objs
@@ -161,139 +159,140 @@ void scanOAM() {
 //-----------------------------------------
 //
 //-----------------------------------------
-void scanline() {
+void scanline(cpu_t *cpu) {
 	uint8_t *tilemapline;
 	uint8_t pixel, line;
 	uint8_t *sld = scanlinedata;
 
-	uint8_t lcdc = IOLCDC;
-	uint8_t ly = IOLY;
+	uint8_t lcdc = cpu->IOLCDC;
+	uint8_t ly = cpu->IOLY;
 
 	// Get tile map base
-	tilemapline = (uint8_t*)(vram + ((lcdc & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
+	tilemapline = (uint8_t*)(cpu->vram + ((lcdc & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 	// Add line and scroll-y offset for getting tile pattern	
-	line = (uint8_t)(ly + IOSCY);
+	line = (uint8_t)(ly + cpu->IOSCY);
 	tilemapline += TILE_LINE_INDEX(line);
 
 	memset(sld, 0, SCREEN_W);
-	blitTileData(tilemapline, sld, IOSCX, line, SCREEN_W);	
+	blitTileData(cpu, tilemapline, sld, cpu->IOSCX, line, SCREEN_W);
 
-	if (lcdc & W_DISPLAY && ly >= IOWY && IOWX < SCREEN_W + 7) 
+	if (lcdc & W_DISPLAY && ly >= cpu->IOWY && cpu->IOWX < SCREEN_W + 7)
 	{
-		line = ly - IOWY;					
-		sld = scanlinedata + IOWX - 7;				//destination offset given by IOWX, WX has an offset of 7
-		tilemapline = (uint8_t*)(vram + ((lcdc & W_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
+		line = ly - cpu->IOWY;
+		sld = scanlinedata + cpu->IOWX - 7;				//destination offset given by IOWX, WX has an offset of 7
+		tilemapline = (uint8_t*)(cpu->vram + ((lcdc & W_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 		tilemapline += TILE_LINE_INDEX(line);
-		blitTileData(tilemapline, sld, 0, line, SCREEN_W - IOWX + 7);
+		blitTileData(cpu, tilemapline, sld, 0, line, SCREEN_W - cpu->IOWX + 7);
 	}
 
 	pixel = 0;
 	while (visible_objs[pixel] != NULL)
-		blitObjectData(visible_objs[pixel++], scanlinedata);
+		blitObjectData(cpu, visible_objs[pixel++], scanlinedata);
 
-	pushScanLine(scanlinedata);
+	pushScanLine(cpu->IOLY, scanlinedata);
 }
 
 //-----------------------------------------
 // 
 //-----------------------------------------
-void writeLCDC(uint8_t newlcdc){
-	if(IOLCDC & 0x80 && !(newlcdc & 0x80)){		
-		IOLY= 0; // LCD Off
-		IOSTAT = IOSTAT & 0xFC;  // reset LY, mode0
+void writeLCDC(cpu_t *cpu, uint8_t newlcdc){
+	if(cpu->IOLCDC & 0x80 && !(newlcdc & 0x80)){
+		cpu->IOLY= 0; // LCD Off
+		cpu->IOSTAT = cpu->IOSTAT & 0xFC;  // reset LY, mode0
 	}
-	else if (!(IOLCDC & 0x80) && (newlcdc & 0x80)) {
-		checkLine(IOLY);
+	else if (!(cpu->IOLCDC & 0x80) && (newlcdc & 0x80)) {
+		checkLine(cpu);
 	}
 
-	video_cycles = 0;
-	IOLCDC = newlcdc;
+	cpu->video_cycles = 0;
+	cpu->IOLCDC = newlcdc;
 }
 
-void writeSTAT(uint8_t newstat){
+void writeSTAT(cpu_t *cpu, uint8_t newstat){
 	newstat = (newstat & ~7) | 0x80;
-	IOSTAT = (IOSTAT & 7) | newstat; 
+	cpu->IOSTAT = (cpu->IOSTAT & 7) | newstat;
 }
 
-void writeLYC(uint8_t newlyc){
-	IOLYC = newlyc; 
-	checkLine(IOLY);
+void writeLYC(cpu_t *cpu, uint8_t newlyc){
+	cpu->IOLYC = newlyc;
+	checkLine(cpu);
 }
 
-uint8_t checkLine(uint8_t ly) {
-	uint8_t stat = IOSTAT & (~LYC_LY_FLAG);
+void checkLine(cpu_t *cpu) {
+	uint8_t stat = cpu->IOSTAT & (~LYC_LY_FLAG);
 
-	if(ly == IOLYC){
+	if(cpu->IOLY == cpu->IOLYC){
 		stat |= LYC_LY_FLAG;
 		if (stat & LYC_LY_IE) {			
-			setInt(LCDC_IF);
+			setInt(cpu, LCDC_IF);
 		}
 	}
 
-	IOSTAT = stat;
-	return ly;
+	cpu->IOSTAT = stat;
 }
 //-----------------------------------------
 // return true if frame is starting
 //-----------------------------------------
-uint8_t video(void) {
+uint8_t video(cpu_t *cpu) {
 
-	if (!(IOLCDC & LCD_DISPLAY)) 
+	if (!(cpu->IOLCDC & LCD_DISPLAY))
 		return 0;
 
-	video_cycles += instr_cycles;
+	cpu->video_cycles += cpu->instr_cycles;
 
-	switch (IOSTAT & V_MODE_MASK)
+	switch (cpu->IOSTAT & V_MODE_MASK)
 	{
 	case V_M2: 							// Mode 2 oam access start scanline	
-		if (video_cycles >= V_M2_CYCLE)
+		if (cpu->video_cycles >= V_M2_CYCLE)
 		{
-			video_cycles -= V_M2_CYCLE;
-			IOSTAT |= V_M3;				// Next, Mode 3 vram access
-			scanOAM();
+			cpu->video_cycles -= V_M2_CYCLE;
+			cpu->IOSTAT |= V_M3;				// Next, Mode 3 vram access
+			scanOAM(cpu);
 		}
 		break;
 
 	case V_M3: 							// Mode 3 vram access
-		if (video_cycles >= V_M3_CYCLE)
+		if (cpu->video_cycles >= V_M3_CYCLE)
 		{
-			video_cycles -= V_M3_CYCLE;
-			IOSTAT &= ~(V_MODE_MASK);     // Next, Mode 0 H-blank
-			if (IOSTAT & HB_IE) 		    // LCD STAT & H-Blank IE
-				setInt(LCDC_IF);
-			scanline();
+			cpu->video_cycles -= V_M3_CYCLE;
+			cpu->IOSTAT &= ~(V_MODE_MASK);     // Next, Mode 0 H-blank
+			if (cpu->IOSTAT & HB_IE) 		    // LCD STAT & H-Blank IE
+				setInt(cpu, LCDC_IF);
+			scanline(cpu);
 		}
 		break;
 
 	case V_M0: 							// Mode 0 H-Blank
-		if (video_cycles >= V_M0_CYCLE) {
-			video_cycles -= V_M0_CYCLE;
-			IOLY = checkLine(IOLY + 1); // Finish processing scanline, go to next one
-			if (IOLY < SCREEN_H) {
-				IOSTAT |= V_M2;     	    // Next, Mode 2 searching oam
-				if (IOSTAT & OAM_IE)
-					setInt(LCDC_IF);
+		if (cpu->video_cycles >= V_M0_CYCLE) {
+			cpu->video_cycles -= V_M0_CYCLE;
+			cpu->IOLY++;
+			checkLine(cpu);		// Finish processing scanline, go to next one
+			if (cpu->IOLY < SCREEN_H) {
+				cpu->IOSTAT |= V_M2;     	    // Next, Mode 2 searching oam
+				if (cpu->IOSTAT & OAM_IE)
+					setInt(cpu, LCDC_IF);
 			}
 			else {
-				IOSTAT |= V_M1;           // Next, Mode 1 V-blank
-				setInt(V_BLANK_IF);
-				if (IOSTAT & VB_IE)
-					setInt(LCDC_IF);
+				cpu->IOSTAT |= V_M1;           // Next, Mode 1 V-blank
+				setInt(cpu, V_BLANK_IF);
+				if (cpu->IOSTAT & VB_IE)
+					setInt(cpu, LCDC_IF);
 			}
 		}
 		break;
 
 	case V_M1: 							// Mode 1 V-blank 10 lines
-		if (video_cycles > V_M1_CYCLE)
+		if (cpu->video_cycles > V_M1_CYCLE)
 		{
-			video_cycles -= V_M1_CYCLE;			
-			if (IOLY > (SCREEN_H + VBLANK_LINES)) {
-				IOLY = checkLine(0);
-				IOSTAT = (IOSTAT & ~V_MODE_MASK) | V_M2; 	// Next, Mode 2 searching oam
+			cpu->video_cycles -= V_M1_CYCLE;
+			if (cpu->IOLY > (SCREEN_H + VBLANK_LINES)) {
+				cpu->IOLY = 0;
+				checkLine(cpu);
+				cpu->IOSTAT = (cpu->IOSTAT & ~V_MODE_MASK) | V_M2; 	// Next, Mode 2 searching oam
 				return 1;
 			}
-
-			IOLY = checkLine(IOLY + 1);
+			cpu->IOLY++;
+			checkLine(cpu);
 			return 0;
 		}
 		break;

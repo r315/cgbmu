@@ -14,41 +14,6 @@ http://meatfighter.com/gameboy
 #include "decoder.h"
 #include "instrs.h"
 
-// IO Registers
-uint8_t IOP1;   // 0xFF00 P1
-uint8_t IOSB;   // 0xFF01 Serial transfer data
-uint8_t IOSC;   // 0xFF02 SIO Control
-uint8_t IODIV;  // 0xFF04 timer divider
-uint8_t IOTIMA; // 0xFF05 timer counter
-uint8_t IOTMA;  // 0xFF06 timer modulo
-uint8_t IOTAC;  // 0xFF07 timer control
-uint8_t IOIF;   // 0xFF0F interrupt flag
-uint8_t IOLCDC; // 0xFF40 lcd control
-uint8_t IOSTAT; // 0xFF41 lcd status
-uint8_t IOSCY;  // 0xFF42 scroll y
-uint8_t IOSCX;  // 0xFF43 scroll x
-uint8_t IOLY;   // 0xFF0F LY
-uint8_t IOLYC;  // 0xFF0F LY Compare
-uint8_t IODMA;  // 0xFF0F
-uint8_t IOBGP;  // 0xFF0F Background palette
-uint8_t IOOBP0; // 0xFF0F object palette 0
-uint8_t IOOBP1; // 0xFF0F object palette 1
-uint8_t IOWY;   // 0xFF0F window Y
-uint8_t IOWX;   // 0xFF0F window x
-uint8_t IOIE;   // 0xFFFF Interrupt Enable
-
-uint8_t vram[0x2000];                    // 0x8000-0x9FFF
-uint8_t iram[0x2000];                    // 0xC000-0xBFFF
-uint8_t oam[sizeof(Object)*MAX_OBJECTS]; // 0xFE00-0xFEBF
-uint8_t hram[128];                       // 0xFF80-0xFFFE
-const uint8_t *rom0;                     // 0x0000-0x3FFF
-const uint8_t *rombank;                  // 0x4000-0x7FFF
-
-Regs regs;
-uint8_t halt_state, stopped;
-uint8_t IME;
-static uint16_t timer_prescaler;
-static uint8_t serial_bit;
 
 static const uint8_t boot_rom [] = {
 	0x31,0xFE,0xFF,0xAF,0x21,0xFF,0x9F,0x32,0xCB,0x7C,0x20,0xFB,0x21,0x26,0xFF,0x0E,
@@ -80,140 +45,136 @@ static const uint8_t boot_rom [] = {
 //-----------------------------------------
 //
 //-----------------------------------------
-void setInt(uint8_t irq) {
-	IOIF |= irq;
-	if (IOIE & irq) {
-		halt_state = HALT_INACTIVE;
+void setInt(cpu_t *cpu, uint8_t irq) {
+	cpu->IOIF |= irq;
+	if (cpu->IOIE & irq) {
+		cpu->halt = false;
 	}
 }
 
-void interrupts(void)
+void interrupts(cpu_t *cpu)
 {
 	uint8_t irq;
 	
-	if(!IME){
+	if(!cpu->IME){
 		return;
 	}
 
-	irq = IOIE & IOIF;
+	irq = cpu->IOIE & cpu->IOIF;
 
 	if (!irq) {
 		return;
 	}
 
-	IME = 0;
-	PUSH(REG_PC);
+	cpu->IME = 0;
+	PUSH(cpu, cpu->PC);
 
 	if(irq & V_BLANK_IF){ // Priority 1
-		IOIF &= ~(V_BLANK_IF);
+		cpu->IOIF &= ~(V_BLANK_IF);
 		REG_PC = 0x0040;
 	}else if(irq & LCDC_IF){ // Priority 2
-		IOIF &= ~(LCDC_IF);
+		cpu->IOIF &= ~(LCDC_IF);
 		REG_PC = 0x0048;
 	}else if(irq & TIMER_IF){ // Priority 3
-		IOIF &= ~TIMER_IF;
+		cpu->IOIF &= ~TIMER_IF;
 		REG_PC = 0x0050;
 	}else if(irq & SERIAL_IF){ // Priority 4
-		IOIF &= ~(SERIAL_IF);
+		cpu->IOIF &= ~(SERIAL_IF);
 		REG_PC = 0x0058;
 	}else if(irq & JOYPAD_IF){ // Priority 5
-		IOIF &= ~(JOYPAD_IF);
+		cpu->IOIF &= ~(JOYPAD_IF);
 		REG_PC = 0x0060;
 	}
 }
 //-----------------------------------------
 //
 //-----------------------------------------
-void writeTAC(uint8_t newtac){
+void writeTAC(cpu_t *cpu, uint8_t newtac){
 	switch(newtac & 3)	{
 		case 0: // 4096Hz		
-			timer_prescaler = 256 * CLOCK_CYCLE;
+			cpu->timer_ovf = 256 * CLOCK_CYCLE;
 			break;
 		case 1: // 262144Hz
-			timer_prescaler = 4 * CLOCK_CYCLE;
+			cpu->timer_ovf = 4 * CLOCK_CYCLE;
 			break;
 		case 2: // 65536Hz
-			timer_prescaler = 16 * CLOCK_CYCLE;
+			cpu->timer_ovf = 16 * CLOCK_CYCLE;
 			break;
 		case 3: // 16384Hz
-			timer_prescaler = 64 * CLOCK_CYCLE;
+			cpu->timer_ovf = 64 * CLOCK_CYCLE;
 			break;		
 	}
 
-	IOTAC = newtac;
+	cpu->IOTAC = newtac;
 }
 //-----------------------------------------
 //
 //-----------------------------------------
 
-void timer(void)
+void timer(cpu_t *cpu)
 {
-	static uint16_t timer_cycles = 0;
-	static uint16_t div_cycles = 0;
+	cpu->div_cycles += cpu->instr_cycles;
 
-	div_cycles += instr_cycles;
-
-	while (div_cycles >= 64 * CLOCK_CYCLE) {
-		IODIV++;
-		div_cycles -= 64 * CLOCK_CYCLE;
+	while (cpu->div_cycles >= 64 * CLOCK_CYCLE) {
+		cpu->IODIV++;
+		cpu->div_cycles -= 64 * CLOCK_CYCLE;
 	}
 
-	if(!(IOTAC & TIMER_STOP)) 
+	if(!(cpu->IOTAC & TIMER_STOP))
 		return;
 	
-	timer_cycles += instr_cycles;
+	cpu->timer_cycles += cpu->instr_cycles;
 
-	while (timer_cycles >= timer_prescaler) {
-		IOTIMA++;
-		if(!IOTIMA){
-			IOTIMA = IOTMA;		// on overflow TIMA is reloaded with TMA
-			setInt(TIMER_IF);	// and TIMER_IF is set
+	while (cpu->timer_cycles >= cpu->timer_ovf) {
+		cpu->IOTIMA++;
+		if(!cpu->IOTIMA){
+			cpu->IOTIMA = cpu->IOTMA;		// on overflow TIMA is reloaded with TMA
+			setInt(cpu, TIMER_IF);	// and TIMER_IF is set
 		}
-		timer_cycles -= timer_prescaler;
+		cpu->timer_cycles -= cpu->timer_ovf;
 	}
 }
 
-void serial(void)
+void serial(cpu_t *cpu)
 {
-	static uint16_t serial_cycles;
-	if ((IOSC & (SC_TRF | SC_CLKI)) != (SC_CLKI | SC_TRF)) {
+	if ((cpu->IOSC & (SC_TRF | SC_CLKI)) != (SC_CLKI | SC_TRF)) {
 		return;
 	}
 
-	serial_cycles += instr_cycles;
+	cpu->serial_cycles += cpu->instr_cycles;
 
-	if (serial_cycles >= SERIAL_CYCLE) {
-		if (!(serial_bit--)) {
-			IOSC &= ~SC_TRF;
-			setInt(SERIAL_IF);
-			serial_cycles = 0;
+	if (cpu->serial_cycles >= SERIAL_CYCLE) {
+		if (!(cpu->serial_bit--)) {
+			cpu->IOSC &= ~SC_TRF;
+			setInt(cpu, SERIAL_IF);
+			cpu->serial_cycles = 0;
 			return;
 		}
 
-		serial_cycles -= SERIAL_CYCLE;
-		IOSB = (IOSB << 1) | 1;
+		cpu->serial_cycles -= SERIAL_CYCLE;
+		cpu->IOSB = (cpu->IOSB << 1) | 1;
 	}
 }
 
-void writeSC(uint8_t new_sc) {
+void writeSC(cpu_t *cpu, uint8_t new_sc) {
 	new_sc |= ~(SC_TRF | SC_CLKI);
 
 	if (new_sc & SC_TRF) {
-		serial_bit = 8;
+		cpu->serial_bit = 8;
 	}
 
-	IOSC = new_sc;
+	cpu->IOSC = new_sc;
 }
 //-----------------------------------------
 //
 //-----------------------------------------
 
-void writeDMA(uint8_t newdma){
+void writeDMA(cpu_t *cpu, uint8_t newdma){
 	uint16_t src = newdma << 8;
 	uint8_t i, *pdst;
-	pdst = (uint8_t*)&oam[0];
+	pdst = cpu->oam;
     for(i = 0; i < DMA_SIZE; i++, pdst++)
-		*pdst = memoryRead(src++);           
+		*pdst = memoryRead(cpu, src++);           
 }
 
 /**----------------------------------------s
@@ -229,28 +190,28 @@ void writeDMA(uint8_t newdma){
 *            |            |
 //----------------------------------------- */
 
-uint8_t joyPad(void) {
+uint8_t joyPad(cpu_t *cpu) {
 	uint8_t buttons;
 	uint8_t p1;
 
 	buttons = ~readButtons();   // read buttons, 0 means button pressed
-	p1 = IOP1;					// Old key presses are cleared on IOP1 write
+	p1 = cpu->IOP1;					// Old key presses are cleared on IOP1 write
 	if (!(p1 & IOP15)) {
 		buttons >>= 4;			// shift nible when P15 is active, filters dpad keys
 	}
 	
 	buttons |= 0xF0;            // create mask
 	
-	IOP1 = p1 & buttons;		// Filter pressed keys
+	cpu->IOP1 = p1 & buttons;		// Filter pressed keys
 	
-	return IOP1;
+	return cpu->IOP1;
 }
 
 //-----------------------------------------
 //
 //-----------------------------------------
 
-uint8_t memoryRead(uint16_t address)
+uint8_t memoryRead(cpu_t *cpu, uint16_t address)
 {	
 	switch(address>>12)
 	{
@@ -258,61 +219,61 @@ uint8_t memoryRead(uint16_t address)
 		case 1:
 		case 2:
 		case 3:
-			return rom0[address];
+			return cpu->rom0[address];
 			
 		case 4: // 4000-7FFF, 16kB switchable ROM bank
 		case 5:
 		case 6:
 		case 7:
-			return rombank[address & 0x3FFF]; 
+			return cpu->rombank[address & 0x3FFF];
 			
 		case 8: // 8000-9FFF, 8k video ram
 		case 9:
-			return vram[address & 0x1FFF];  
+			return cpu->vram[address & 0x1FFF];
 			
 		case 0x0A: // A000-BFFF, 8kB switchable RAM bank
 		case 0x0B:
-			return cartridgeRead(address);  
+			return cpu->cartridgeRead(cpu, address);  
 		
 		case 0x0C: // C000-DFFF, kB internal ram
 		case 0x0D:
-			return iram[address & 0x1FFF];  
+			return cpu->iram[address & 0x1FFF];
 			
 		default: break;
 	}	
 	// E000-EDFF, 8k ram fold
 	if((address > 0xDFFF) && (address < 0xFE00))
-		return iram[address & 0x1FFF];
+		return cpu->iram[address & 0x1FFF];
 	// FE00-FE9F, 160bytes oam
 	if ((address > 0xFDFF) && (address < 0xFEA0))
-		return oam[address & 0xFF];
+		return cpu->oam[address & 0xFF];
 	// FF80-FFFE, 127 Bytes hram	
 	if((address > 0xFF7F) && (address < 0xFFFF))		
-		return hram[address & 0x7f];
+		return cpu->hram[address & 0x7f];
 
 	switch(address)
 	{
-		case 0xFF00: return joyPad();
-		case 0xFF01: return IOSB;
-		case 0xFF02: return IOSC;
-		case 0xFF04: return IODIV;
-		case 0xFF05: return IOTIMA;
-		case 0xFF06: return IOTMA;
-		case 0xFF07: return IOTAC;
-		case 0xFF0F: return IOIF;
-	    case 0xFF40: return IOLCDC;
-        case 0xFF41: return IOSTAT;
-        case 0xFF42: return IOSCY;
-        case 0xFF43: return IOSCX;
-        case 0xFF44: return IOLY;
-        case 0xFF45: return IOLYC;
+		case 0xFF00: return joyPad(cpu);
+		case 0xFF01: return cpu->IOSB;
+		case 0xFF02: return cpu->IOSC;
+		case 0xFF04: return cpu->IODIV;
+		case 0xFF05: return cpu->IOTIMA;
+		case 0xFF06: return cpu->IOTMA;
+		case 0xFF07: return cpu->IOTAC;
+		case 0xFF0F: return cpu->IOIF;
+	    case 0xFF40: return cpu->IOLCDC;
+        case 0xFF41: return cpu->IOSTAT;
+        case 0xFF42: return cpu->IOSCY;
+        case 0xFF43: return cpu->IOSCX;
+        case 0xFF44: return cpu->IOLY;
+        case 0xFF45: return cpu->IOLYC;
 		case 0xFF46: return 0xFF; //IODMA;
-        case 0xFF47: return IOBGP;
-        case 0xFF48: return IOOBP0;
-        case 0xFF49: return IOOBP1;        
-        case 0xFF4A: return IOWY;
-        case 0xFF4B: return IOWX;
-        case 0xFFFF: return IOIE;
+        case 0xFF47: return cpu->IOBGP;
+        case 0xFF48: return cpu->IOOBP0;
+        case 0xFF49: return cpu->IOOBP1;
+        case 0xFF4A: return cpu->IOWY;
+        case 0xFF4B: return cpu->IOWX;
+        case 0xFFFF: return cpu->IOIE;
       }
 	  return 0xFF;
 }
@@ -320,11 +281,11 @@ uint8_t memoryRead(uint16_t address)
 //
 //-----------------------------------------
 
-void memoryWrite(uint16_t address, uint8_t data)
+void memoryWrite(cpu_t *cpu, uint16_t address, uint8_t data)
 {	
 	switch(address>>12)
 	{
-		case 0:
+		case 0: // 0000-7FFF
 		case 1:
 		case 2:
 		case 3:
@@ -332,140 +293,145 @@ void memoryWrite(uint16_t address, uint8_t data)
 		case 5:
 		case 6:
 		case 7:
-			cartridgeWrite(address,data);
+			cpu->cartridgeWrite(cpu, address, data);
 			return;
 			
 		case 8:     // 8000-9FFF, 8k
 		case 9:
-			vram[address & 0x1FFF] = data;
+			cpu->vram[address & 0x1FFF] = data;
 			return;
 			
 		case 0x0A:	// A000-BFFF, 8k
 		case 0x0B:
-			cartridgeWrite(address,data);
+			cpu->cartridgeWrite(cpu, address, data);
 			return; 
 		
 		case 0x0C:  // C000-DFFF, 8k
 		case 0x0D:
-			iram[address & 0x1FFF] = data;
+			cpu->iram[address & 0x1FFF] = data;
 			return; 
 			
 		default: break;
 	}
 	// E000-EDFF, 8k ram fold
 	if((address > 0xDFFF) && (address < 0xFE00)){
-		iram[address - 0xE000]=data;
+		cpu->iram[address - 0xE000] = data;
 		return;
 	}
 	// FE00-FE9F, 160bytes oam
 	if((address > 0xFDFF) && (address < 0xFEA0)){
-		oam[address & 0xFF ] = data;
+		cpu->oam[address & 0xFF ] = data;
 		return;
 	}
 	// FF80-FFFE, 127 Bytes hram
 	if((address > 0xFF7F) && (address < 0xFFFF)){
-		hram[address & 0x7F] = data;
+		cpu->hram[address & 0x7F] = data;
 		return ;
 	}
 		
 	switch(address)
 	{
-		case 0xFF00: IOP1 = (data | 0xCF); 	return;
-		case 0xFF01: IOSB = data;
-		case 0xFF02: writeSC(data); return;
-		case 0xFF04: IODIV = 0; return;		// any write clears it
-		case 0xFF05: IOTIMA = data; return;
-		case 0xFF06: IOTMA = data; return;
-		case 0xFF07: writeTAC(data); return;
-		case 0xFF0F: IOIF = data; return;
-	    case 0xFF40: writeLCDC(data); return;
-        case 0xFF41: writeSTAT(data); return;
-        case 0xFF42: IOSCY = data;	return;
-        case 0xFF43: IOSCX = data; 	return;
+		case 0xFF00: cpu->IOP1 = (data | 0xCF); 	return;
+		case 0xFF01: cpu->IOSB = data;
+		case 0xFF02: writeSC(cpu, data); return;
+		case 0xFF04: cpu->IODIV = 0; return;		// any write clears it
+		case 0xFF05: cpu->IOTIMA = data; return;
+		case 0xFF06: cpu->IOTMA = data; return;
+		case 0xFF07: writeTAC(cpu, data); return;
+		case 0xFF0F: cpu->IOIF = data; return;
+	    case 0xFF40: writeLCDC(cpu, data); return;
+        case 0xFF41: writeSTAT(cpu, data); return;
+        case 0xFF42: cpu->IOSCY = data;	return;
+        case 0xFF43: cpu->IOSCX = data; 	return;
         case 0xFF44: return;				// read only
-        case 0xFF45: writeLYC(data); return;
-		case 0xFF46: writeDMA(data); return;			
-        case 0xFF47: IOBGP = data; return;
-        case 0xFF48: IOOBP0 = data; return;
-        case 0xFF49: IOOBP1 = data; return;        
-        case 0xFF4A: IOWY = data; return;
-        case 0xFF4B: IOWX = data; return;
-        case 0xFFFF: IOIE = data; return;
+        case 0xFF45: writeLYC(cpu, data); return;
+		case 0xFF46: writeDMA(cpu, data); return;			
+        case 0xFF47: cpu->IOBGP = data; return;
+        case 0xFF48: cpu->IOOBP0 = data; return;
+        case 0xFF49: cpu->IOOBP1 = data; return;        
+        case 0xFF4A: cpu->IOWY = data; return;
+        case 0xFF4B: cpu->IOWX = data; return;
+        case 0xFFFF: cpu->IOIE = data; return;
     }
 }
 //-----------------------------------------
 //
 //-----------------------------------------
 
-uint16_t memoryRead16(uint16_t address)
+uint16_t memoryRead16(cpu_t *cpu, uint16_t address)
 {	
-	return memoryRead(address) | (memoryRead(address+1)<<8);
+	return memoryRead(cpu, address) | (memoryRead(cpu, address+1) << 8);
 }
 //-----------------------------------------
 //
 //-----------------------------------------
 
-void memoryWrite16(uint16_t address, uint16_t data)
+void memoryWrite16(cpu_t *cpu, uint16_t address, uint16_t data)
 {
-	memoryWrite(address++, (uint8_t)data);
-	memoryWrite(address, (uint8_t)(data>>8));	
+	memoryWrite(cpu, address++, (uint8_t)data);
+	memoryWrite(cpu, address, (uint8_t)(data>>8));	
 }
 //-----------------------------------------
 //
 //-----------------------------------------
-void initCpu(void)
+void initCpu(cpu_t *cpu)
 {
 	REG_A = 0x01;
     REG_B = 0x00;
     REG_C = 0x13;
     REG_D = 0x00;
     REG_E = 0xD8;
-    REG_H = 0x01;
-    REG_L = 0x4D;
+    cpu->H = 0x01;
+    cpu->L = 0x4D;
     
-    REG_SP = 0xFFFE;
-    REG_PC = 0x0100;    
-	REG_F =  FZ | FH | FC;
+    cpu->SP = 0xFFFE;
+    cpu->PC = 0x0100;    
+	cpu->F =  FZ | FH | FC;
 	
-    IOTIMA = 0x00;
-    IOTMA  = 0x00;
-    IOTAC  = 0xF8;
-	IODIV  = 0xAB;
+    cpu->IOTIMA = 0x00;
+    cpu->IOTMA  = 0x00;
+    cpu->IOTAC  = 0xF8;
+	cpu->IODIV  = 0xAB;
 
-    IOLCDC = 0x91;
-	IOSTAT = 0x85;
-    IOSCY  = 0x00;
-    IOSCX  = 0x00;
-	IOLY   = 0x00; 	 
-    IOLYC  = 0x00;
-	IODMA  = 0xFF;
-	IOBGP  = 0xFC;
-    IOOBP0 = 0xFF;
-    IOOBP1 = 0xFF;
-    IOWY   = 0x00;
-    IOWX   = 0x00;
+    cpu->IOLCDC = 0x91;
+	cpu->IOSTAT = 0x85;
+    cpu->IOSCY  = 0x00;
+    cpu->IOSCX  = 0x00;
+	cpu->IOLY   = 0x00; 	 
+    cpu->IOLYC  = 0x00;
+	cpu->IODMA  = 0xFF;
+	cpu->IOBGP  = 0xFC;
+    cpu->IOOBP0 = 0xFF;
+    cpu->IOOBP1 = 0xFF;
+    cpu->IOWY   = 0x00;
+    cpu->IOWX   = 0x00;
     
-	IOIF   = 0xE1;
-    IOIE   = 0x00;
+	cpu->IOIF   = 0xE1;
+    cpu->IOIE   = 0x00;
 
-	IOP1   = 0xCF;
+	cpu->IOP1   = 0xCF;
 
-	IOSC = 0x7E;
-	IOSB = 0x00;
+	cpu->IOSC = 0x7E;
+	cpu->IOSB = 0x00;
 
-	halt_state = HALT_INACTIVE;
+	cpu->halt = false;
+
+	cpu->div_cycles = 0;
+	cpu->timer_cycles = 0;
+	cpu->serial_cycles = 0;
+	cpu->video_cycles = 0;
 }
 
-void bootCpu(void)
+void bootCpu(cpu_t *cpu)
 {
-	REG_PC = 0;
+	cpu->PC = 0;
 
-	cartridgeInit(boot_rom);
+	cartridgeInit(cpu, boot_rom);
 
 	do{
-		decode();
-		timer();
-		video();
-		interrupts();
-	}while(REG_PC != 0x100);
+		decode(cpu);
+		timer(cpu);
+		video(cpu);
+		interrupts(cpu);
+	}while(cpu->PC != 0x100);
 }

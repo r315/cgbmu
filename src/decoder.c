@@ -2,14 +2,14 @@
 #include "decoder.h"
 #include "instrs.h"
 
+static uint8_t cb_decode(cpu_t*);
+
 #if TABLE_DECODER
 #define NOP nop
 
 uint8_t  instr_cycles;
 
-static uint8_t cb_decode(void);
-
-static const uint8_t (*cb_opcodes[])(void) = {
+static const uint8_t (*cb_opcodes[])(cpu_t*) = {
 	rlc_b, rlc_c, rlc_d, rlc_e, rlc_h, rlc_l, rlc_ind_hl, rlc_a, rrc_b, rrc_c, rrc_d, rrc_e, rrc_h, rrc_l, rrc_ind_hl, rrc_a,
 	rl_b, rl_c, rl_d, rl_e, rl_h, rl_l, rl_ind_hl, rl_a, rr_b, rr_c, rr_d, rr_e, rr_h, rr_l, rr_ind_hl, rr_a,
 	sla_b, sla_c, sla_d, sla_e, sla_h, sla_l, sla_ind_hl, sla_a, sra_b, sra_c, sra_d, sra_e, sra_h, sra_l, sra_ind_hl, sra_a,
@@ -29,7 +29,7 @@ static const uint8_t (*cb_opcodes[])(void) = {
 };
 
 
-static const uint8_t (*opcodes[])(void) = {
+static const uint8_t (*opcodes[])(cpu_t*) = {
 	nop, ld_bc_d16, ld_ind_bc_a, inc_bc, inc_b, dec_b, ld_b_d8, rlca, ld_ind_a16_sp, add_hl_bc, ld_a_ind_bc, dec_bc, inc_c, dec_c, ld_c_d8, rrca,						  // 0x00
 	stop, ld_de_d16, ld_ind_de_a, inc_de, inc_d, dec_d, ld_d_d8, rla, jr_s8, add_hl_de, ld_a_ind_de, dec_de, inc_e, dec_e, ld_e_d8, rra,								  // 0x10
 	jr_nz_s8, ld_hl_d16, ld_ind_hli_a, inc_hl, inc_h, dec_h, ld_h_d8, daa, jr_z_s8, add_hl_hl, ld_a_ind_hli, dec_hl, inc_l, dec_l, ld_l_d8, cpl,						  // 0x20
@@ -48,44 +48,40 @@ static const uint8_t (*opcodes[])(void) = {
 	ld_a_ind_a8, pop_af, ld_a_ind_c, di, NOP, push_af, or_d8, rst_6, ld_hl_sp_s8, ld_sp_hl, ld_a_ind_a16, ei, NOP, NOP, cp_d8, rst_7									  // 0xf0
 };
 
-void decode(void)
+void decode(cpu_t *cpu)
 {
-	if (halt_state == HALT_ACTIVE) {	
-		instr_cycles = ONE_CYCLE;
+	if (cpu->halt == 1) {	
+		cpu->instr_cycles = ONE_CYCLE;
 		return;			
 	}
 
-	uint8_t opcode = memoryRead(REG_PC++);
-	instr_cycles = opcodes[opcode]();
+	uint8_t opcode = memoryRead(cpu, cpu->PC++);
+	cpu->instr_cycles = opcodes[opcode](cpu);
 }
 
-static uint8_t cb_decode(void)
+static uint8_t cb_decode(cpu_t *cpu)
 { 
-	return cb_opcodes[memoryRead(REG_PC++)]();
+	return cb_opcodes[memoryRead(cpu, cpu->PC++)](cpu);
 }
 #else
 
-#define DST_REG(op) ((op >> 3) & 0x07)
-#define SRC_REG(op) (op & 0x07)
-
-void cb_decode(uint8_t op);
 //-----------------------------------------
 //-----------------------------------------
-void decode(void)
+void decode(cpu_t *cpu)
 {
 uint8_t dst;
 uint8_t aux;
 uint8_t opcode;
 uint16_t aux16;
 
-	instr_cycles = 0;
+	cpu->instr_cycles = 0;
 
-	if(halt_state == HALT_ACTIVE){		
+	if(cpu->halt == 1){		
 		SET_INSTR_CYCLES(ONE_CYCLE);
 		return;
 	}
     
-    opcode = memoryRead(REG_PC++);
+    opcode = memoryRead(cpu, REG_PC++);
 
 	switch(opcode)
 	{
@@ -111,7 +107,7 @@ uint16_t aux16;
 		case 0x26:
 		case 0x2E:
 		case 0x3E: // LD A,#		
-			REG_INDEX(DST_REG(opcode)) = memoryRead(REG_PC++);
+			REG_INDEX(DST_REG(opcode)) = memoryRead(cpu, REG_PC++);
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;	
 			
@@ -175,7 +171,7 @@ uint16_t aux16;
 		case 0x66:
 		case 0x6E:
 		case 0x7E: // LD A,(HL)			
-			REG_INDEX(DST_REG(opcode)) = memoryRead(REG_HL);
+			REG_INDEX(DST_REG(opcode)) = memoryRead(cpu, REG_HL);
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;			
 			
@@ -186,74 +182,74 @@ uint16_t aux16;
 		case 0x74:
 		case 0x75:
 		case 0x77: // LD (HL),A			
-			memoryWrite(REG_HL, REG_INDEX(SRC_REG(opcode)));
+			memoryWrite(cpu, REG_HL, REG_INDEX(SRC_REG(opcode)));
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;	
                 
         case 0x36: // LD (HL),n
-			memoryWrite(REG_HL, memoryRead(REG_PC++));
+			memoryWrite(cpu, REG_HL, memoryRead(cpu, REG_PC++));
 			SET_INSTR_CYCLES(THREE_CYCLE);
 			break;
 			
 		case 0x0A: // LD A,(BC)
-			REG_A = memoryRead(REG_BC);
+			REG_A = memoryRead(cpu, REG_BC);
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;
 			
 		case 0x1A: // LD A,(DE)
-			REG_A = memoryRead(REG_DE);
+			REG_A = memoryRead(cpu, REG_DE);
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;		
 						
 		case 0xFA: // LD A,(nn)
-			aux16 = memoryRead16(REG_PC);
-			REG_A = memoryRead(aux16);
+			aux16 = memoryRead16(cpu, REG_PC);
+			REG_A = memoryRead(cpu, aux16);
 			REG_PC += 2;
 			SET_INSTR_CYCLES(FOUR_CYCLE);
 			break;		
 			
 		case 0x02: // LD (BC),A
-			memoryWrite(REG_BC,REG_A);
+			memoryWrite(cpu, REG_BC,REG_A);
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;
 			
 		case 0x12: // LD (DE),A
-			memoryWrite(REG_DE,REG_A);
+			memoryWrite(cpu, REG_DE,REG_A);
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;		
 		
 		case 0xEA: // LD (nn),A
-			memoryWrite(memoryRead16(REG_PC),REG_A);
+			memoryWrite(cpu, memoryRead16(cpu, REG_PC),REG_A);
 			REG_PC += 2;
 			SET_INSTR_CYCLES(FOUR_CYCLE);
 			break;	
 			
 		case 0xF2: // LD A,($FF00+C)
 			aux = REG_C;
-			REG_A = memoryRead(0xFF00 | aux);
+			REG_A = memoryRead(cpu, 0xFF00 | aux);
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;	
 		
 		case 0xE2: // LD ($FF00+C),A
 			aux = REG_C;
-			memoryWrite(0xFF00 | aux, REG_A);
+			memoryWrite(cpu, 0xFF00 | aux, REG_A);
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;		
 		
 		case 0xE0: // LD ($FF00+n),A
-			aux = memoryRead(REG_PC++);
-			memoryWrite(0xFF00 | aux, REG_A);
+			aux = memoryRead(cpu, REG_PC++);
+			memoryWrite(cpu, 0xFF00 | aux, REG_A);
 			SET_INSTR_CYCLES(THREE_CYCLE);
 			break;	
 			
 		case 0xF0: // LD A,($FF00+n)
-			REG_A = memoryRead(0xFF00 | memoryRead(REG_PC++));
+			REG_A = memoryRead(cpu, 0xFF00 | memoryRead(cpu, REG_PC++));
 			SET_INSTR_CYCLES(THREE_CYCLE);
 			break;			
 			
 		case 0x22: // LD (HLI),A
 		case 0x32: // LD (HLD),A
-			memoryWrite(REG_HL, REG_A);
+			memoryWrite(cpu, REG_HL, REG_A);
 			if(opcode & 0x10) REG_HL--;
 			else REG_HL++;
 			SET_INSTR_CYCLES(TWO_CYCLE);
@@ -261,7 +257,7 @@ uint16_t aux16;
 			
 		case 0x2A: // LD A,(HLI)
 		case 0x3A: // LD A,(HLD)
-			REG_A = memoryRead(REG_HL);
+			REG_A = memoryRead(cpu, REG_HL);
 			if(opcode & 0x10) REG_HL--;
 			else REG_HL++;
 			SET_INSTR_CYCLES(TWO_CYCLE);
@@ -272,13 +268,13 @@ uint16_t aux16;
 		case 0x11:
 		case 0x21:
 			dst = DST_REG(opcode);
-			REG_INDEX(dst+1) = memoryRead(REG_PC++); // LSB
-		    REG_INDEX(dst)   = memoryRead(REG_PC++); // MSB
+			REG_INDEX(dst+1) = memoryRead(cpu, REG_PC++); // LSB
+		    REG_INDEX(dst)   = memoryRead(cpu, REG_PC++); // MSB
 			SET_INSTR_CYCLES(THREE_CYCLE);
 			break;
 			
 		case 0x31: // LD SP,nn
-			REG_SP = memoryRead16(REG_PC);
+			REG_SP = memoryRead16(cpu, REG_PC);
 			REG_PC +=2;
 			SET_INSTR_CYCLES(THREE_CYCLE);
 			break;				
@@ -289,8 +285,8 @@ uint16_t aux16;
 			break;	
 			
 		case 0xF8: // LD HL,SP+n
-			aux = memoryRead(REG_PC++);
-			REG_F = 0;
+			aux = memoryRead(cpu, REG_PC++);
+			PSW = 0;
 			if( ((REG_SP & 0xff) + aux) > 0xFF) PSW = FC;
 			if( ((REG_SP & 0x0f) + (aux & 0x0f)) > 0x0f) PSW |= FH;				
 			REG_HL = REG_SP + (signed char)aux;			
@@ -298,7 +294,7 @@ uint16_t aux16;
 			break;				
 				
 		case 0x08: // LD (nn),SP		
-			memoryWrite16(memoryRead16(REG_PC), REG_SP);
+			memoryWrite16(cpu, memoryRead16(cpu, REG_PC), REG_SP);
 			REG_PC += 2;
 			SET_INSTR_CYCLES(FIVE_CYCLE);
 			break;			
@@ -307,14 +303,14 @@ uint16_t aux16;
 		case 0xD5:
 		case 0xE5:
 			dst = DST_REG(opcode);
-			memoryWrite(--REG_SP, REG_INDEX(dst));   // MSB
-			memoryWrite(--REG_SP, REG_INDEX(dst+1)); // LSB
+			memoryWrite(cpu, --REG_SP, REG_INDEX(dst));   // MSB
+			memoryWrite(cpu, --REG_SP, REG_INDEX(dst+1)); // LSB
 			SET_INSTR_CYCLES(FOUR_CYCLE);
 			break;
 			
 		case 0xF5: // PUSH AF
-			memoryWrite(--REG_SP, REG_A); // MSB			
-			memoryWrite(--REG_SP, REG_F & 0xf0); // LSB			
+			memoryWrite(cpu, --REG_SP, REG_A); // MSB			
+			memoryWrite(cpu, --REG_SP, PSW & 0xf0); // LSB			
 			SET_INSTR_CYCLES(FOUR_CYCLE);
 			break;		
 		
@@ -322,14 +318,14 @@ uint16_t aux16;
 		case 0xD1:
 		case 0xE1:
 			dst = DST_REG(opcode);
-			REG_INDEX(dst+1) = memoryRead(REG_SP++); // LSB
-			REG_INDEX(dst) = memoryRead(REG_SP++); // MSB
+			REG_INDEX(dst+1) = memoryRead(cpu, REG_SP++); // LSB
+			REG_INDEX(dst) = memoryRead(cpu, REG_SP++); // MSB
 			SET_INSTR_CYCLES(THREE_CYCLE);
 			break;
 			
 		case 0xF1: // POP AF
-			PSW = memoryRead(REG_SP++)&0xF0; // LSB
-			REG_A = memoryRead(REG_SP++); // MSB
+			PSW = memoryRead(cpu, REG_SP++)&0xF0; // LSB
+			REG_A = memoryRead(cpu, REG_SP++); // MSB
 			SET_INSTR_CYCLES(THREE_CYCLE);
 			break;
 			
@@ -390,7 +386,7 @@ uint16_t aux16;
 		case 0xBC:
 		case 0xBD:		
 		case 0xBF:	
-			alu(DST_REG(opcode), REG_INDEX(SRC_REG(opcode)));
+			alu(cpu, DST_REG(opcode), REG_INDEX(SRC_REG(opcode)));
 			SET_INSTR_CYCLES(ONE_CYCLE);
 			break;
 			
@@ -402,7 +398,7 @@ uint16_t aux16;
 		case 0xAE: // XOR (HL)
 		case 0xB6: // OR (HL)
 		case 0xBE: // CP (HL)
-			alu(DST_REG(opcode), memoryRead(REG_HL));
+			alu(cpu, DST_REG(opcode), memoryRead(cpu, REG_HL));
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;		
 		
@@ -414,7 +410,7 @@ uint16_t aux16;
 		case 0xEE: // XOR #
 		case 0xF6: // OR #
 		case 0xFE: // CP #
-			alu(DST_REG(opcode),memoryRead(REG_PC++));
+			alu(cpu, DST_REG(opcode),memoryRead(cpu, REG_PC++));
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;		
 			
@@ -425,18 +421,18 @@ uint16_t aux16;
 		case 0x24:
 		case 0x2C:
 		case 0x3C:
-			inc(REG_ADDR(DST_REG(opcode)));
+			inc(cpu, REG_ADDR(DST_REG(opcode)));
 			SET_INSTR_CYCLES(ONE_CYCLE);
 			break;	
 			
 		case 0x34: // INC (HL)
 		case 0x35: // DEC (HL)
-			aux = memoryRead(REG_HL);
+			aux = memoryRead(cpu, REG_HL);
 			if(opcode&1)
-				dec(&aux);
+				dec(cpu, &aux);
 			else
-				inc(&aux);
-			memoryWrite(REG_HL, aux);
+				inc(cpu, &aux);
+			memoryWrite(cpu, REG_HL, aux);
 			SET_INSTR_CYCLES(THREE_CYCLE);
 			break;
 			
@@ -447,19 +443,19 @@ uint16_t aux16;
 		case 0x25:
 		case 0x2D:
 		case 0x3D:
-			dec(REG_ADDR(DST_REG(opcode)));
+			dec(cpu, REG_ADDR(DST_REG(opcode)));
 			SET_INSTR_CYCLES(ONE_CYCLE);
 			break;		 		
 				
 // 16bit Arithmetic
 		// ADD HL,rnn - flags: -,0,H,C
-		case 0x09: add_hl_d16(REG_BC); SET_INSTR_CYCLES(TWO_CYCLE); break;
-		case 0x19: add_hl_d16(REG_DE); SET_INSTR_CYCLES(TWO_CYCLE); break;
-		case 0x29: add_hl_d16(REG_HL); SET_INSTR_CYCLES(TWO_CYCLE); break;
-		case 0x39: add_hl_d16(REG_SP); SET_INSTR_CYCLES(TWO_CYCLE); break;
+		case 0x09: add_hl_d16(cpu, REG_BC); SET_INSTR_CYCLES(TWO_CYCLE); break;
+		case 0x19: add_hl_d16(cpu, REG_DE); SET_INSTR_CYCLES(TWO_CYCLE); break;
+		case 0x29: add_hl_d16(cpu, REG_HL); SET_INSTR_CYCLES(TWO_CYCLE); break;
+		case 0x39: add_hl_d16(cpu, REG_SP); SET_INSTR_CYCLES(TWO_CYCLE); break;
 			
 		case 0xE8: // ADD SP,#				
-			aux = memoryRead(REG_PC++);
+			aux = memoryRead(cpu, REG_PC++);
 			PSW = 0;
 			if( ((REG_SP & 0xff) + aux) > 0xFF) PSW = FC;
 			if( ((REG_SP & 0x0f) + (aux & 0x0f)) > 0x0f) PSW |= FH;	
@@ -481,10 +477,10 @@ uint16_t aux16;
 			
 // Miscellaneous
 		// SWAP, RLC, RL, RRC, RR, SLA, SRA, SRL, BIT, RST, SET
-		case 0xCB: cb_decode(memoryRead(REG_PC++));break;
+		case 0xCB: cb_decode(cpu); break;
 			
 		// DAA
-		case 0x27: daa(); SET_INSTR_CYCLES(ONE_CYCLE); break;
+		case 0x27: daa(cpu); SET_INSTR_CYCLES(ONE_CYCLE); break;
 		
 		case 0x2F: // CPL
 			REG_A = ~REG_A;
@@ -505,18 +501,18 @@ uint16_t aux16;
 			break;
 			
 		case 0x76: // HALT
-			halt_state = HALT_ACTIVE;
+			cpu->halt = 1;
 			SET_INSTR_CYCLES(ONE_CYCLE);         
 			break;	
 			
 		case 0x10: // STOP
-			stopped	= 1;
+			cpu->stopped	= 1;
 			SET_INSTR_CYCLES(ONE_CYCLE);
 			break;
 			
 		case 0xF3: // DI
 		case 0xFB: // EI
-			IME = (opcode>>3) & 1 ;
+			cpu->IME = (opcode>>3) & 1 ;
 			SET_INSTR_CYCLES(ONE_CYCLE);
 			break;	
 			
@@ -551,7 +547,7 @@ uint16_t aux16;
 			
 // Jumps			
 		case 0xC3: // JP nn
-			REG_PC = memoryRead16(REG_PC);
+			REG_PC = memoryRead16(cpu, REG_PC);
 			SET_INSTR_CYCLES(FOUR_CYCLE);
 			break;	
 			
@@ -559,7 +555,7 @@ uint16_t aux16;
 		case 0xCA: // JP z,nn
 			aux = (opcode<<4) & FZ;			
 			if ((PSW & FZ) == aux) {
-				REG_PC = memoryRead16(REG_PC);
+				REG_PC = memoryRead16(cpu, REG_PC);
 				SET_INSTR_CYCLES(ONE_CYCLE);
 			}
 			else	
@@ -571,7 +567,7 @@ uint16_t aux16;
 		case 0xDA: // JP C,nn
 			aux = (opcode<<1) & FC;			
 			if ((PSW & FC) == aux) {
-				REG_PC = memoryRead16(REG_PC);
+				REG_PC = memoryRead16(cpu, REG_PC);
 				SET_INSTR_CYCLES(ONE_CYCLE);
 			}
 			else	
@@ -585,7 +581,7 @@ uint16_t aux16;
 			break;
 			
 		case 0x18: // JR n
-			REG_PC = REG_PC + (signed char)memoryRead(REG_PC) + 1;
+			REG_PC = REG_PC + (signed char)memoryRead(cpu, REG_PC) + 1;
 			SET_INSTR_CYCLES(THREE_CYCLE);
 			break;	
 			
@@ -593,7 +589,7 @@ uint16_t aux16;
 		case 0x28: // JR Z,n
 			aux = (opcode<<4) & FZ;			
 			if ((PSW & FZ) == aux) {
-				REG_PC = REG_PC + (signed char)memoryRead(REG_PC) + 1;
+				REG_PC = REG_PC + (signed char)memoryRead(cpu, REG_PC) + 1;
 				SET_INSTR_CYCLES(ONE_CYCLE);
 			}else
 				REG_PC++;				
@@ -604,7 +600,7 @@ uint16_t aux16;
 		case 0x38: // JR C,n
 			aux = (opcode<<1) & FC;
 			if ((PSW & FC) == aux) {
-				REG_PC = REG_PC + (signed char)memoryRead(REG_PC) + 1;
+				REG_PC = REG_PC + (signed char)memoryRead(cpu, REG_PC) + 1;
 				SET_INSTR_CYCLES(ONE_CYCLE);
 			}
 			else	
@@ -615,8 +611,8 @@ uint16_t aux16;
 // Calls			
 			
 		case 0xCD: // CALL nn
-			PUSH(REG_PC + 2);
-			REG_PC = memoryRead16(REG_PC);
+			PUSH(cpu, REG_PC + 2);
+			REG_PC = memoryRead16(cpu, REG_PC);
 			SET_INSTR_CYCLES(SIX_CYCLE);
 			break;	
 			
@@ -624,8 +620,8 @@ uint16_t aux16;
 		case 0xCC: // CALL z,nn
 			aux = (opcode<<4) & FZ;			
 			if( (PSW & FZ) == aux )	{
-				PUSH(REG_PC+2);
-				REG_PC = memoryRead16(REG_PC);
+				PUSH(cpu, REG_PC+2);
+				REG_PC = memoryRead16(cpu, REG_PC);
 				SET_INSTR_CYCLES(THREE_CYCLE);
 			}
 			else
@@ -637,8 +633,8 @@ uint16_t aux16;
 		case 0xDC: // CALL C,nn
 			aux = (opcode<<1) & FC;			
 			if( (PSW & FC) == aux ) {
-				PUSH(REG_PC+2);
-				REG_PC = memoryRead16(REG_PC);
+				PUSH(cpu, REG_PC+2);
+				REG_PC = memoryRead16(cpu, REG_PC);
 				SET_INSTR_CYCLES(THREE_CYCLE);
 			}
 			else
@@ -656,7 +652,7 @@ uint16_t aux16;
 		case 0xEF:
 		case 0xF7:
 		case 0xFF:
-			PUSH(REG_PC);
+			PUSH(cpu, REG_PC);
 			REG_PC = opcode & 0x38;
 			SET_INSTR_CYCLES(FOUR_CYCLE);
 			break;
@@ -664,9 +660,9 @@ uint16_t aux16;
 // Returns			
 		
 		case 0xD9: // RETI
-			 IME = 1;				
+			 cpu->IME = 1;				
 		case 0xC9: // RET
-			POP(REG_PC);
+			POP(cpu, REG_PC);
 			SET_INSTR_CYCLES(FOUR_CYCLE);
 			break;	
 			
@@ -674,7 +670,7 @@ uint16_t aux16;
 		case 0xC8: // RET Z
 			aux = (opcode<<4) & FZ;			
 			if ((PSW & FZ) == aux) {
-				POP(REG_PC);
+				POP(cpu, REG_PC);
 				SET_INSTR_CYCLES(THREE_CYCLE);
 			}
 			SET_INSTR_CYCLES(TWO_CYCLE);
@@ -684,7 +680,7 @@ uint16_t aux16;
 		case 0xD8: // RET C
 			aux = (opcode<<1) & FC;			
 			if ((PSW & FC) == aux) {
-				POP(REG_PC);
+				POP(cpu, REG_PC);
 				SET_INSTR_CYCLES(THREE_CYCLE);
 			}
 			SET_INSTR_CYCLES(TWO_CYCLE);		
@@ -700,10 +696,14 @@ uint16_t aux16;
 //-----------------------------------------
 // 2 byte instructions
 //-----------------------------------------
-void cb_decode(uint8_t op)
+static uint8_t cb_decode(cpu_t *cpu)
 {
-uint8_t reg = op & 7, aux;
-uint8_t bitnum = (op >> 3) & 7;
+	uint8_t op, reg, aux;
+	uint8_t bitnum;
+
+	op = memoryRead(cpu, REG_PC++);
+	reg = op & 7;
+	bitnum = (op >> 3) & 7;
  
 	switch(op)
 	{
@@ -714,14 +714,14 @@ uint8_t bitnum = (op >> 3) & 7;
 		case 0x04:
 		case 0x05:
 		case 0x07:
-			rlc(REG_ADDR(reg));
+			rlc(cpu, REG_ADDR(reg));
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;		
 		
 		case 0x06: // RLC (HL)	
-			aux = memoryRead(REG_HL);
-			rlc(&aux);
-			memoryWrite(REG_HL, aux);
+			aux = memoryRead(cpu, REG_HL);
+			rlc(cpu, &aux);
+			memoryWrite(cpu, REG_HL, aux);
 			SET_INSTR_CYCLES(FOUR_CYCLE);	
 			break;
 						
@@ -732,14 +732,14 @@ uint8_t bitnum = (op >> 3) & 7;
 		case 0x0C:
 		case 0x0D:
 		case 0x0F:
-			rrc(REG_ADDR(reg));
+			rrc(cpu, REG_ADDR(reg));
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;		
 		
 		case 0x0E: // RRC (HL)	
-			aux = memoryRead(REG_HL);
-			rrc(&aux);
-			memoryWrite(REG_HL, aux);
+			aux = memoryRead(cpu, REG_HL);
+			rrc(cpu, &aux);
+			memoryWrite(cpu, REG_HL, aux);
 			SET_INSTR_CYCLES(FOUR_CYCLE);	
 			break;			
 			
@@ -750,14 +750,14 @@ uint8_t bitnum = (op >> 3) & 7;
 		case 0x14:
 		case 0x15:
 		case 0x17:
-			rl(REG_ADDR(reg));
+			rl(cpu, REG_ADDR(reg));
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;		
 		
 		case 0x16: // RL (HL)	
-			aux = memoryRead(REG_HL);
-			rl(&aux);
-			memoryWrite(REG_HL, aux);
+			aux = memoryRead(cpu, REG_HL);
+			rl(cpu, &aux);
+			memoryWrite(cpu, REG_HL, aux);
 			SET_INSTR_CYCLES(FOUR_CYCLE);	
 			break;	
 		
@@ -768,14 +768,14 @@ uint8_t bitnum = (op >> 3) & 7;
 		case 0x1C:
 		case 0x1D:
 		case 0x1F:
-			rr(REG_ADDR(reg));
+			rr(cpu, REG_ADDR(reg));
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;		
 		
 		case 0x1E: // RR (HL)	
-			aux = memoryRead(REG_HL);
-			rr(&aux);
-			memoryWrite(REG_HL,aux);
+			aux = memoryRead(cpu, REG_HL);
+			rr(cpu, &aux);
+			memoryWrite(cpu, REG_HL,aux);
 			SET_INSTR_CYCLES(FOUR_CYCLE);	
 			break;
 			
@@ -786,14 +786,14 @@ uint8_t bitnum = (op >> 3) & 7;
 		case 0x24:
 		case 0x25:
 		case 0x27:
-			sla(REG_ADDR(reg));
+			sla(cpu, REG_ADDR(reg));
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;		
 		
 		case 0x26: // SLA (HL)	
-			aux = memoryRead(REG_HL);
-			sla(&aux);
-			memoryWrite(REG_HL, aux);
+			aux = memoryRead(cpu, REG_HL);
+			sla(cpu, &aux);
+			memoryWrite(cpu, REG_HL, aux);
 			SET_INSTR_CYCLES(FOUR_CYCLE);
 			break;
 			
@@ -804,14 +804,14 @@ uint8_t bitnum = (op >> 3) & 7;
 		case 0x2C:
 		case 0x2D:
 		case 0x2F:
-			sra(REG_ADDR(reg));
+			sra(cpu, REG_ADDR(reg));
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;		
 		
 		case 0x2E: // SRA (HL)	
-			aux = memoryRead(REG_HL);
-			sra(&aux);
-			memoryWrite(REG_HL, aux);
+			aux = memoryRead(cpu, REG_HL);
+			sra(cpu, &aux);
+			memoryWrite(cpu, REG_HL, aux);
 			SET_INSTR_CYCLES(FOUR_CYCLE);	
 			break;			
 		
@@ -822,14 +822,14 @@ uint8_t bitnum = (op >> 3) & 7;
 		case 0x34:
 		case 0x35:
 		case 0x37:
-			swap(REG_ADDR(reg));
+			swap(cpu, REG_ADDR(reg));
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;	
 			
 		case 0x36: // SWAP (HL)
-			aux = memoryRead(REG_HL);
-			swap(&aux);
-			memoryWrite(REG_HL, aux);
+			aux = memoryRead(cpu, REG_HL);
+			swap(cpu, &aux);
+			memoryWrite(cpu, REG_HL, aux);
 			SET_INSTR_CYCLES(FOUR_CYCLE);
 			break;
 		
@@ -840,14 +840,14 @@ uint8_t bitnum = (op >> 3) & 7;
 		case 0x3C:
 		case 0x3D:
 		case 0x3F:
-			srl(REG_ADDR(reg));
+			srl(cpu, REG_ADDR(reg));
 			SET_INSTR_CYCLES(TWO_CYCLE);
 			break;
 			
 		case 0x3E: // SRL (HL)
-			aux = memoryRead(REG_HL);
-			srl(&aux);
-			memoryWrite(REG_HL, aux);
+			aux = memoryRead(cpu, REG_HL);
+			srl(cpu, &aux);
+			memoryWrite(cpu, REG_HL, aux);
 			SET_INSTR_CYCLES(FOUR_CYCLE);
 			break;	
 			
@@ -855,19 +855,21 @@ uint8_t bitnum = (op >> 3) & 7;
 			switch(op & 0xC0)
 			{
 				case 0x40:
-					bit(bitnum, REG_ADDR(reg));
+					bit(cpu, bitnum, REG_ADDR(reg));
 					break;
 					
 				case 0x80:
-					res(bitnum, REG_ADDR(reg));
+					res(cpu, bitnum, REG_ADDR(reg));
 					break;
 					
 				case 0xC0:
-					set(bitnum, REG_ADDR(reg));
+					set(cpu, bitnum, REG_ADDR(reg));
 					break;
 			}
 			break;
-	}	
+	}
+
+	return 0;
 }
 #endif
 

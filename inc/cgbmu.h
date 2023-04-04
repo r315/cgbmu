@@ -13,6 +13,6 @@ void updateFps(void);
 // Implemented by target
 int loadRom(char *fn);
 uint8_t readButtons(void);
-void pushScanLine(uint8_t *scanline);
+void pushScanLine(uint8_t ly, uint8_t *scanline);
 int drawInt(int x, int y, unsigned int v, char radix, char digitos);
 #endif /* _common_h_ */

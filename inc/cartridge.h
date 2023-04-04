@@ -2,6 +2,7 @@
 #define _cartridge_h_
 
 #include <stdint.h>
+#include "dmgcpu.h"
 
 #define CARTRIDGE_ROM_SIZE          0x4000  // 16kB ROM (0x0000 - 0x3FFF)
 #define CARTRIDGE_ROM_BANK_SIZE     0x4000  // 16kB switchable ROM bank
@@ -18,7 +19,5 @@
 
 #define MCB1_RAM_EN				0x0A
 
-uint8_t cartridgeRead(uint16_t address);
-void cartridgeWrite(uint16_t address, uint8_t data);
-void cartridgeInit(const uint8_t *ptr);
+void cartridgeInit(cpu_t *cpu, const uint8_t *ptr);
 #endif

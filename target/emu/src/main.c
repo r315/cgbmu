@@ -73,6 +73,8 @@ static uint8_t *MBC1_ROM = NULL;
 
 extern uint8_t done;
 
+static cpu_t test_cpu;
+
 void optParseFlag(void *opt){
 	*((uint8_t*)(((opt_t*)opt)->ctx)) |= ((opt_t*)opt)->flag;
 }
@@ -150,7 +152,6 @@ int loadRom(char *file)
 	}
 
 	printf("Rom size %ukByte\n", 32 << MBC1_ROM[CARTRIDGE_SIZE_OFFSET]);
-	cartridgeInit(MBC1_ROM);	
 	fclose(fp);
 	return n;
 }
@@ -208,7 +209,7 @@ uint8_t readButtons(void)
 	return button;
 }
 
-void pushScanLine(uint8_t *scanline) {
+void pushScanLine(uint8_t ly, uint8_t *scanline) {
 	uint16_t tft_line[SCREEN_W];
 	uint8_t *end = scanline + SCREEN_W;
 	uint8_t pixel = 0;
@@ -217,7 +218,7 @@ void pushScanLine(uint8_t *scanline) {
 		tft_line[pixel++] = lcd_pal[*scanline++];
 	}
 
-	LCD_WriteArea(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + IOLY, SCREEN_W, 1, tft_line);
+	LCD_WriteArea(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + ly, SCREEN_W, 1, tft_line);
 }
 
 int drawInt(int x, int y, unsigned int v, char radix, char digitos)
@@ -251,12 +252,18 @@ int loadTestRom(uint8_t nr) {
 	return loadRom(path);
 }
 
-void dry_run(void) {
-	initCpu();
+void dry_run(const uint8_t *rom) {
+	cartridgeInit(&test_cpu, rom);
+	initCpu(&test_cpu);
 	while (readButtons() != 255) {
 #if 1
 		// slow path
-		runOneStep();
+		uint8_t frame;
+		decode(&test_cpu);
+		frame = video(&test_cpu);
+		timer(&test_cpu);
+		serial(&test_cpu);
+		interrupts(&test_cpu);
 #else
 		// Fastest run
 		runOneFrame();
@@ -296,16 +303,16 @@ opt_t options[] = {
 	
 	parseOptions(argc, argv, sizeof(options)/sizeof(opt_t), options);
 
-#if 1
+#if 0
 	if(loadRom(romfile) > 0) {
 #else
 	if(loadTestRom(0) > 0){
 #endif
-		//dry_run();		// Generic run
+		//dry_run(MBC1_ROM);		// Generic run
 
-		//DBG_run();		// Run loaded rom in debug mode
+		DBG_run(MBC1_ROM);		// Run loaded rom in debug mode
 	
-		cgbmu(MBC1_ROM);  // Run emulator in normal mode	
+		//cgbmu(MBC1_ROM);  // Run emulator in normal mode	
 	}
 	else {
 		LIB2D_Text(0, 4, "Fail to load rom");

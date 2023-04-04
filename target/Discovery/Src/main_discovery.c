@@ -15,7 +15,7 @@ uint8_t *cartridge = &_binary_rom_start;
 static uint8_t *screen;
 uint8_t rgb_pal [256] = {230,248,215, 138,192,114, 55,106,87, 10,26,39};
 static const uint32_t argb_pal[] = {0xFFE6F8D7, 0xFF8AC072, 0xFF376A57, 0xFF0A1A27};
-
+#if 0
 static void LCD_ConfigVideoDma(uint32_t dst, uint32_t src, uint16_t w, uint16_t h, uint32_t bgc)
 {
     DMA2D->CR = DMA2D_CR_M2M_PFC;
@@ -34,7 +34,7 @@ static void LCD_ConfigVideoDma(uint32_t dst, uint32_t src, uint16_t w, uint16_t 
 
     LTDC->BCCR = bgc;
 }
-
+#endif
 void videoInit(void)
 {    
     BSP_LCD_Init();
@@ -95,12 +95,12 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
  * 
  * @param scanline 
  */
-void pushScanLine(uint8_t *scanline){
+void pushScanLine(uint8_t ly, uint8_t *scanline){
 
     uint8_t *end = scanline + SCREEN_W;
-    uint32_t *dst = (uint32_t*)(screen + (IOLY * BSP_LCD_GetXSize() * 4));
+    uint32_t *dst = (uint32_t*)(screen + (ly * BSP_LCD_GetXSize() * 4));
 
-	if(IOLY == 0){
+	if(ly == 0){
 		//DMA2D->CR |= DMA2D_CR_START;
         BSP_LED_Toggle(LED2);
 	}

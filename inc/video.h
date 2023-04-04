@@ -45,6 +45,7 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 
 */
 
+#include "dmgcpu.h"
 
 #ifndef _video_h_
 #define _video_h_
@@ -119,11 +120,11 @@ typedef struct _Tile {
 	}line[8];
 }TileData;
 
-uint8_t video(void);
-uint8_t checkLine(uint8_t ly);
-void scanline(void);
-void scanOAM(void);
-void writeLCDC(uint8_t newlcdc);
-void writeSTAT(uint8_t newstat);
-void writeLYC(uint8_t newstat);
+uint8_t video(cpu_t *cpu);
+void checkLine(cpu_t *cpu);
+void scanline(cpu_t *cpu);
+void scanOAM(cpu_t *cpu);
+void writeLCDC(cpu_t *cpu, uint8_t newlcdc);
+void writeSTAT(cpu_t *cpu, uint8_t newstat);
+void writeLYC(cpu_t *cpu, uint8_t newstat);
 #endif

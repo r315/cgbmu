@@ -6,6 +6,7 @@
 #include "debugger.h"
 #include "dmgcpu.h"
 #include "decoder.h"
+#include "cartridge.h"
 #include "video.h"
 #include "liblcd.h"
 #include "lib2d.h"
@@ -15,10 +16,44 @@
 	#include "disassembler.h"
 #else
 void disassembleHeader(void){}
-void disassemble(void){}
+void disassemble(cpu_t *cpu){}
 #endif
-	#define FRAME_TIME 16
-	#define BREAK_CONDITION(_cond_) if((_cond_)){ printf("break hit %d\n", ++break_count); dbg_state = DBG_BREAK; break; }
+#define FRAME_TIME 16
+#define BREAK_CONDITION(_cond_) if((_cond_)){ printf("break hit %d\n", ++break_count); dbg_state = DBG_BREAK; break; }
+
+#define DBG_CPU		dbg_cpu
+#define DBG_REG_A	DBG_CPU.A
+#define DBG_REG_B	DBG_CPU.B
+#define DBG_REG_C	DBG_CPU.C
+#define DBG_REG_D	DBG_CPU.D
+#define DBG_REG_E	DBG_CPU.E
+#define DBG_REG_H	DBG_CPU.H
+#define DBG_REG_L	DBG_CPU.L
+#define DBG_REG_F	DBG_CPU.F
+#define DBG_REG_BC	DBG_CPU.BC
+#define DBG_REG_DE	DBG_CPU.DE
+#define DBG_REG_HL	DBG_CPU.HL
+#define DBG_REG_SP	DBG_CPU.SP
+#define DBG_REG_PC	DBG_CPU.PC
+
+#define DBG_REG_IOLY	DBG_CPU.IOLY
+#define DBG_REG_IOLYC	DBG_CPU.IOLYC
+#define DBG_REG_IOSTAT	DBG_CPU.IOSTAT
+#define DBG_REG_IOLCDC	DBG_CPU.IOLCDC
+#define DBG_REG_IOSCX	DBG_CPU.IOSCX
+#define DBG_REG_IOSCY	DBG_CPU.IOSCY
+#define DBG_REG_IOWX	DBG_CPU.IOWX
+#define DBG_REG_IOWY	DBG_CPU.IOWY
+#define DBG_REG_IOIE	DBG_CPU.IOIE
+#define DBG_REG_IOIF	DBG_CPU.IOIF
+#define DBG_REG_IOTAC	DBG_CPU.IOTAC
+#define DBG_REG_IOTIMA	DBG_CPU.IOTIMA
+#define DBG_REG_IOTMA   DBG_CPU.IOTMA
+#define DBG_REG_IME	    DBG_CPU.IME
+#define DBG_REG_IODIV   DBG_CPU.IODIV
+#define DBG_REG_HALT	DBG_CPU.halt
+
+
 
 enum debug_state {
 	DBG_PAUSE = 0,
@@ -29,6 +64,8 @@ enum debug_state {
 	DBG_CONTINUE,
 };
 
+static cpu_t dbg_cpu;
+
 static uint8_t break_count = 0;
 static uint8_t dbg_state = DBG_SINGLE;
 static uint32_t frame_counter = 0;
@@ -37,8 +74,8 @@ static uint16_t break_address = 0xBEFF;
 static void debugCommand(void);
 
 void DBG_SingleStep(void) {
-	decode();
-	if (video()) {
+	decode(&dbg_cpu);
+	if (video(&dbg_cpu)) {
 		frame_counter++;
 		updateFps(); 
 #if 0
@@ -49,9 +86,9 @@ void DBG_SingleStep(void) {
 		dtics = GetTick();
 #endif
 	}
-	timer();
-	// serial
-	interrupts();
+	timer(&dbg_cpu);
+	serial(&dbg_cpu);
+	interrupts(&dbg_cpu);
 }
 
 void DBG_FrameStep(void)
@@ -60,11 +97,11 @@ void DBG_FrameStep(void)
 	uint32_t dtics = GetTick();
 
 	while (cycles < V_FRAME_CYCLE) {
-		decode();
-		video();
-		timer();
-		interrupts();
-		cycles += instr_cycles;
+		decode(&dbg_cpu);
+		video(&dbg_cpu);
+		timer(&dbg_cpu);
+		interrupts(&dbg_cpu);
+		cycles += dbg_cpu.instr_cycles;
 	}
 	cycles -= V_FRAME_CYCLE;
 
@@ -77,9 +114,11 @@ void DBG_FrameStep(void)
 	}
 }
 
-void DBG_run(void){	
+void DBG_run(const uint8_t *rom){	
 	uint8_t key;
-	initCpu();
+
+	cartridgeInit(&dbg_cpu, rom);
+	initCpu(&dbg_cpu);
 
 	disassembleHeader();
 	//printf(">");
@@ -91,7 +130,7 @@ void DBG_run(void){
 
 		case DBG_BREAK:			
 			dbg_state = DBG_PAUSE;
-			disassemble();			
+			disassemble(&dbg_cpu);			
 			DBG_DumpRegisters();
 			//printf(">");
 			continue;
@@ -115,18 +154,20 @@ void DBG_run(void){
 		case DBG_FRAME:
 			DBG_FrameStep();
 			//BREAK_CONDITION(key == J_A);
-			BREAK_CONDITION(REG_PC == break_address);
+			BREAK_CONDITION(dbg_cpu.PC == break_address);
 			break;
 
 		case DBG_SINGLE:
 			DBG_SingleStep();
 			//BREAK_CONDITION(key == J_A);
-			BREAK_CONDITION(REG_PC == break_address);
+			BREAK_CONDITION(dbg_cpu.PC == break_address);
 			//BREAK_CONDITION(IOIF & JOYPAD_IF);
 			//BREAK_CONDITION(memoryRead(REG_PC) == 0xD9);
 			//BREAK_CONDITION(REG_PC == 0x0150);
-			//BREAK_CONDITION(REG_PC == 0x0100);			
-			//BREAK_CONDITION(halt_state == HALT_ACTIVE);
+			//BREAK_CONDITION(REG_PC == 0x0100);
+			if (key == 'x') {
+				dbg_state = DBG_STEP;
+			}
 			break;
 
 		default:
@@ -171,30 +212,30 @@ void DBG_DumpRegisters(void)
 	
 	//setAttribute(g_double);
 //	setFont(BOLD);
-	DBG_printVal(TEXT_COL1, TEXT_ROW2, "af:", REG_A << 8| REG_F ,16,4);
-	DBG_printVal(TEXT_COL1, TEXT_ROW3, "bc:", REG_BC,16,4);
-	DBG_printVal(TEXT_COL1, TEXT_ROW4, "de:", REG_DE,16,4);
-	DBG_printVal(TEXT_COL1, TEXT_ROW5, "hl:", REG_HL,16,4);
-	DBG_printVal(TEXT_COL1, TEXT_ROW6, "sp:", REG_SP,16,4);
-	DBG_printVal(TEXT_COL1, TEXT_ROW7, "pc:", REG_PC,16,4);
-	DBG_printVal(TEXT_COL1, TEXT_ROW9, "LCDC:", IOLCDC,16,2);
-	DBG_printVal(TEXT_COL1, TEXT_ROW10,"STAT:", IOSTAT, 16, 2);
-	DBG_printVal(TEXT_COL1, TEXT_ROW11,"LY:  ", IOLY,16,2);
-	DBG_printVal(TEXT_COL1, TEXT_ROW12,"LYC: ", IOLYC, 16, 2);
-	DBG_printVal(TEXT_COL1, TEXT_ROW13,"SCX: ", IOSCX, 16, 2);
-	DBG_printVal(TEXT_COL1, TEXT_ROW14,"SCY: ", IOSCY, 16, 2);
-	DBG_printVal(TEXT_COL1, TEXT_ROW15,"WX:  ", IOWX, 16, 2);
-	DBG_printVal(TEXT_COL1, TEXT_ROW16,"WY:  ", IOWY, 16, 2);
+	DBG_printVal(TEXT_COL1, TEXT_ROW2, "af:", DBG_REG_A << 8 | DBG_REG_F ,16,4);
+	DBG_printVal(TEXT_COL1, TEXT_ROW3, "bc:", DBG_REG_BC,16,4);
+	DBG_printVal(TEXT_COL1, TEXT_ROW4, "de:", DBG_REG_DE,16,4);
+	DBG_printVal(TEXT_COL1, TEXT_ROW5, "hl:", DBG_REG_HL,16,4);
+	DBG_printVal(TEXT_COL1, TEXT_ROW6, "sp:", DBG_REG_SP,16,4);
+	DBG_printVal(TEXT_COL1, TEXT_ROW7, "pc:", DBG_REG_PC,16,4);
+	DBG_printVal(TEXT_COL1, TEXT_ROW9, "LCDC:", DBG_REG_IOLCDC,16,2);
+	DBG_printVal(TEXT_COL1, TEXT_ROW10,"STAT:", DBG_REG_IOSTAT, 16, 2);
+	DBG_printVal(TEXT_COL1, TEXT_ROW11,"LY:  ", DBG_REG_IOLY,16,2);
+	DBG_printVal(TEXT_COL1, TEXT_ROW12,"LYC: ", DBG_REG_IOLYC, 16, 2);
+	DBG_printVal(TEXT_COL1, TEXT_ROW13,"SCX: ", DBG_REG_IOSCX, 16, 2);
+	DBG_printVal(TEXT_COL1, TEXT_ROW14,"SCY: ", DBG_REG_IOSCY, 16, 2);
+	DBG_printVal(TEXT_COL1, TEXT_ROW15,"WX:  ", DBG_REG_IOWX, 16, 2);
+	DBG_printVal(TEXT_COL1, TEXT_ROW16,"WY:  ", DBG_REG_IOWY, 16, 2);
 
-	DBG_printVal(TEXT_COL2, TEXT_ROW1, "IE:  ", IOIE, 16, 2);
-	DBG_printVal(TEXT_COL2, TEXT_ROW2, "IF:  ", IOIF, 16, 2);
-	DBG_printVal(TEXT_COL2, TEXT_ROW3, "TIMA:", IOTIMA,16,2);
-	DBG_printVal(TEXT_COL2, TEXT_ROW4, "TMA: ", IOTMA, 16, 2);
-	DBG_printVal(TEXT_COL2, TEXT_ROW5, "TAC: ", IOTAC, 16, 2);
-	DBG_printVal(TEXT_COL2, TEXT_ROW6, "DIV: ", IODIV,16,2);
+	DBG_printVal(TEXT_COL2, TEXT_ROW1, "IE:  ", DBG_REG_IOIE, 16, 2);
+	DBG_printVal(TEXT_COL2, TEXT_ROW2, "IF:  ", DBG_REG_IOIF, 16, 2);
+	DBG_printVal(TEXT_COL2, TEXT_ROW3, "TIMA:", DBG_REG_IOTIMA,16,2);
+	DBG_printVal(TEXT_COL2, TEXT_ROW4, "TMA: ", DBG_REG_IOTMA, 16, 2);
+	DBG_printVal(TEXT_COL2, TEXT_ROW5, "TAC: ", DBG_REG_IOTAC, 16, 2);
+	DBG_printVal(TEXT_COL2, TEXT_ROW6, "DIV: ", DBG_REG_IODIV,16,2);
 
-	DBG_printVal(TEXT_COL2, TEXT_ROW8, "IME: ", IME, 16, 1);
-	DBG_printVal(TEXT_COL2, TEXT_ROW9, "HALT:", halt_state, 16, 1);
+	DBG_printVal(TEXT_COL2, TEXT_ROW8, "IME: ", DBG_REG_IME, 16, 1);
+	DBG_printVal(TEXT_COL2, TEXT_ROW9, "HALT:", DBG_REG_HALT, 16, 1);
 	
 #endif
 }
@@ -216,7 +257,7 @@ unsigned char p = 160;
 	{
 		x = drawInt(0,p+(i*8),addr,16,4)+8;
 		for(j=0; j < 16; j++)
-	 		x = drawInt(x,p+(i*9),memoryRead(addr++),16,2);	
+	 		x = drawInt(x,p+(i*9),memoryRead(&DBG_CPU, addr++),16,2);
 	}
 #endif	
 }
@@ -227,15 +268,15 @@ void DBG_DumpStackFrame(void)
 {
 	unsigned short x,_sp;
 	signed char i;
-	_sp = regs.SP;
+	_sp = DBG_CPU.SP;
 	LIB2D_SetFcolor(LCD_PINK);
 	
 	for(i=7; i >-1 ; i--)
 	{	
 		x = drawInt(0,i*8,_sp,16,4);
 		x = LIB2D_Char(x,i*8,':');
-		x = drawInt(x,i*8,memoryRead(_sp+1),16,2);
-		x = drawInt(x,i*8,memoryRead(_sp),16,2);
+		x = drawInt(x,i*8,memoryRead(&DBG_CPU, _sp+1),16,2);
+		x = drawInt(x,i*8,memoryRead(&DBG_CPU, _sp),16,2);
 		_sp +=2;	
 	}
 }
@@ -249,7 +290,7 @@ void DBG_DrawTileLine(uint8_t msb, uint8_t lsb) {
 	for (i = 0; i < 8; i++) {
 		color = (msb & 0x80) ? 2 : 0;
 		color |= (lsb & 0x80) ? 1 : 0;
-		color = (IOBGP >> (color << 1));
+		color = (DBG_CPU.IOBGP >> (color << 1));
 		//LCD_Data(lcd_pal[color & 3]);
 		msb <<= 1;
 		lsb <<= 1;
@@ -270,17 +311,17 @@ void DBG_BGmap(void) {
 	TileData *td;
 	uint8_t offset;
 
-	bgmapbase = (uint8_t*)(vram + ((IOLCDC & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
+	bgmapbase = (uint8_t*)(DBG_CPU.vram + ((DBG_CPU.IOLCDC & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 
 	for (h = 0; h < 32; h++) {
 		for (w = 0; w < 32; w++) {
 			offset = *(bgmapbase + w + (h * 32));
 
-			if (IOLCDC & BG_W_DATA) {
-				td = (TileData*)(vram)+offset;
+			if (DBG_CPU.IOLCDC & BG_W_DATA) {
+				td = (TileData*)(DBG_CPU.vram)+offset;
 			}
 			else {
-				td = (TileData*)(vram + TILE_DATA1_SIGNED_BASE) + (int8_t)(offset);
+				td = (TileData*)(DBG_CPU.vram + TILE_DATA1_SIGNED_BASE) + (int8_t)(offset);
 			}
 			DBG_DrawTile(w, h, td);
 		}
@@ -436,7 +477,7 @@ static void debugCommand(void){
 				}
 			}
 			else if (!strcmp(cmd, "reset")) {
-				initCpu();
+				initCpu(&DBG_CPU);
 			}
 		}
 

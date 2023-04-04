@@ -9,14 +9,14 @@ void disassembleHeader(void) {
 	printf("\n\t\tInstruction\n");
 }
 
-void disassemble(void){
+void disassemble(cpu_t *cpu){
 uint8_t src;
 uint8_t dst;
 uint8_t opcode;
 
     printf("PC: %04X\t", REG_PC);
 
-    opcode = memoryRead(REG_PC);	
+    opcode = memoryRead(cpu, REG_PC);	
 	src = (opcode & 0x07);	
     dst = ((opcode >> 3) & 0x07);
 
@@ -46,7 +46,7 @@ uint8_t opcode;
 		case 0x26:
 		case 0x2E:
         case 0x3E:
-            printf("ld %c,$%02x\t",rname[dst],memoryRead(REG_PC+1));		
+            printf("ld %c,$%02x\t",rname[dst],memoryRead(cpu, REG_PC+1));		
 			break;	
 			
 		case 0x40: // LD Rn,Rm
@@ -121,31 +121,31 @@ uint8_t opcode;
             printf("ld (HL),%c\t",rname[src]);break;	
                 
         case 0x36: // LD (HL),n
-            printf("ld (HL),%02x\t",memoryRead(REG_PC+1));break;
+            printf("ld (HL),%02x\t",memoryRead(cpu, REG_PC+1));break;
 			
         case 0x0A: // LD A,(BC)
-            printf("ld a,(BC),%02x\t",memoryRead(REG_BC+1));break;
+            printf("ld a,(BC),%02x\t",memoryRead(cpu, REG_BC+1));break;
 			
         case 0x1A: // LD A,(DE)
-            printf("ld a,(DE),%02x\t",memoryRead(REG_DE+1));break;		
+            printf("ld a,(DE),%02x\t",memoryRead(cpu, REG_DE+1));break;
 						
         case 0xFA: // LD A,(nn)
-            printf("ld a,($%04x)\t",memoryRead16(REG_PC+1));break;		
+            printf("ld a,($%04x)\t",memoryRead16(cpu, REG_PC+1));break;
 			
         case 0x02: // LD (BC),A
             printf("ld (BC),a\t"); break;		
 		case 0x12: // LD (DE),A
 			printf("ld (DE),a\t"); break;		
         case 0xEA: // LD (nn),A
-            printf("ld ($%04x),a\t",memoryRead16(REG_PC+1)); break;			
+            printf("ld ($%04x),a\t",memoryRead16(cpu, REG_PC+1)); break;
         case 0xF2: // LD A,($FF00+C)
             printf("ld a,($%04x)\t",0xFF00 + REG_C); break;		
 		case 0xE2: // LD ($FF00+C),A
 			printf("ld ($%04x),a\t",0xFF00 + REG_C); break;		
         case 0xE0: // LD ($FF00+n),A
-            printf("ld ($%04x),a\t",0xFF00 + memoryRead(REG_PC+1)); break;			
+            printf("ld ($%04x),a\t",0xFF00 + memoryRead(cpu, REG_PC+1)); break;
 		case 0xF0: // LD A,($FF00+n)
-			printf("ld a,($%04x)\t",0xFF00 + memoryRead(REG_PC+1)); break;			
+			printf("ld a,($%04x)\t",0xFF00 + memoryRead(cpu, REG_PC+1)); break;
         case 0x22: // LD (HLI),A 
             printf("ld (hl+),a\t"); break;
 		case 0x32: // LD (HLD),A
@@ -156,19 +156,19 @@ uint8_t opcode;
 			printf("ld a,(hl-)\t"); break;      		
 // 16bit loads	
         case 0x01: // LD n,nn
-            printf("ld bc,$%04x\t", memoryRead16(REG_PC+1)); break;
+            printf("ld bc,$%04x\t", memoryRead16(cpu, REG_PC+1)); break;
         case 0x11:
-            printf("ld de,$%04x\t", memoryRead16(REG_PC+1)); break;
+            printf("ld de,$%04x\t", memoryRead16(cpu, REG_PC+1)); break;
         case 0x21:
-            printf("ld hl,$%04x\t", memoryRead16(REG_PC+1)); break;			
+            printf("ld hl,$%04x\t", memoryRead16(cpu, REG_PC+1)); break;
 		case 0x31: 
-			printf("ld sp,$%04x\t", memoryRead16(REG_PC+1)); break;			
+			printf("ld sp,$%04x\t", memoryRead16(cpu, REG_PC+1)); break;
 		case 0xF9: // LD SP,HL
 			printf("ld sp,hl\t"); break;			
         case 0xF8: // LD HL,SP+n
             printf("ld hl,sp+n\t"); break;				
         case 0x08: // LD (nn),SP
-             printf("ld ($%04x),sp\t", memoryRead16(REG_PC+1)); break;			
+             printf("ld ($%04x),sp\t", memoryRead16(cpu, REG_PC+1)); break;
         case 0xC5: // PUSH Rnn
             printf("push bc\t\t"); break;		
         case 0xD5:
@@ -261,21 +261,21 @@ uint8_t opcode;
             printf("cp (hl)\t\t"); break;
             		
         case 0xC6: // ADD A,#
-            printf("add a,%02x\t", memoryRead(REG_PC+1)); break;
+            printf("add a,%02x\t", memoryRead(cpu, REG_PC+1)); break;
         case 0xCE: // ADC #
-            printf("adc a,%02x\t", memoryRead(REG_PC+1)); break;
+            printf("adc a,%02x\t", memoryRead(cpu, REG_PC+1)); break;
         case 0xD6: // SUB #
-            printf("sub a,%02x\t", memoryRead(REG_PC+1)); break;
+            printf("sub a,%02x\t", memoryRead(cpu, REG_PC+1)); break;
         case 0xDE: // SBC A,#
-            printf("sbc a,%02x\t", memoryRead(REG_PC+1)); break;
+            printf("sbc a,%02x\t", memoryRead(cpu, REG_PC+1)); break;
         case 0xE6: // AND #		
-            printf("and a,%02x\t", memoryRead(REG_PC+1)); break;
+            printf("and a,%02x\t", memoryRead(cpu, REG_PC+1)); break;
         case 0xEE: // XOR #
-            printf("xor a,%02x\t", memoryRead(REG_PC+1)); break;
+            printf("xor a,%02x\t", memoryRead(cpu, REG_PC+1)); break;
         case 0xF6: // OR #
-            printf("or a,%02x\t", memoryRead(REG_PC+1)); break;
+            printf("or a,%02x\t", memoryRead(cpu, REG_PC+1)); break;
 		case 0xFE: // CP #
-			printf("cp %02x\t", memoryRead(REG_PC+1)); break;
+			printf("cp %02x\t", memoryRead(cpu, REG_PC+1)); break;
 			
 		case 0x04: // INC rn
 		case 0x0C:
@@ -306,7 +306,7 @@ uint8_t opcode;
 		case 0x29: printf("add hl,hl\t");  break;
 		case 0x39: printf("add hl,sp\t");  break;			
 		case 0xE8: // ADD SP,#				
-			printf("add sp,$%2x\t", memoryRead(REG_PC));			
+			printf("add sp,$%2x\t", memoryRead(cpu, REG_PC));
 			
 		// INC Rnn - no flags affected
 		case 0x03: printf("inc bc\t\t");  break;
@@ -337,25 +337,25 @@ uint8_t opcode;
 		case 0x1F: printf("rra\t\t"); break;
 			
 // Jumps			
-		case 0xC3: printf("jp $%04x\t", memoryRead16(REG_PC+1)); break;			
-		case 0xC2: printf("jp nz,$%04x\t", memoryRead16(REG_PC+1)); break;
-		case 0xCA: printf("jp z,$%04x\t", memoryRead16(REG_PC+1)); break;
-		case 0xD2: printf("jp nc,$%04x\t", memoryRead16(REG_PC+1)); break;
-		case 0xDA: printf("jp c,$%04x\t", memoryRead16(REG_PC+1)); break;			
+		case 0xC3: printf("jp $%04x\t", memoryRead16(cpu, REG_PC+1)); break;
+		case 0xC2: printf("jp nz,$%04x\t", memoryRead16(cpu, REG_PC+1)); break;
+		case 0xCA: printf("jp z,$%04x\t", memoryRead16(cpu, REG_PC+1)); break;
+		case 0xD2: printf("jp nc,$%04x\t", memoryRead16(cpu, REG_PC+1)); break;
+		case 0xDA: printf("jp c,$%04x\t", memoryRead16(cpu, REG_PC+1)); break;
         case 0xE9: printf("jp (hl)\t"); break;
 		
-		case 0x18: printf("jr %04x\t", (REG_PC + 2) + (signed char)memoryRead(REG_PC+1)); break;			
-		case 0x20: printf("jr nz,%04x\t", (REG_PC + 2) + (signed char)memoryRead(REG_PC+1)); break;
-		case 0x28: printf("jr z,%04x\t", (REG_PC + 2) + (signed char)memoryRead(REG_PC+1)); break;			
-        case 0x30: printf("jr nc,%04x\t", (REG_PC + 2) + (signed char)memoryRead(REG_PC+1)); break;
-		case 0x38: printf("jr c,%04x\t", (REG_PC + 2) + (signed char)memoryRead(REG_PC+1)); break;			
+		case 0x18: printf("jr %04x\t", (REG_PC + 2) + (signed char)memoryRead(cpu, REG_PC+1)); break;
+		case 0x20: printf("jr nz,%04x\t", (REG_PC + 2) + (signed char)memoryRead(cpu, REG_PC+1)); break;
+		case 0x28: printf("jr z,%04x\t", (REG_PC + 2) + (signed char)memoryRead(cpu, REG_PC+1)); break;
+        case 0x30: printf("jr nc,%04x\t", (REG_PC + 2) + (signed char)memoryRead(cpu, REG_PC+1)); break;
+		case 0x38: printf("jr c,%04x\t", (REG_PC + 2) + (signed char)memoryRead(cpu, REG_PC+1)); break;
 			
 // Calls			
-		case 0xCD: printf("call $%04x\t", memoryRead16(REG_PC+1)); break;			
-		case 0xC4: printf("call nz,$%04x\t", memoryRead16(REG_PC+1)); break;
-		case 0xCC: printf("call z,$%04x\t", memoryRead16(REG_PC+1)); break;			
-		case 0xD4: printf("call nc,$%04x\t", memoryRead16(REG_PC+1)); break;
-		case 0xDC: printf("call c,$%04x\t", memoryRead16(REG_PC+1)); break;
+		case 0xCD: printf("call $%04x\t", memoryRead16(cpu, REG_PC+1)); break;
+		case 0xC4: printf("call nz,$%04x\t", memoryRead16(cpu, REG_PC+1)); break;
+		case 0xCC: printf("call z,$%04x\t", memoryRead16(cpu, REG_PC+1)); break;
+		case 0xD4: printf("call nc,$%04x\t", memoryRead16(cpu, REG_PC+1)); break;
+		case 0xDC: printf("call c,$%04x\t", memoryRead16(cpu, REG_PC+1)); break;
 			
 // Restarts
 		case 0xC7: // RST n
@@ -379,7 +379,7 @@ uint8_t opcode;
 // Miscellaneous
 		// SWAP, RLC, RL, RRC, RR, SLA, SRA, SRL, BIT, RST, SET
         case 0xCB:
-			opcode = memoryRead(REG_PC + 1);
+			opcode = memoryRead(cpu, REG_PC + 1);
 			src = (opcode & 0x07);
 			dst = ((opcode >> 3) & 0x07);
             switch(opcode)
