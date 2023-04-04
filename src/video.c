@@ -4,7 +4,7 @@
 #include "video.h"
 #include "cgbmu.h"
 
-static Object *visible_objs[MAX_LINE_OBJECTS];
+static Object *visible_objs[MAX_LINE_OBJECTS + 1];
 static uint8_t scanlinedata[SCREEN_W];		// one line of pixels
 
 //-----------------------------------------
@@ -219,16 +219,14 @@ void writeLYC(cpu_t *cpu, uint8_t newlyc){
 }
 
 void checkLine(cpu_t *cpu) {
-	uint8_t stat = cpu->IOSTAT & (~LYC_LY_FLAG);
+	cpu->IOSTAT &= ~LYC_LY_FLAG;
 
 	if(cpu->IOLY == cpu->IOLYC){
-		stat |= LYC_LY_FLAG;
-		if (stat & LYC_LY_IE) {			
+		cpu->IOSTAT |= LYC_LY_FLAG;
+		if (cpu->IOSTAT & LYC_LY_IE) {			
 			setInt(cpu, LCDC_IF);
 		}
 	}
-
-	cpu->IOSTAT = stat;
 }
 //-----------------------------------------
 // return true if frame is starting

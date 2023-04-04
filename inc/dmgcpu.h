@@ -177,16 +177,6 @@ typedef struct cpu_s{
     };
     uint16_t SP;
     uint16_t PC;
-    const uint8_t *rom0;
-    const uint8_t *rombank;
-    uint8_t vram[VRAM_SIZE];     // 0x8000-0x9FFF
-    uint8_t iram[IRAM_SIZE];     // 0xC000-0xBFFF
-    uint8_t oam[OAM_SIZE];       // 0xFE00-0xFEBF
-    uint8_t hram[256];           // 0xFF80-0xFFFE
-
-    uint8_t halt;
-    uint8_t stopped;
-    uint8_t IME;                 // interrupt master enable  Set and reset by DI,EI instructions
 
     uint8_t IOP1;                // 0xFF00 P1
     uint8_t IOSB;                // 0xFF01 Serial transfer data
@@ -210,6 +200,13 @@ typedef struct cpu_s{
     uint8_t IOWX;                // 0xFF4B window x
     uint8_t IOIE;                // 0xFFFF Interrupt Enable  0|0|0| P1 | Serial | Timer | Lcdc | V-blank |
 
+    const uint8_t *rom0;
+    const uint8_t *rombank;
+
+    uint8_t halt;
+    uint8_t stopped;
+    uint8_t IME;                 // interrupt master enable  Set and reset by DI,EI instructions
+    
     uint16_t instr_cycles;
     uint32_t video_cycles;
     uint16_t timer_cycles;
@@ -221,6 +218,12 @@ typedef struct cpu_s{
     void *cartridge_data;
     uint8_t(*cartridgeRead)(struct cpu_s *cpu, uint16_t address);
     void(*cartridgeWrite)(struct cpu_s *cpu, uint16_t address, uint8_t data);
+
+    uint8_t vram[VRAM_SIZE];     // 0x8000-0x9FFF
+    uint8_t iram[IRAM_SIZE];     // 0xC000-0xBFFF
+    uint8_t oam[OAM_SIZE];       // 0xFE00-0xFEBF
+    uint8_t hram[256];           // 0xFF80-0xFFFE
+
 }cpu_t;
 
 

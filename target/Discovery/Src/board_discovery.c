@@ -15,6 +15,13 @@ void vc_putchar(char c);
 uint32_t memavail(void);
 void dumpBuf(uint8_t *buf, uint32_t off, uint32_t size);
 
+uint32_t GetTick(void) {
+	return HAL_GetTick();
+}
+void DelayMs(uint32_t ms) {
+	HAL_Delay(ms);
+}
+
 FRESULT scan_files (char* path)
 {
     FRESULT res;

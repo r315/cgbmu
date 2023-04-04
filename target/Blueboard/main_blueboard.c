@@ -112,7 +112,7 @@ void fsInit(void)
 //--------------------------------------------------
 //
 //--------------------------------------------------
-int loadRom(char *fn)
+int loadRom(const uint8_t **dst, char *fn)
 {
 #if defined(USE_FS)
     WORD n;
@@ -178,7 +178,7 @@ int main (void){
 
     DBG_PIN_INIT;
 
-    loadRom("mario.gb");
+    loadRom(NULL, "mario.gb");
     
     cgbmu(cartridge);
 

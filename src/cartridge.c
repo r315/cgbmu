@@ -5,7 +5,6 @@
 #include <cgbmu.h>
 #include "cartridge.h"
 #include "dmgcpu.h"
-#include "board.h"
 
 typedef struct mbc1_s{
 	uint8_t bank;

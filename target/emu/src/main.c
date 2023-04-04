@@ -69,11 +69,17 @@ static const char *card_types[] = {
 	"CAMERA",
 };
 const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
-static uint8_t *MBC1_ROM = NULL;
 
 extern uint8_t done;
-
+static uint8_t *mbc1_rom;
 static cpu_t test_cpu;
+
+uint32_t GetTick(void) {
+	return SDL_GetTicks();
+}
+void DelayMs(uint32_t ms) {
+	SDL_Delay(ms);
+}
 
 void optParseFlag(void *opt){
 	*((uint8_t*)(((opt_t*)opt)->ctx)) |= ((opt_t*)opt)->flag;
@@ -105,7 +111,7 @@ void parseOptions(int argc, char **argv, int optc, opt_t *options) {
 #include <unistd.h>
 #endif
 
-int loadRom(char *file)
+int loadRom(const uint8_t **dst, char *file)
 {
 	char cwd[1024];
 	FILE *fp;
@@ -136,23 +142,24 @@ int loadRom(char *file)
 
 	printf("Reading %u bytes\n", sz);
 
-	MBC1_ROM = (uint8_t*)malloc(sz);
+	uint8_t *rom_data = (uint8_t*)malloc(sz);
 
-	n = fread(MBC1_ROM, 1, sz, fp);
+	n = fread(rom_data, 1, sz, fp);
 
-	uint8_t card_type = MBC1_ROM[CARTRIDGE_TYPE_OFFSET];
+	uint8_t card_type = rom_data[CARTRIDGE_TYPE_OFFSET];
 
 	printf("Card type: %s\n", card_types[card_type]);
 
-	printf("Game Title: %s\n", (char*)&MBC1_ROM[CARTRIDGE_TITLE_OFFSET]);
+	printf("Game Title: %s\n", (char*)&rom_data[CARTRIDGE_TITLE_OFFSET]);
 
 	if (card_type > CARTRIDGE_MBC1) {
 		printf("Warning ONLY CARTRIDGE MBC1 SUPPORTED \n");
-	
 	}
 
-	printf("Rom size %ukByte\n", 32 << MBC1_ROM[CARTRIDGE_SIZE_OFFSET]);
+	printf("Rom size %ukByte\n", 32 << rom_data[CARTRIDGE_SIZE_OFFSET]);
 	fclose(fp);
+
+	*dst = rom_data;
 	return n;
 }
 //-----------------------------------------
@@ -249,7 +256,7 @@ int loadTestRom(uint8_t nr) {
 	*(path + len) = '/';
 	strcpy(path + len + 1, test_roms[nr]);
 	
-	return loadRom(path);
+	return loadRom(&mbc1_rom, path);
 }
 
 void dry_run(const uint8_t *rom) {
@@ -283,14 +290,14 @@ void printHelp(void) {
 //-----------------------------------------------------------
 int main (int argc, char *argv[])
 {
-char *romfile = NULL;
-uint8_t flags = 0;
-opt_t options[] = {
-	{"-d", NULL, RUN_FLAG_DEBUG, &flags, optParseFlag},
-	{"-t", NULL, RUN_FLAG_TEST, &flags, optParseFlag},
-	{"-r", NULL, RUN_FLAG_FILE, &romfile,optParseStr},
-	//{"-i", NULL, RUN_FLAG_MODE, &instrs_test_rom_path, optParseStr}
-};
+	char *romfile = NULL;
+	uint8_t flags = 0;
+	opt_t options[] = {
+		{"-d", NULL, RUN_FLAG_DEBUG, &flags, optParseFlag},
+		{"-t", NULL, RUN_FLAG_TEST, &flags, optParseFlag},
+		{"-r", NULL, RUN_FLAG_FILE, &romfile,optParseStr},
+		//{"-i", NULL, RUN_FLAG_MODE, &instrs_test_rom_path, optParseStr}
+	};
 	
 	if(argc == 1) // no arguments
 	{
@@ -303,14 +310,14 @@ opt_t options[] = {
 	
 	parseOptions(argc, argv, sizeof(options)/sizeof(opt_t), options);
 
-#if 0
-	if(loadRom(romfile) > 0) {
+#if 1
+	if(loadRom(&mbc1_rom, romfile) > 0) {
 #else
 	if(loadTestRom(0) > 0){
 #endif
 		//dry_run(MBC1_ROM);		// Generic run
 
-		DBG_run(MBC1_ROM);		// Run loaded rom in debug mode
+		DBG_run(mbc1_rom);		// Run loaded rom in debug mode
 	
 		//cgbmu(MBC1_ROM);  // Run emulator in normal mode	
 	}
@@ -321,8 +328,8 @@ opt_t options[] = {
 
 	LCD_Close();
 
-	if(MBC1_ROM)
-		free(MBC1_ROM);
+	if(mbc1_rom)
+		free(mbc1_rom);
 
 	return 0;
 }

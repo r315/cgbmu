@@ -18,9 +18,6 @@
 
 #define DBG_PIN_TOGGLE
 
-#define GetTick SDL_GetTicks
-#define DelayMs	SDL_Delay
-
 #define SCREEN_OFFSET_X		0
 #define SCREEN_OFFSET_Y		0
 

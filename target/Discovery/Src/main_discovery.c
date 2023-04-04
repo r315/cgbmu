@@ -119,7 +119,7 @@ void pushScanLine(uint8_t ly, uint8_t *scanline){
  * @param fn 
  * @return int 
  */
-int loadRom(char *fn)
+int loadRom(const uint8_t **dst, char *fn)
 {
     //cartridgeInit(cartridge);
     //return ROM_SIZE;

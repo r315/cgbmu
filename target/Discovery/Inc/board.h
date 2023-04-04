@@ -12,9 +12,6 @@ extern "C" {
 
 #define DBG_PIN_TOGGLE
 
-#define DelayMs HAL_Delay
-#define GetTick HAL_GetTick
-
 enum {false = 0, true, OFF = false, ON = true};
 
 #define SCREEN_OFFSET_X     0

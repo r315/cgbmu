@@ -52,7 +52,7 @@ void pushScanLine(uint8_t ly, uint8_t *scanline){
     LCD_WriteArea(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + ly, SCREEN_W, 1, tft_line);
 }
 
-int loadRom(char *fn)
+int loadRom(const uint8_t **dst, char *fn)
 {
     //load from SD Card here
     //cartridgeInit(&CARTRIDGE_NAME);

@@ -66,6 +66,9 @@ static uint8_t cb_decode(cpu_t *cpu)
 #else
 
 //-----------------------------------------
+// Decoder that uses opcode bits to decode 
+// instruction to be executed.
+// The only gain is code size
 //-----------------------------------------
 void decode(cpu_t *cpu)
 {

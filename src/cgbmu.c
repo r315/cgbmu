@@ -1,4 +1,4 @@
-#include "board.h"
+#include <stddef.h>
 #include "cartridge.h"
 #include "cgbmu.h"
 #include "video.h"
@@ -11,7 +11,7 @@ static uint8_t done;
 static cpu_t dmgcpu;
 
 void cgbmuExit(void){
-	done = true;
+	done = 1;
 }
 
 void updateFps(void) {
@@ -110,7 +110,7 @@ uint8_t runOneStep(void) {
 void cgbmu(const uint8_t *rom) {
 	uint8_t mode = SINGLE_STEP;
 	uint32_t ticks = 0;
-	done = false;
+	done = 0;
 	
 	if(rom == NULL){
 		bootCpu(&dmgcpu);

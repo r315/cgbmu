@@ -6,7 +6,6 @@ http://meatfighter.com/gameboy
 
 */
 #include <stdint.h>
-#include "board.h"
 #include "dmgcpu.h"
 #include "video.h"
 #include "cartridge.h"
@@ -48,7 +47,7 @@ static const uint8_t boot_rom [] = {
 void setInt(cpu_t *cpu, uint8_t irq) {
 	cpu->IOIF |= irq;
 	if (cpu->IOIE & irq) {
-		cpu->halt = false;
+		cpu->halt = 0;
 	}
 }
 
@@ -414,7 +413,7 @@ void initCpu(cpu_t *cpu)
 	cpu->IOSC = 0x7E;
 	cpu->IOSB = 0x00;
 
-	cpu->halt = false;
+	cpu->halt = 0;
 
 	cpu->div_cycles = 0;
 	cpu->timer_cycles = 0;

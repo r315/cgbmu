@@ -229,7 +229,7 @@ static void bit(cpu_t *cpu, uint8_t b, uint8_t r){
  * @brief Misc/control instructions
  */
 uint8_t nop(cpu_t *cpu){ return ONE_CYCLE;}
-uint8_t stop(cpu_t *cpu){ cpu->stopped = 1; return ONE_CYCLE; }
+uint8_t stop(cpu_t *cpu){ cpu->stopped = 1; return ONE_CYCLE; } // TODO: Implement properly
 uint8_t scf(cpu_t *cpu){ PSW &= ~(FN | FH); PSW |= FC; return ONE_CYCLE; }
 uint8_t cpl(cpu_t *cpu){ REG_A = ~REG_A; PSW |= FN | FH; return ONE_CYCLE; }
 uint8_t ccf(cpu_t *cpu){ PSW &= ~( FN | FH); PSW ^= FC; return ONE_CYCLE; }
