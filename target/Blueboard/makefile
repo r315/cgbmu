@@ -1,4 +1,4 @@
-TARGET 		=$(BUILD_DIR)/bbcgbemu
+TARGET 		=$(BUILD_DIR)/bb-cgbmu
 
 BUILD_DIR   :=build
 BOARD_PATH 	=$(CURDIR)
@@ -51,6 +51,7 @@ LSCRIPT =$(BOARD_PATH)/lpc1768_gb.ld
 
 #########################################################################
 #  Compiler Options
+DEVICE =LPC1768
 
 CPU =-mcpu=cortex-m3 -mthumb
 
@@ -90,7 +91,14 @@ SIZE = $(GCC_EXEC_PREFIX)size
 OBJCOPY = $(GCC_EXEC_PREFIX)objcopy
 OBJDUMP = $(GCC_EXEC_PREFIX)objdump
 REMOVE = rm -fR
-CHECKSUM =$(LIBEMB_PATH)/bsp/tools/checksum
+
+
+ifeq ($(shell uname -s), Linux)
+JLK ="/opt/SEGGER/JLink/JLinkExe"
+else
+CHECKSUM ="C:\Tools\bin\checksum"
+JLK =$(JLINK)/jlink
+endif
 #########################################################################
 
 all: $(TARGET).elf size
@@ -102,7 +110,7 @@ $(TARGET).elf: $(OBJECTS) $(ROM_OBJ)
 $(TARGET).bin: $(TARGET).elf 
 	$(OBJCOPY) -O binary $(TARGET).elf $@
 #hd -n 128 $@
-	@echo "---- Generating checksum ----"
+	@echo "[CK] $@"
 	@$(CHECKSUM) $@
 
 #https://balau82.wordpress.com/2012/02/19/linking-a-binary-blob-with-gcc
@@ -110,17 +118,26 @@ $(ROM_OBJ): $(ROM_FILE)
 	$(OBJCOPY) -I binary -O elf32-littlearm --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0 $< $@
 	@$(OBJDUMP) -t $@
 	
-$(CHECKSUM):
-	@gcc $@.c -o $@
-
-blueboard.cfg:
-	@echo "---- Generating opencod configuration file ----"
+$(TARGET)_.cfg:
+	@echo "Creating configuration file for st-link probe"
 	@echo "adapter driver st-link" > $@
 	@echo "transport select dapdirect_swd" >> $@
 	@echo "st-link vid_pid 0x0483 0x3748" >> $@
 	@echo "adapter speed 4000" >> $@
-	@echo "source [find target/lpc17xx.cfg]" >> $@
+	@echo "source [find board/mcb1700.cfg]" >> $@
+
+$(TARGET).cfg: #openocd with jlink probe
+	@echo "Creating configuration file for jlink probe"
+	@echo "# windows driver must be libusb" > $@
+	@echo "adapter driver jlink" >> $@
+	@echo "transport select "swd"" >> $@
+	@echo "source [find board/mcb1700.cfg]" >> $@
 	
+$(TARGET).jlink: $(TARGET).bin
+	@echo "Creating Jlink configuration file"
+	@echo "loadfile $< 0x00000000" >> $@
+	@echo "r" >> $@
+	@echo "q" >> $@
 
 list: $(TARGET).elf
 	@echo "---- Listing ----"
@@ -136,8 +153,11 @@ clean:
 clean-rom:
 	$(VERBOSE)-rm -f $(ROM_OBJ)
 
-program: $(TARGET).bin $(TARGET).cfg $(CHECKSUM)
-	openocd -f $(TARGET).cfg -c "program $(TARGET).bin 0x00000000 verify reset exit"
+program: $(TARGET).bin $(TARGET).cfg
+	openocd -f $(TARGET).cfg -c "program $< 0x00000000 verify reset exit"
+
+_program: $(TARGET).jlink $(TARGET).bin
+	$(VERBOSE)$(JLK) -device $(DEVICE) -if SWD -speed auto -CommanderScript $<
 
 $(BUILD_DIR):
 	mkdir -p $@

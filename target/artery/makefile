@@ -1,7 +1,7 @@
 ######################################
 # target
 ######################################
-TARGET =gbemu
+TARGET =artery-cgbmu
 
 #######################################
 # paths
@@ -76,7 +76,7 @@ OCD_CONFIG =$(BOARD_PATH)/at32f415.cfg
 
 # C defines
 C_DEFS +=\
-AT32F415CBT7 \
+$(DEVICE) \
 USE_STDPERIPH_DRIVER
 #######################################
 # binaries
@@ -98,10 +98,17 @@ ifeq ($(GCC_COLORS), )
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 #unexport GCC_COLORS
 endif
+
+ifeq ($(shell uname -s), Linux)
+JLK ="/opt/SEGGER/JLink/JLinkExe"
+else
+JLK =$(JLINK)/jlink
+endif
 #######################################
 # CFLAGS
 #######################################
 # cpu
+DEVICE =AT32F415CBT7
 CPU =-mcpu=cortex-m4 -mthumb
 
 # fpu
@@ -168,8 +175,8 @@ all: $(BUILD_DIR)/$(TARGET).elf size
 
 bin: $(BUILD_DIR)/$(TARGET).bin
 
-program: $(BUILD_DIR)/$(TARGET).elf
-	openocd -f $(OCD_CONFIG) -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+program: $(BUILD_DIR)/$(TARGET).jlink bin
+	$(VERBOSE)$(JLK) -device $(DEVICE) -if SWD -speed auto -CommanderScript $<
 
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	@echo "[CC]  $<"
@@ -205,6 +212,12 @@ $(ROM_OBJ): $(ROM_FILE)
 	$(OBJCOPY) -I binary -O elf32-littlearm --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0  $< $@
 	@$(OBJDUMP) -t $@
 #--rename-section .data=.rodata
+
+$(BUILD_DIR)/$(TARGET).jlink: $(BUILD_DIR)/$(TARGET).bin
+	@echo "Creating Jlink configuration file"
+	@echo "loadfile $< 0x00000000" > $@
+	@echo "r" >> $@
+	@echo "q" >> $@
 #######################################
 # clean up
 #######################################

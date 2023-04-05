@@ -19,7 +19,7 @@ emu:
 bb:
 	@"$(MAKE)" $(TARGET_BB_PARAM) $(EMU_PARAM)
 bb-program: bb
-	@"$(MAKE)" $(TARGET_BB_PARAM) program
+	@"$(MAKE)" $(TARGET_BB_PARAM) $(EMU_PARAM) program
 bb-rebuild-rom:
 	@"$(MAKE)" $(TARGET_BB_PARAM) clean-rom
 	@"$(MAKE)" bb
@@ -27,13 +27,15 @@ bb-rebuild-rom:
 disco: 
 	"$(MAKE)" $(TARGET_DISCO_PARAM) $(EMU_PARAM)
 disco-program: disco
-	@"$(MAKE)" $(TARGET_DISCO_PARAM) program
+	@"$(MAKE)" $(TARGET_DISCO_PARAM) $(EMU_PARAM) program
 disco-rebuild-rom:
 	@"$(MAKE)" $(TARGET_DISCO_PARAM) clean-rom
 	@"$(MAKE)" disco-program
 
 artery: 
 	@"$(MAKE)" $(TARGET_ARTERY_PARAM) $(EMU_PARAM)
+artery-program: artery
+	@"$(MAKE)" $(TARGET_ARTERY_PARAM) $(EMU_PARAM) program
 artery-rebuild-rom:
 	@"$(MAKE)" $(TARGET_ARTERY_PARAM) clean-rom
 	@"$(MAKE)" artery
