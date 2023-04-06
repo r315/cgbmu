@@ -89,40 +89,54 @@ void blitObjectData(cpu_t *cpu, obj_t *obj, uint8_t *dst) {
 		}while(start < end);
 	}
 }
-/**-------------------------------------------------------
-* @brief put one line from screen buffer (256x256px) into scanlinedata
+/**
+* @brief Combine one line of background/window tiles to screen buffer line
 *        
-* @param mapline		pointer to first tile for the current scanline
-* @param dst			pointer for current scanline data
-* @param pixeloffset	start pixel for current scanline
-* @param line           the line to put
-* @param size			SCREEN_W for background, WX for window (not implemented yet)
-*---------------------------------------------------------*/
-void blitTileData(cpu_t *cpu, uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint8_t size) {
-	uint8_t tileindex, msb, lsb, color;
-	tile_t *td;
+* @param cpu            cpu structure were palettes and video buffers reside
+* @param tilemapline	Source tile map with added offset (LY + SCY)
+* @param dst			Destination buffer for pixel color
+* @param pixeloffset	Start pixel for current scanline (SCX)
+* @param line           Current screen line being drawn  (SCY + LY)
+* @param size			Number of pixel to blit
+* */
+void blitTileData(cpu_t *cpu, uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint32_t count) {
+	uint8_t tilepattern, msb, lsb, color;
+	uint8_t *pal;
+	tiledata_t *td;
 
-	line = TILE_LINE(line);				// Mask line in tile 
+	line = TILE_LINE(line);                   // Mask line within the tile 
+	pal = cpu->bgpal;	
 
-	while (size) {
-		tileindex = *(tilemapline + TILE_INDEX(pixeloffset));  // add pixel offset with wraparround
-		td = (cpu->IOLCDC & BG_W_DATA) ? (tile_t*)(cpu->vram) + tileindex : (tile_t*)(cpu->vram + TILE_DATA1_SIGNED_BASE) + (int8_t)tileindex;
+    uint32_t npixel = TILE_LINE(pixeloffset); // SCX offset is only affects start tile
+    uint32_t mask = (0x80 >> npixel);		  // create correct mask for first tile
+    npixel = TILE_W - npixel;                 // Compute number of pixel to blit on first tile
+
+	do{ // loop through all pixels for current line
+		tilepattern = *(tilemapline + TILE_INDEX(pixeloffset)); // Implicit  mod(pixeloffset, 256) ensures line wraparound
+		// Get tile data from active tile data memory
+		td = (cpu->IOLCDC & BG_W_DATA) ? (tiledata_t*)(cpu->vram) + tilepattern : (tiledata_t*)(cpu->vram + TILE_DATA1_SIGNED_BASE) + (int8_t)tilepattern;
 		msb = td->line[line].msb;
 		lsb = td->line[line].lsb;
-		msb <<= TILE_LINE(pixeloffset);
-		lsb <<= TILE_LINE(pixeloffset);
-
-		do {			
-			color = (msb & 0x80) ? 2 : 0;
-			color |= (lsb & 0x80) ? 1 : 0;
-			msb <<= 1;
-			lsb <<= 1;
-			color = (cpu->IOBGP >> (color << 1)) & 3;
-			*(dst++) = color;	
-			pixeloffset++;
-			size--;
-		} while (TILE_PIXEL(pixeloffset) != 0 && size != 0);
-	}
+		// Update counters
+		pixeloffset += npixel;
+		count -= npixel;
+		// loop for all/remaining pixels of one tile
+		do {
+			// How to optimize this crap???
+			color = (msb & mask) ? 2 : 0;
+			color |= (lsb & mask) ? 1 : 0;			
+			*(dst++) = pal[color];
+			mask >>= 1;
+			npixel--;
+		} while (npixel);
+        // Done blitting 
+        if (!count) {
+            return;
+        }
+		// Compute how many pixel to blit next
+		npixel = (count > TILE_W) ? TILE_W : count;
+		mask = 0x80;
+	} while (1);
 }
 
 //-----------------------------------------
