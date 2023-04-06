@@ -230,16 +230,24 @@ typedef struct cpu_s{
     uint16_t serial_cycles;
     uint8_t  serial_bit;
 
+	obj_t **visible_objs;       // use pointers to avoid 
+	uint8_t *screen_line;       // out of bound offsets
+	uint8_t *oam;               // when indexing far structure members
+	uint8_t *hram;
+	uint8_t *vram;
+	uint8_t *iram;
+
     void *cartridge_data;
     uint8_t(*cartridgeRead)(struct cpu_s *cpu, uint16_t address);
     void(*cartridgeWrite)(struct cpu_s *cpu, uint16_t address, uint8_t data);
 
-    uint8_t vram[VRAM_SIZE];     // 0x8000-0x9FFF
-    uint8_t iram[IRAM_SIZE];     // 0xC000-0xBFFF
-    uint8_t oam[OAM_SIZE];       // 0xFE00-0xFEBF
-    uint8_t hram[256];           // 0xFF80-0xFFFE
-    obj_t *visible_objs[11 + 1];
-    uint8_t screen_line[160];    // one line of pixels
+    obj_t *_visible_objs[11 + 1];
+    uint8_t _screen_line[160];    // one line of pixels
+    uint8_t _oam[OAM_SIZE];       // 0xFE00-0xFEBF
+    uint8_t _hram[256];           // 0xFF80-0xFFFE
+    uint8_t _vram[VRAM_SIZE];     // 0x8000-0x9FFF
+    uint8_t _iram[IRAM_SIZE];     // 0xC000-0xBFFF
+	uint8_t id;
 }cpu_t;
 
 

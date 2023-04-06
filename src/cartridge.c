@@ -84,7 +84,8 @@ void cartridgeInit(cpu_t *cpu, const uint8_t *rom) {
 	case CARTRIDGE_MBC1:
 	case CARTRIDGE_MBC1_RAM:
 	case CARTRIDGE_MBC1_RAM_BAT:
-		mbc1 = &_mbc1; //(mbc1_t *)malloc(sizeof(mbc1_t)); // use for multiple cpu instances
+		mbc1 = &_mbc1;
+		//mbc1 = (mbc1_t *)malloc(sizeof(mbc1_t)); // use for multiple cpu instances
 		cpu->cartridge_data = mbc1;
 		cpu->cartridgeRead = mbc1Read;
 		cpu->cartridgeWrite = mbc1Write;

@@ -22,7 +22,7 @@ typedef struct _font_t{
 #endif
 
 #ifdef USE_DEFAULT_FONT
-extern font_t defaultFont;
+extern const font_t defaultFont;
 #endif
 
 #ifdef USE_DEFAULT_BOLD_FONT

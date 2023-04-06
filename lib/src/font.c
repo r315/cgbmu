@@ -232,7 +232,7 @@ const uint8_t defaultFontData[]={
 #endif /* USE_DEFAULT_EXTENDED_FONT */
 };
 
-font_t defaultFont = {
+const font_t defaultFont = {
     .w = 8,
     .h = 8,
     .data = defaultFontData,

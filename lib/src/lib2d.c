@@ -12,7 +12,7 @@ typedef struct lib2d_s{
 	char (*xgetchar)(void);
 	uint16_t forecolor;
 	uint16_t backcolor;
-	font_t *font;
+	const font_t *font;
 	uint16_t cx;
 	uint16_t cy;
 	uint16_t sc;
