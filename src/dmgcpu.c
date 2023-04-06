@@ -106,9 +106,6 @@ void writeTAC(cpu_t *cpu, uint8_t newtac){
 
 	cpu->IOTAC = newtac;
 }
-//-----------------------------------------
-//
-//-----------------------------------------
 
 void timer(cpu_t *cpu)
 {
@@ -134,6 +131,9 @@ void timer(cpu_t *cpu)
 	}
 }
 
+//-----------------------------------------
+//
+//-----------------------------------------
 void serial(cpu_t *cpu)
 {
 	if ((cpu->IOSC & (SC_TRF | SC_CLKI)) != (SC_CLKI | SC_TRF)) {
@@ -167,6 +167,32 @@ void writeSC(cpu_t *cpu, uint8_t new_sc) {
 //-----------------------------------------
 //
 //-----------------------------------------
+void writeBGP(cpu_t *cpu, uint8_t newbgp) {
+	cpu->IOBGP = newbgp;
+
+	for (uint8_t i = 0; i < 4; i++) {
+		cpu->bgpal[i] = newbgp & 3;
+		newbgp >>= 2;
+	}
+}
+
+void writeOBP0(cpu_t *cpu, uint8_t newbgp) {
+	cpu->IOOBP0 = newbgp;
+
+	for (uint8_t i = 0; i < 4; i++) {
+		cpu->obj0pal[i] = newbgp & 3;
+		newbgp >>= 2;
+	}
+}
+
+void writeOBP1(cpu_t *cpu, uint8_t newbgp) {
+	cpu->IOOBP1 = newbgp;
+
+	for (uint8_t i = 0; i < 4; i++) {
+		cpu->obj1pal[i] = newbgp & 3;
+		newbgp >>= 2;
+	}
+}
 
 void writeDMA(cpu_t *cpu, uint8_t newdma){
 	uint16_t src = newdma << 8;
@@ -194,14 +220,14 @@ uint8_t joyPad(cpu_t *cpu) {
 	uint8_t p1;
 
 	buttons = ~readButtons();   // read buttons, 0 means button pressed
-	p1 = cpu->IOP1;					// Old key presses are cleared on IOP1 write
+	p1 = cpu->IOP1;             // Old key presses are cleared on IOP1 write
 	if (!(p1 & IOP15)) {
 		buttons >>= 4;			// shift nible when P15 is active, filters dpad keys
 	}
 	
 	buttons |= 0xF0;            // create mask
 	
-	cpu->IOP1 = p1 & buttons;		// Filter pressed keys
+	cpu->IOP1 = p1 & buttons;   // Filter pressed keys
 	
 	return cpu->IOP1;
 }
@@ -345,9 +371,9 @@ void memoryWrite(cpu_t *cpu, uint16_t address, uint8_t data)
         case 0xFF44: return;				// read only
         case 0xFF45: writeLYC(cpu, data); return;
 		case 0xFF46: writeDMA(cpu, data); return;			
-        case 0xFF47: cpu->IOBGP = data; return;
-        case 0xFF48: cpu->IOOBP0 = data; return;
-        case 0xFF49: cpu->IOOBP1 = data; return;        
+        case 0xFF47: writeBGP(cpu, data); return;
+        case 0xFF48: writeOBP0(cpu, data); return;
+        case 0xFF49: writeOBP1(cpu, data); return;
         case 0xFF4A: cpu->IOWY = data; return;
         case 0xFF4B: cpu->IOWX = data; return;
         case 0xFFFF: cpu->IOIE = data; return;
@@ -399,9 +425,9 @@ void initCpu(cpu_t *cpu)
 	cpu->IOLY   = 0x00; 	 
     cpu->IOLYC  = 0x00;
 	cpu->IODMA  = 0xFF;
-	cpu->IOBGP  = 0xFC;
-    cpu->IOOBP0 = 0xFF;
-    cpu->IOOBP1 = 0xFF;
+	writeBGP(cpu, 0xFC);
+	writeOBP0(cpu, 0xFF);
+	writeOBP1(cpu, 0xFF);    
     cpu->IOWY   = 0x00;
     cpu->IOWX   = 0x00;
     
@@ -419,6 +445,14 @@ void initCpu(cpu_t *cpu)
 	cpu->timer_cycles = 0;
 	cpu->serial_cycles = 0;
 	cpu->video_cycles = 0;
+
+	cpu->visible_objs = cpu->_visible_objs;
+	cpu->screen_line = cpu->_screen_line;
+	cpu->oam = cpu->_oam;
+	cpu->hram = cpu->_hram;
+	cpu->vram = cpu->_vram;
+	cpu->iram = cpu->_iram;
+
 }
 
 void bootCpu(cpu_t *cpu)

@@ -137,12 +137,12 @@ typedef struct obj_s{
     uint8_t flags;      // |priority | Y Flip | X Flip | Palette number | - | - | - | - | 
 }obj_t;
 
-typedef struct tile_s {
+typedef struct tiledata_s {
 	struct {
 		uint8_t lsb;
 		uint8_t msb;
 	}line[8];
-}tile_t;
+}tiledata_t;
 
 /*
  15..8  7..0
@@ -240,6 +240,10 @@ typedef struct cpu_s{
     void *cartridge_data;
     uint8_t(*cartridgeRead)(struct cpu_s *cpu, uint16_t address);
     void(*cartridgeWrite)(struct cpu_s *cpu, uint16_t address, uint8_t data);
+
+	uint8_t bgpal[4];
+	uint8_t obj0pal[4];
+	uint8_t obj1pal[4];
 
     obj_t *_visible_objs[11 + 1];
     uint8_t _screen_line[160];    // one line of pixels

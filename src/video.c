@@ -11,7 +11,7 @@
 //-----------------------------------------
 void blitObjectData(cpu_t *cpu, obj_t *obj, uint8_t *dst) {
 	uint8_t pixel_mask, color, objline;
-	uint8_t pal = (obj->flags & OBJECT_FLAG_PAL) ? cpu->IOOBP1 : cpu->IOOBP0;
+	uint8_t *pal = (obj->flags & OBJECT_FLAG_PAL) ? cpu->obj1pal : cpu->obj0pal;
 	uint8_t pattern = obj->pattern;
 	uint8_t *end, *start;
 
@@ -27,7 +27,7 @@ void blitObjectData(cpu_t *cpu, obj_t *obj, uint8_t *dst) {
 	}
 
 	//Each Tile has 16bytes and one line of pixels needs 2 bytes
-	tile_t *td = (tile_t*)cpu->vram + pattern;
+	tiledata_t *td = (tiledata_t*)cpu->vram + pattern;
 	uint8_t lsb = td->line[objline].lsb;
 	uint8_t msb = td->line[objline].msb;
 
@@ -51,9 +51,8 @@ void blitObjectData(cpu_t *cpu, obj_t *obj, uint8_t *dst) {
 			color = (msb & pixel_mask) ? 2 : 0;
 			color |= (lsb & pixel_mask) ? 1 : 0;
 			if (color) {
-				color = (pal >> (color << 1)) & 3;
 				if(!(obj->flags & OBJECT_FLAG_PRIO) || !*start)
-					*start = color;
+					*start = pal[color];
 			}
 			pixel_mask <<= 1;
 			start++;
@@ -61,16 +60,19 @@ void blitObjectData(cpu_t *cpu, obj_t *obj, uint8_t *dst) {
 	}
 	else {
 		if (obj->x < SPRITE_W) {
+			// Clip sprite to screen start
 			pixel_mask = 0x80 >> (SPRITE_W - obj->x);
 			start = dst;
 			end = start + obj->x;
 		}
 		else if(obj->x > SCREEN_W){
+			// Clip sprite to screen end
 			pixel_mask = 0x80;
 			start = dst + (obj->x - SPRITE_W);
 			end = dst + SCREEN_W;
 		}
 		else {
+			// No clip
 			pixel_mask = 0x80;
 			start = dst + (obj->x - SPRITE_W);
 			end = start + SPRITE_W;
@@ -78,10 +80,9 @@ void blitObjectData(cpu_t *cpu, obj_t *obj, uint8_t *dst) {
 		do{
 			color = (msb & pixel_mask) ? 2 : 0;
 			color |= (lsb & pixel_mask) ? 1 : 0;
-			if (color) { // Color index 0 is transparent
-				color = (pal >> (color << 1)) & 3;
+			if (color) { // Color index 0 is transparent				
 				if (!(obj->flags & OBJECT_FLAG_PRIO) || !*start)
-					*start = color;
+					*start = pal[color];
 			}
 			pixel_mask >>= 1;
 			start++;
@@ -138,7 +139,7 @@ void scanOAM(cpu_t *cpu) {
 		return;
 	}
 
-	curline = cpu->IOLY + 16;	// Y position has a offset of 16pixels
+	curline = cpu->IOLY + 16;	// Y position has a offset of 16 pixel
 
 	n = 0;
 	h = (lcdc & OBJ_SIZE) ? SPRITE_H << 1 : SPRITE_H; // 8x16 objs
@@ -160,7 +161,7 @@ void scanOAM(cpu_t *cpu) {
 //-----------------------------------------
 void scanline(cpu_t *cpu) {
 	uint8_t *tilemapline;
-	uint8_t pixel, line;
+	uint8_t line;
 	uint8_t *sld = cpu->screen_line;
 
 	uint8_t lcdc = cpu->IOLCDC;
@@ -174,19 +175,19 @@ void scanline(cpu_t *cpu) {
 
 	memset(sld, 0, SCREEN_W);
 	blitTileData(cpu, tilemapline, sld, cpu->IOSCX, line, SCREEN_W);
-
+	// Draw window if active and visible
 	if (lcdc & W_DISPLAY && ly >= cpu->IOWY && cpu->IOWX < SCREEN_W + 7)
 	{
-		line = ly - cpu->IOWY;
-		sld = cpu->screen_line + cpu->IOWX - 7;				//destination offset given by IOWX, WX has an offset of 7
+		line = ly - cpu->IOWY;						// Calculate y offset from start of window
+		sld = cpu->screen_line + cpu->IOWX - 7;		// Calculate x offset from start of window, WX has an offset of 7
 		tilemapline = (uint8_t*)(cpu->vram + ((lcdc & W_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
 		tilemapline += TILE_LINE_INDEX(line);
 		blitTileData(cpu, tilemapline, sld, 0, line, SCREEN_W - cpu->IOWX + 7);
 	}
 
-	pixel = 0;
-	while (cpu->visible_objs[pixel] != NULL)
-		blitObjectData(cpu, cpu->visible_objs[pixel++], cpu->screen_line);
+	uint32_t idx = 0;
+	while (cpu->visible_objs[idx] != NULL)
+		blitObjectData(cpu, cpu->visible_objs[idx++], cpu->screen_line);
 
 	pushScanLine(cpu);
 }
