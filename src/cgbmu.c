@@ -5,7 +5,7 @@
 #include "dmgcpu.h"
 #include "decoder.h"
 
-enum{ SINGLE_FRAME, SINGLE_STEP};
+enum{ SINGLE_FRAME, SINGLE_STEP, FAST_RUN};
 
 static uint8_t done;
 static cpu_t dmgcpu;
@@ -129,6 +129,16 @@ void cgbmu(const uint8_t *rom) {
 				}
 				ticks = GetTick();
 			}
+		}
+	}
+	else if (mode == FAST_RUN) {
+		while (!done) {
+			decode(&dmgcpu);
+			if(video(&dmgcpu))
+				updateFps();
+			timer(&dmgcpu);
+			serial(&dmgcpu);
+			interrupts(&dmgcpu);
 		}
 	}
 	else {				// frame loop

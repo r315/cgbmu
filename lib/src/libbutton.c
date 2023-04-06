@@ -48,7 +48,7 @@ uint32_t cur;
                 break;
             }
             __button.cur = cur; // another key was pressed 
-            break;              // TODO: optionaly implement if one key is relesed
+            break;              // TODO: optionally implement if one key is released
 
         case BUTTON_TIMING:
             if(cur == BUTTON_EMPTY){

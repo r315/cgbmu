@@ -10,9 +10,9 @@
 //put one line of Sprite data into scanlinedata
 //-----------------------------------------
 void blitObjectData(cpu_t *cpu, obj_t *obj, uint8_t *dst) {
-	uint8_t pixel_mask, color, objline;
+	uint32_t pixel_mask, color, objline;
+	uint32_t pattern = obj->pattern;
 	uint8_t *pal = (obj->flags & OBJECT_FLAG_PAL) ? cpu->obj1pal : cpu->obj0pal;
-	uint8_t pattern = obj->pattern;
 	uint8_t *end, *start;
 
 	//Get pattern, for 8x16 mode the extra data is on the next pattern index
@@ -21,8 +21,8 @@ void blitObjectData(cpu_t *cpu, obj_t *obj, uint8_t *dst) {
 		objline = (obj->flags & OBJECT_FLAG_YFLIP) ? (SPRITE_8x16_H_MASK - 1 - objline) : objline;
 	}
 	else {
-		// Add line offset, 2byte per line
 		objline = TILE_LINE((cpu->IOLY - (obj->y - SPRITE_Y_OFFSET)));
+        // Y-FLIP is achieved reversing line index
 		objline = (obj->flags & OBJECT_FLAG_YFLIP) ? (SPRITE_H - 1 - objline) : objline;
 	}
 
@@ -143,7 +143,7 @@ void blitTileData(cpu_t *cpu, uint8_t *tilemapline, uint8_t *dst, uint8_t pixelo
 // Scan OAM for visible objects
 //-----------------------------------------
 void scanOAM(cpu_t *cpu) {
-	uint8_t h, n, curline, lcdc;
+	uint32_t h, n, curline, lcdc;
 	obj_t *pobj = (obj_t*)cpu->oam;
 
 	lcdc = cpu->IOLCDC;

@@ -222,13 +222,13 @@ typedef struct cpu_s{
     uint8_t stopped;
     uint8_t IME;                 // interrupt master enable  Set and reset by DI,EI instructions
     
-    uint16_t instr_cycles;
+    uint32_t instr_cycles;
     uint32_t video_cycles;
-    uint16_t timer_cycles;
+    uint32_t timer_cycles;
     uint32_t timer_ovf;
-	uint16_t div_cycles;
-    uint16_t serial_cycles;
-    uint8_t  serial_bit;
+	uint32_t div_cycles;
+    uint32_t serial_cycles;
+    uint32_t serial_bit;
 
 	obj_t **visible_objs;       // use pointers to avoid 
 	uint8_t *screen_line;       // out of bound offsets
