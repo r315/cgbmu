@@ -18,7 +18,7 @@
 #include "tests.h"
 #include "lib2d.h"
 
-#define MULTIPLE_CPUS	0
+#define MULTIPLE_CPUS	0 // Ensure dynamic allocation for cartridgs and SDL window with proper size
 
 typedef struct threadparam_s {
 	cpu_t *cpu;
@@ -84,7 +84,7 @@ static const char *card_types[] = {
 const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
 
 extern uint8_t done;
-static uint8_t *mbc1_rom;
+static const uint8_t *mbc1_rom;
 static cpu_t cpu_1, cpu_2, cpu_3, cpu_4;
 #if _WIN32 && MULTIPLE_CPUS
 HANDLE ghMutex;
@@ -298,7 +298,7 @@ void drawFps(cpu_t *cpu) {
 int loadTestRom(uint8_t nr) {
 	char *path = malloc(128);
 
-	strcpy(path, (const char*)ROM_PATH"/tests"); // Defined on project properties
+	strcpy(path, (const char*)ROMS_PATH"/tests");
 
 	int len = strlen(path);
 	*(path + len) = '/';
@@ -316,7 +316,7 @@ void threadRun(void *ptr) {
 
 	const uint8_t *rom_data;
 	threadparam_t *run = (threadparam_t*)ptr;
-	cpu_t *cpu, cpu_x;
+	cpu_t *cpu;
 
 	if(loadRom(&rom_data, run->romfile) == 0){
 		return;
@@ -417,7 +417,7 @@ int main (int argc, char *argv[])
 	LCD_Close();
 
 	if(mbc1_rom)
-		free(mbc1_rom);
+		free((void*)mbc1_rom);
 
 	return 0;
 }

@@ -10,14 +10,17 @@
 #include "video.h"
 #include "liblcd.h"
 #include "lib2d.h"
+#include "disassembler.h"
 
-#if defined(_WIN32) || defined(linux)
+#if defined(_WIN32)
 	#include <conio.h>
-	#include "disassembler.h"
-#else
+#endif
+
+#if !defined(_WIN32) && !defined(linux)
 void disassembleHeader(void){}
 void disassemble(cpu_t *cpu){}
 #endif
+
 #define FRAME_TIME 16
 #define BREAK_CONDITION(_cond_) if((_cond_)){ printf("break hit %d\n", ++break_count); dbg_state = DBG_BREAK; break; }
 
@@ -297,7 +300,7 @@ void DBG_DrawTileLine(uint8_t msb, uint8_t lsb) {
 	}
 }
 
-void DBG_DrawTile(uint8_t x, uint8_t y, tile_t *td) {
+void DBG_DrawTile(uint8_t x, uint8_t y, tiledata_t *td) {
 	uint8_t i;
 	//LCD_Window(x * 8, y * 8, 8, 8);
 	for (i = 0; i < 8; i++) {
@@ -308,7 +311,7 @@ void DBG_DrawTile(uint8_t x, uint8_t y, tile_t *td) {
 void DBG_BGmap(void) {
 	uint8_t w, h;
 	uint8_t *bgmapbase;
-	tile_t *td;
+	tiledata_t *td;
 	uint8_t offset;
 
 	bgmapbase = (uint8_t*)(DBG_CPU.vram + ((DBG_CPU.IOLCDC & BG_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
@@ -318,10 +321,10 @@ void DBG_BGmap(void) {
 			offset = *(bgmapbase + w + (h * 32));
 
 			if (DBG_CPU.IOLCDC & BG_W_DATA) {
-				td = (tile_t*)(DBG_CPU.vram)+offset;
+				td = (tiledata_t*)(DBG_CPU.vram)+offset;
 			}
 			else {
-				td = (tile_t*)(DBG_CPU.vram + TILE_DATA1_SIGNED_BASE) + (int8_t)(offset);
+				td = (tiledata_t*)(DBG_CPU.vram + TILE_DATA1_SIGNED_BASE) + (int8_t)(offset);
 			}
 			DBG_DrawTile(w, h, td);
 		}
@@ -451,8 +454,8 @@ char readLine(char *dst, uint8_t max) {
 //available debug commands
 //bp <addr hex>
 //------------------------------------------------------
-static void debugCommand(void){
 #if defined(_WIN32) || defined(linux)
+static void debugCommand(void){
 	static char line[20];
 
 	if(readLine(line, sizeof(line))){
@@ -497,5 +500,5 @@ static void debugCommand(void){
 		}
 	}
 
-#endif
 }
+#endif
