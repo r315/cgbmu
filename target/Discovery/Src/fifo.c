@@ -5,10 +5,12 @@
 // Fifo handling
 // ---------------------------------------------------
 
-void fifo_init(fifo_t *fifo)
+void fifo_init(fifo_t *fifo, uint8_t *buffer, uint32_t size)
 {
 	fifo->head = 0;
 	fifo->tail = 0;
+	fifo->size = size;
+	fifo->buf = buffer;
 }
 
 

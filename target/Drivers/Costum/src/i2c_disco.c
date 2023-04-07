@@ -80,7 +80,7 @@ static void I2C_MspInit(void)
     gpio_init_structure.Pin = DISCOVERY_EXT_I2Cx_SCL_PIN;
     gpio_init_structure.Mode = GPIO_MODE_AF_OD;
     gpio_init_structure.Pull = GPIO_NOPULL;
-    gpio_init_structure.Speed = GPIO_SPEED_FAST;
+    gpio_init_structure.Speed = GPIO_SPEED_FREQ_HIGH;
     gpio_init_structure.Alternate = DISCOVERY_EXT_I2Cx_SCL_SDA_AF;
     HAL_GPIO_Init(DISCOVERY_EXT_I2Cx_SCL_SDA_GPIO_PORT, &gpio_init_structure);
 

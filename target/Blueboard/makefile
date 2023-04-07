@@ -4,6 +4,7 @@ BUILD_DIR   :=build
 BOARD_PATH 	=$(CURDIR)
 EMU_PATH 	:=../..
 LIB_PATH    :=$(EMU_PATH)/lib
+ROMS_PATH   :=$(ROMS_PATH)/roms
 DRIVERS_COMPONENT_PATH =../Drivers/Component
 CMSIS_PATH  =../Drivers/CMSIS
 
@@ -29,7 +30,7 @@ $(BSP_PATH)/src/spi.c \
 $(FATFS_PATH)/pff.c \
 $(FATFS_PATH)/mmc.c \
 
-ROM_FILE=$(ROMS_PATH)/tests/cpu_instrs.gb
+ROM_FILE=$(ROMS_PATH)/cpu_instrs.gb
 
 C_INCLUDES  = \
 $(BOARD_PATH) \

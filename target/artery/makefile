@@ -14,8 +14,8 @@ DRIVERS_STD_PATH =$(DRIVERS_PATH)/Drivers/StdPeriph_Driver
 DRIVERS_COSTUM_PATH =$(DRIVERS_PATH)/Drivers/Costum
 DRIVERS_COMPONENT_PATH =$(DRIVERS_PATH)/Drivers/Component
 EMU_PATH 		:=../..
-LIB_PATH    	=$(EMU_PATH)/lib
-ROMS_PATH		:=roms
+LIB_PATH    	:=$(EMU_PATH)/lib
+ROMS_PATH		:=$(EMU_PATH)/roms
 
 C_INCLUDES = \
 $(BOARD_PATH) \
@@ -63,7 +63,7 @@ $(EMU_PATH)/src/cgbmu.c \
 # ASM sources
 #ASM_SOURCES =startup_at32f415cbt7.s
 
-ROM_FILE=$(ROMS_PATH)/tests/cpu_instrs.gb
+ROM_FILE=$(ROMS_PATH)/cpu_instrs.gb
 #######################################
 # Misc files
 #######################################

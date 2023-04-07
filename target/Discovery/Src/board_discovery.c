@@ -1,27 +1,120 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include "fatfs.h"
+//#include "fatfs.h"
 #include "board.h"
 #include "i2c.h"
 #include "pcf8574.h"
 
+#define ENABLE_FS 0
 
 static i2cbus_t i2cbus;
 
 static void SystemClock_Config(void);
 void Serial_Init(void);
-void vc_putchar(char c);
 uint32_t memavail(void);
 void dumpBuf(uint8_t *buf, uint32_t off, uint32_t size);
 
 uint32_t GetTick(void) {
 	return HAL_GetTick();
 }
+
 void DelayMs(uint32_t ms) {
 	HAL_Delay(ms);
 }
 
+void BOARD_Init(void)
+{
+    SCB_EnableICache();
+    SCB_EnableDCache();
+
+    HAL_Init();
+
+    SystemClock_Config();
+
+    BSP_LED_Init(LED1);
+    BSP_LED_Init(LED2);
+    
+    Serial_Init();
+
+    printf("\e[2J\r");
+#if ENABLE_FS
+    SD_Init();
+
+    //SD_DumpSector(0);
+    fatFs_Init();
+#endif
+
+    BSP_PB_Init(BUTTON_USER, BUTTON_MODE_GPIO);
+
+    I2C_Init(&i2cbus);
+    io_drv_pcf8574.init(&i2cbus);
+
+    printf("System clock: %luMHz\n",SystemCoreClock/1000000);
+
+    printf("Mem available: %d\n\n", (int)memavail());
+
+    /* Initialize the LCD */
+    BSP_LCD_Init();
+    
+    BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
+}
+
+static void SystemClock_Config(void)
+{
+    RCC_ClkInitTypeDef RCC_ClkInitStruct;
+    RCC_OscInitTypeDef RCC_OscInitStruct;
+    HAL_StatusTypeDef ret = HAL_OK;
+
+    /* Enable HSE Oscillator and activate PLL with HSE as source */
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+    RCC_OscInitStruct.PLL.PLLM = 25;
+    RCC_OscInitStruct.PLL.PLLN = 400;
+    RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+    RCC_OscInitStruct.PLL.PLLQ = 9;
+    RCC_OscInitStruct.PLL.PLLR = 7;
+
+    ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);
+    if (ret != HAL_OK)
+    {
+        while (1)
+        {
+            ;
+        }
+    }
+
+    /* Activate the OverDrive to reach the 216 MHz Frequency */
+    ret = HAL_PWREx_EnableOverDrive();
+    if (ret != HAL_OK)
+    {
+        while (1)
+        {
+            ;
+        }
+    }
+
+    /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2 clocks dividers */
+    RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+
+    ret = HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_7);
+    if (ret != HAL_OK)
+    {
+        while (1)
+        {
+            ;
+        }
+    }
+}
+
+
+#if ENABLE_FS
 FRESULT scan_files (char* path)
 {
     FRESULT res;
@@ -139,99 +232,6 @@ void BOARD_DeInit(void){
     FATFS_UnLinkDriver(SDPath);
 }
 
-void BOARD_Init(void)
-{
-    SCB_EnableICache();
-    SCB_EnableDCache();
-
-    HAL_Init();
-
-    SystemClock_Config();
-
-    BSP_LED_Init(LED1);
-    BSP_LED_Init(LED2);
-    
-    Serial_Init();
-
-    printf("\e[2J\r");
-
-    //SD_Init();
-
-    //SD_DumpSector(0);
-
-    fatFs_Init();
-
-    BSP_PB_Init(BUTTON_USER, BUTTON_MODE_GPIO);
-
-    I2C_Init(&i2cbus);
-    io_drv_pcf8574.init(&i2cbus);
-
-    printf("System clock: %luMHz\n",SystemCoreClock/1000000);
-
-    uint32_t *dram = (uint32_t*)SDRAM_DEVICE_ADDR;
-
-    printf("Mem %08X:%08X\n", (int)dram, (int)*dram);
-    printf("Mem available: %d\n\n", (int)memavail());
-
-    /* Initialize the LCD */
-    BSP_LCD_Init();
-    
-    BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
-}
-
-static void SystemClock_Config(void)
-{
-    RCC_ClkInitTypeDef RCC_ClkInitStruct;
-    RCC_OscInitTypeDef RCC_OscInitStruct;
-    HAL_StatusTypeDef ret = HAL_OK;
-
-    /* Enable HSE Oscillator and activate PLL with HSE as source */
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    RCC_OscInitStruct.PLL.PLLM = 25;
-    RCC_OscInitStruct.PLL.PLLN = 400;
-    RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-    RCC_OscInitStruct.PLL.PLLQ = 9;
-    RCC_OscInitStruct.PLL.PLLR = 7;
-
-    ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);
-    if (ret != HAL_OK)
-    {
-        while (1)
-        {
-            ;
-        }
-    }
-
-    /* Activate the OverDrive to reach the 216 MHz Frequency */
-    ret = HAL_PWREx_EnableOverDrive();
-    if (ret != HAL_OK)
-    {
-        while (1)
-        {
-            ;
-        }
-    }
-
-    /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2 clocks dividers */
-    RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
-    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
-
-    ret = HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_7);
-    if (ret != HAL_OK)
-    {
-        while (1)
-        {
-            ;
-        }
-    }
-}
-
 int access(char *file, int mode)
 {
     FRESULT fr;
@@ -263,6 +263,7 @@ int access(char *file, int mode)
     }
     return -1;
 }
+#endif
 
 void __debugbreak(void){
 	 asm volatile

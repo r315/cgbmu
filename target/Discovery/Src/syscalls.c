@@ -54,22 +54,13 @@
 #include <sys/times.h>
 #include <sys/unistd.h>
 #include "board.h"
-#include "fatfs.h"
 
-/* Variables */
-//#undef errno
-extern int errno;
-extern int __io_putchar(int ch) __attribute__((weak));
-extern int __io_getchar(void) __attribute__((weak));
+void SERIAL_PutString(const char* str, int size);
+int SERIAL_GetChar(void);
 
 char *__env[1] = {0};
 char **environ = __env;
 static char *heap_end = NULL;
-
-#define MAX_FILES 1
-static FIL files[MAX_FILES];
-static FIL *openfiles[MAX_FILES];
-extern UART_HandleTypeDef huart1;
 
 
 /* Functions */
@@ -103,27 +94,6 @@ void _exit(int status)
 
 int _read(int file, char *ptr, int len)
 {
-	FRESULT fr;
-	UINT br;	
-
-	if (file == STDIN_FILENO){
-		return -1;
-	}
-
-	// Skip system files
-	file >>= 4;
-
-	if(file > MAX_FILES){		
-		return -1;
-	}
-
-	fr = f_read(&files[file - 1], ptr, len, &br);
-
-	if (fr == FR_OK)
-	{
-		return br;
-	}
-
 	return -1;
 }
 
@@ -139,11 +109,11 @@ int _write(int file, char *data, int len)
 	// 1:stdout 
 	// 2:stderr
 	if (file == STDOUT_FILENO || file == STDERR_FILENO)
-	{
-		HAL_StatusTypeDef status = HAL_UART_Transmit(&huart1, (uint8_t *)data, len, 1000);
-		// return # of bytes written - as best we can tell
-		return (status == HAL_OK ? len : 0);
+	{		
+		SERIAL_PutString(data, len);
+		return len;
 	}
+
 	return -1;
 }
 
@@ -172,68 +142,27 @@ caddr_t _sbrk(int incr)
 
 int _close(int file)
 {
-	// Skip system files
-	file >>= 4;
-
-	if(file > MAX_FILES){		
-		return -1;
-	}
-
-	openfiles[file - 1] = NULL;
-
-	f_close(&files[file - 1]);
-
-	return 0;
+	return -1;
 }
 
-int __fstat(int file, struct stat *st)
+int _fstat(int file, struct stat *st)
 {
 	st->st_mode = S_IFCHR;
 	return 0;
 }
 
-int __isatty(int file)
+int _isatty(int file)
 {
-	return 1;
+	return -1;
 }
 
 int _lseek(int file, int ptr, int dir)
 {
-
-	if(ptr < 0 || dir == SEEK_CUR)
-		return -1;
-
-	// Skip system files
-	file >>= 4;
-
-	if(file > MAX_FILES){		
-		return -1;
-	}
-
-	FRESULT fr = f_lseek(&files[file - 1], ptr);
-
-	if(fr != FR_OK)
-	{
-		return -1;
-	}
-
-	return 0;
+	return -1;
 }
 
 int _open(char *path, int flags, ...)
 {
-	uint8_t fn;
-
-	for(fn = 1; fn <= MAX_FILES; fn++)
-	{
-		if(openfiles[fn - 1] == NULL){
-			FRESULT fr = f_open(&files[fn - 1], path, FA_READ);
-			if (fr == FR_OK){
-				openfiles[fn - 1] = &files[fn - 1];
-				return (fn << 4); // first 16 files are reserved for system
-			}
-		}
-	}
 	return -1;
 }
 
