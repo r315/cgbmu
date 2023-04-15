@@ -15,7 +15,6 @@ extern "C" {
 
 enum Attributes{
 	FONT_NORMAL,
-	FONT_INVERTED,
 	FONT_TRANSPARENT,
 	FONT_DOUBLE
 };

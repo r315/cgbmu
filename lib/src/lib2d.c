@@ -18,11 +18,11 @@ typedef struct lib2d_s{
 	uint16_t sc;
 	uint8_t vspace;
 	uint16_t (*drawChar)(uint16_t  x, uint16_t y, uint8_t *char_data, uint16_t *buffer);
+    uint32_t buffer_offset;
+    uint16_t buffer[8 * 8 * 2]; // double buffer, font dependent
 }lib2d_t;
 
 static lib2d_t lib2d;
-static uint16_t scratch[8 * 8 * 2]; // font dependent
-static uint16_t scratch_offset;
 //-----------------------------------------------------------
 //
 //-----------------------------------------------------------
@@ -45,22 +45,12 @@ static uint16_t drawCharSimple(uint16_t x, uint16_t y, uint8_t *char_data, uint1
 	return x + (lib2d.font->w);
 }
 
-static uint16_t drawCharInverted(uint16_t x, uint16_t y, uint8_t *char_data, uint16_t *buffer){
-	uint8_t w,h;
-	uint16_t *pbuf = buffer;
-
-	for (h=0; h < lib2d.font->h; h++){ 	
-		for(w=0; w < lib2d.font->h; w++){
-			*pbuf++ = (*char_data & (0x80 >> w)) ? lib2d.backcolor : lib2d.forecolor;
-		}
-		char_data += 1;		
- 	}
-	return x+(lib2d.font->w);
-}
-
 static uint16_t drawCharTransparent(uint16_t x, uint16_t y, uint8_t *char_data, uint16_t *buffer)
 {
 	uint8_t w,h;
+    
+    (void)buffer;
+
 	for (h=0; h < lib2d.font->h; h++){
 		for(w=0;w<lib2d.font->w; w++){
 			if(*char_data & (0x80 >> w))
@@ -68,41 +58,49 @@ static uint16_t drawCharTransparent(uint16_t x, uint16_t y, uint8_t *char_data, 
 		}	
 		char_data += 1;
 	}
+
 	return x+(lib2d.font->w);
 }
+
 static uint16_t drawCharDouble(uint16_t x, uint16_t y, uint8_t *char_data, uint16_t *buffer)
 {
-	uint8_t w,h;
-    //LCD_Window(x,y,lib2d.font->w * 2, lib2d.font->h * 2);
-	for (h=0;h<lib2d.font->h;h++){			    // altura
-		for(w=0;w<lib2d.font->w;w++){			// primeira linha
-			if(*char_data & (0x80 >> w))	// se pixel
-			{
-				//LCD_Data(lib2d.forecolor);			// desenha 2 px w de FC
-				//LCD_Data(lib2d.forecolor);
-			}
-	        else
-			{
-    	        //LCD_Data(lib2d.backcolor);			// desenha 2 px w de BC
-				//LCD_Data(lib2d.backcolor);
-			}
-		}
-		for(w=0;w<lib2d.font->w;w++)			// segunda linha igual a primeira
-		{
-			if(*char_data & (0x80 >> w))
-			{
-				//LCD_Data(lib2d.forecolor);
-				//LCD_Data(lib2d.forecolor);
-			}
-	        else
-			{
-    	        //LCD_Data(lib2d.backcolor);					
-				//LCD_Data(lib2d.backcolor);
-			}
-		}
-		char_data += 1;
- 	}	
-	return x+(lib2d.font->w * 2);
+	uint32_t w, h, z;
+    uint16_t *p1, *p2;
+
+    (void)buffer;
+
+    lib2d.buffer_offset = 0; // use full buffer
+
+    for(z = 0; z < 4; z++){
+        p1 = lib2d.buffer + lib2d.buffer_offset;
+        p2 = p1 + lib2d.font->w * 2;
+
+        for (h = 0; h < lib2d.font->h / 4; h++){
+            for(w = 0; w < lib2d.font->w; w++){
+                if(*char_data & (0x80 >> w))
+                {
+                    *p1++ = lib2d.forecolor;
+                    *p1++ = lib2d.forecolor;
+                    *p2++ = lib2d.forecolor;
+                    *p2++ = lib2d.forecolor;
+                }else{
+                    *p1++ = lib2d.backcolor;
+                    *p1++ = lib2d.backcolor;
+                    *p2++ = lib2d.backcolor;
+                    *p2++ = lib2d.backcolor;
+                }
+            }
+            p1 += lib2d.font->w * 2;
+            p2 += lib2d.font->w * 2;
+            char_data += 1;
+        }
+
+        LCD_WriteArea(x, y, lib2d.font->w * 2, lib2d.font->h, lib2d.buffer + lib2d.buffer_offset);
+        y += 4;        
+        lib2d.buffer_offset ^= 8*8; // swap buffer
+    }
+
+	return x + (lib2d.font->w * 2);
 }
 
 void LIB2D_SetColors(uint16_t fc, uint16_t bc){ lib2d.forecolor = fc; lib2d.backcolor = bc;}
@@ -130,8 +128,8 @@ void LIB2D_SetCursor(uint16_t x, uint16_t y){
 uint16_t LIB2D_Char(uint16_t x, uint16_t y, uint8_t c)
 {
     c -= 0x20;
-	scratch_offset = (scratch_offset == 0) ? 8*8 : 0; 
-	return lib2d.drawChar(x, y, (uint8_t*)lib2d.font->data + (c * lib2d.font->h), scratch + scratch_offset);
+	lib2d.buffer_offset ^= 8*8; // swap buffer
+	return lib2d.drawChar(x, y, (uint8_t*)lib2d.font->data + (c * lib2d.font->h), lib2d.buffer + lib2d.buffer_offset);
 }
 //----------------------------------------------------------
 //
@@ -157,6 +155,8 @@ void LIB2D_Init(void)
 	lib2d.sc = 0;
 	//lib2d.xputc = DISPLAY_putc;
 	lib2d.drawChar = drawCharSimple;
+
+    lib2d.buffer_offset = 8 * 8;
 }
 //----------------------------------------------------------
 //
@@ -186,7 +186,6 @@ void LIB2D_SetAttribute(uint8_t atr){
 	switch(atr){
 		default:
 		case FONT_NORMAL: lib2d.drawChar = drawCharSimple;break;
-		case FONT_INVERTED: lib2d.drawChar = drawCharInverted;break;
 		case FONT_DOUBLE: lib2d.drawChar = drawCharDouble;break;
 		case FONT_TRANSPARENT: lib2d.drawChar = drawCharTransparent;break;
 	}
