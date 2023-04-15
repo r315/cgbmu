@@ -55,16 +55,16 @@ typedef struct spibus{
     dmatype_t dma;     		// DMA channel/controller
     uint8_t  bus;   		// bus number 0,1...
     uint32_t freq;  		// Clock frequency in khz
-    volatile uint8_t  flags;   		// 7:6 Mode, 5:0 flags
+    volatile uint8_t  flags;// 7:6 Mode, 5:0 flags
     uint32_t trf_counter;	// Transfer counter, used when data so be transferred is greater than 65535
     void (*eot_cb)(void);   // User end of transfer call back
 }spibus_t;
 
 void SPI_Init(spibus_t *spidev);
 void SPI_Transfer(spibus_t *spidev, uint8_t *src, uint32_t count);
-void SPI_TransferDMA(spibus_t *spidev, uint16_t *data, uint32_t count);
+void SPI_TransferDMA(spibus_t *spidev, uint8_t *data, uint32_t count);
 void SPI_WaitEOT(spibus_t *spidev);
-uint16_t SPI_Xchg(spibus_t *spidev, uint16_t data);
+uint16_t SPI_Xchg(spibus_t *spidev, uint8_t *data);
 
 #ifdef __cplusplus
 }

@@ -36,17 +36,12 @@ void SPI_DMA_IRQHandler(spibus_t *spidev){
         spidev->trf_counter -= 0x10000UL;
         dma->TCNT = (spidev->trf_counter > 0x10000UL) ? 0xFFFFUL : spidev->trf_counter;
         dma->CHCTRL |= DMA_CHCTRL1_CHEN;
-    }else{
-        // wait for the last byte to be transmitted
-        while(spi->STS & SPI_STS_BSY){
-            if(spi->STS & SPI_STS_OVR){
-                //dummy read for clearing OVR flag
-                spidev->trf_counter = spi->DT;
-            }
-        }
-        /* Restore 8bit Spi */        
-        spi->CTRL1 &= ~(SPI_CTRL1_SPIEN | SPI_CTRL1_DFF16);
-	    spi->CTRL1 |= SPI_CTRL1_SPIEN;
+    }else{        
+        if(spi->STS & SPI_STS_OVR){
+            //dummy read for clearing OVR flag
+            spidev->trf_counter = spi->DT;
+        }      
+
         spi->CTRL2 &= ~(SPI_CTRL2_DMATEN);
 
         spidev->trf_counter = 0;
@@ -80,7 +75,7 @@ static void SPI_SetFreq(SPI_Type *spi, uint32_t freq){
         div = 2;
     }
 
-    while((2 << --br) > div); 
+    do{--br;}while((uint32_t)(2 << br) > div); 
 
     spi->CTRL1 &= ~(SPI_CTRL1_SPIEN | SPI_CTRL1_MCLKP);
     spi->CTRL1 |= (br << SPI_CTRL1_MDIV_Pos);
@@ -170,10 +165,17 @@ void SPI_Init(spibus_t *spidev){
  *
  * \return Received data
  * */
-uint16_t SPI_Xchg(spibus_t *spidev, uint16_t data){
+uint16_t SPI_Xchg(spibus_t *spidev, uint8_t *data){
     SPI_Type *spi = (SPI_Type*)spidev->ctrl;
 
-    *((__IO uint8_t *)&spi->DT) = data;
+    if(spidev->flags & SPI_16BIT){
+        spi->CTRL1 |= SPI_CTRL1_DFF16;
+        *((__IO uint16_t *)&spi->DT) = *(uint16_t*)data;
+    }else{
+        spi->CTRL1 &= ~(SPI_CTRL1_DFF16);
+        *((__IO uint8_t *)&spi->DT) = *data;
+    }
+
     while((spi->STS & SPI_STS_TE) == 0);
     while((spi->STS & SPI_STS_BSY) != 0);
 
@@ -188,12 +190,22 @@ uint16_t SPI_Xchg(spibus_t *spidev, uint16_t data){
  * */
 void SPI_Transfer(spibus_t *spidev, uint8_t *src, uint32_t count){
     SPI_Type *spi = (SPI_Type*)spidev->ctrl;
-    
-    while(count--){
-        *((__IO uint8_t *)&spi->DT) = *src++;
-        while((spi->STS & SPI_STS_TE) == 0);
-        while((spi->STS & SPI_STS_BSY) != 0);
-    }
+
+    if(spidev->flags & SPI_16BIT){
+        spi->CTRL1 |= SPI_CTRL1_DFF16;
+        while(count--){
+            *((__IO uint16_t *)&spi->DT) = *(uint16_t*)src++;
+            while((spi->STS & SPI_STS_TE) == 0);
+            while((spi->STS & SPI_STS_BSY) != 0);
+        }
+    }else{
+        spi->CTRL1 &= ~(SPI_CTRL1_DFF16);
+        while(count--){
+            *((__IO uint8_t *)&spi->DT) = *src++;
+            while((spi->STS & SPI_STS_TE) == 0);
+            while((spi->STS & SPI_STS_BSY) != 0);
+        }
+    } 
 }
 
 /**
@@ -202,18 +214,21 @@ void SPI_Transfer(spibus_t *spidev, uint8_t *src, uint32_t count){
  * \param data  : Pointer to data
  * \param count : total number of transfers
  * */
-void SPI_TransferDMA(spibus_t *spidev, uint16_t *src, uint32_t count){
-    static uint16_t _data;
+void SPI_TransferDMA(spibus_t *spidev, uint8_t *src, uint32_t count){
+    static uint16_t sdata;
     SPI_Type *spi = (SPI_Type*)spidev->ctrl;
     DMA_Channel_Type *dma = (DMA_Channel_Type*)spidev->dma.stream;
 
-    // Configure Spi for 16bit DMA
-    spi->CTRL1 &= ~SPI_CTRL1_SPIEN;
-    spi->CTRL1 |= SPI_CTRL1_DFF16 | SPI_CTRL1_SPIEN;
+    if(spidev->flags & SPI_16BIT){
+        //spi->CTRL1 &= ~SPI_CTRL1_SPIEN;
+        spi->CTRL1 |= SPI_CTRL1_DFF16; // | SPI_CTRL1_SPIEN;
+    }else{
+        spi->CTRL1 &= ~(SPI_CTRL1_DFF16);
+    }
 
     if(spidev->flags & SPI_DMA_NO_MINC){
-        _data = src[0];
-        src = &_data;
+        sdata = *(uint8_t*)src;
+        src = (uint8_t*)&sdata;
         dma->CHCTRL &= ~(DMA_CHCTRL1_MINC);
     }else{
         dma->CHCTRL |= DMA_CHCTRL1_MINC;
@@ -235,9 +250,9 @@ void SPI_TransferDMA(spibus_t *spidev, uint16_t *src, uint32_t count){
  * @brief Wait for end of DMA transfer
  * */
 void SPI_WaitEOT(spibus_t *spidev){    
-    #if 0
-    SPI_TypeDef *spi = (SPI_TypeDef*)spidev->ctrl;
-    while(spi->SR & SPI_SR_BSY){
+    #if 1
+    SPI_Type *spi = (SPI_Type*)spidev->ctrl;
+    while(spi->STS & SPI_STS_BSY){
     #else
     while(SPIDEV_GET_FLAG(spidev, SPI_BUSY)){
     #endif

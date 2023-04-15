@@ -73,7 +73,7 @@ static void LCD_WriteData(uint16_t *data, uint32_t count){
 
     if(spidev->dma.per != NULL){
         spidev->flags |= SPI_16BIT;
-        SPI_TransferDMA(spidev, data, count);
+        SPI_TransferDMA(spidev, (uint8_t*)data, count);
         //LCD_CS1; // SET by DMA handler
     }else{
         while(count--)
