@@ -31,7 +31,7 @@ $(EMU_PATH)/src/cgbmu.c
 LIBS     =-lSDL2main -lSDL2 -lGL
 SYMBOLS  =-D__DEBUG__ -D__EMU__ -DROMS_PATH=   #'$(ROMS_PATH)'
 INCLUDES = $(addprefix -I, $(C_INCLUDES)) $(shell sdl2-config --cflags)
-CFLAGS  =-Og -g -Wall -gdwarf-2 -gstrict-dwarf $(INCLUDES) $(SYMBOLS) 
+CFLAGS  =-Og -g -Wall -Wextra -gdwarf-2 -gstrict-dwarf $(INCLUDES) $(SYMBOLS) 
 LDFLAGS =-LSDL2/lib/x64
 OBJS    =$(addprefix $(BUILD_DIR)/, $(notdir $(CSRCS:.c=.o)))
 

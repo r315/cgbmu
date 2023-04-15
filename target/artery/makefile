@@ -126,7 +126,7 @@ DEBUG =0
 OPT   =-O2
 else
 DEBUG =1
-OPT   =-Og -g -gdwarf-2
+OPT   =-Og -g -gdwarf-2 -std=gnu11 -Wall -Wextra
 endif
 
 
@@ -149,7 +149,8 @@ LDLIBS_PATH =
 # Generate dependency information
 #CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst))
 
-CFLAGS   =$(MCU) $(OPT) $(addprefix -D, $(C_DEFS)) $(addprefix -I, $(C_INCLUDES)) -fdata-sections -ffunction-sections -std=gnu11 -Wall
+CFLAGS   =$(MCU) $(OPT) $(addprefix -D, $(C_DEFS)) $(addprefix -I, $(C_INCLUDES)) -fdata-sections -ffunction-sections
+
 CPPFLAGS =$(CFLAGS)
 ASFLAGS  =$(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 LDFLAGS  =$(MCU) $(SPECS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref,--gc-sections

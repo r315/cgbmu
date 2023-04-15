@@ -4,7 +4,7 @@ BUILD_DIR   :=build
 BOARD_PATH 	=$(CURDIR)
 EMU_PATH 	:=../..
 LIB_PATH    :=$(EMU_PATH)/lib
-ROMS_PATH   :=$(ROMS_PATH)/roms
+ROMS_PATH   :=$(EMU_PATH)/roms
 DRIVERS_COMPONENT_PATH =../Drivers/Component
 CMSIS_PATH  =../Drivers/CMSIS
 
@@ -58,7 +58,7 @@ CPU =-mcpu=cortex-m3 -mthumb
 
 MCU =$(CPU)
 
-OPT = -Og -g -Wall -gdwarf-2 
+OPT =-Og -g -gdwarf-2 -Wall -Wextra 
 
 ifdef SEMIHOSTING
 SPECS =--specs=rdimon.specs

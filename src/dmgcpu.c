@@ -357,7 +357,7 @@ void memoryWrite(cpu_t *cpu, uint16_t address, uint8_t data)
 	switch(address)
 	{
 		case 0xFF00: cpu->IOP1 = (data | 0xCF); 	return;
-		case 0xFF01: cpu->IOSB = data;
+		case 0xFF01: cpu->IOSB = data; return;
 		case 0xFF02: writeSC(cpu, data); return;
 		case 0xFF04: cpu->IODIV = 0; return;		// any write clears it
 		case 0xFF05: cpu->IOTIMA = data; return;
