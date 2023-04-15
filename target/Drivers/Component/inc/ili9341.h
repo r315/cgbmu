@@ -61,11 +61,13 @@ enum {
 
 void LCD_Init(void *param);
 void LCD_FillRect(uint16_t x, uint16_t y,  uint16_t w, uint16_t h, uint16_t color);
-void LCD_Pixel(uint16_t x, uint16_t y, uint16_t color);
 void LCD_WriteArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *data);
-void LCD_Bkl(uint8_t state);
-void LCD_SetOrientation(uint8_t m);
+void LCD_Pixel(uint16_t x, uint16_t y, uint16_t color);
 void LCD_Scroll(uint16_t sc);
+void LCD_SetOrientation(uint8_t m);
+void LCD_Window(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+void LCD_Data(uint16_t data);
+void LCD_Bkl(uint8_t state);
 uint16_t LCD_GetWidth(void);
 uint16_t LCD_GetHeight(void);
 uint32_t LCD_GetSize(void);

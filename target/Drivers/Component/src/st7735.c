@@ -14,32 +14,31 @@
 
 #ifdef TFT_BGR_FILTER
 // Applys for TFT's with BGR filter or IPS
-#define DEFAULT_MADC		0x08
+#define DEFAULT_MADCTL		0x08
 #else
-#define DEFAULT_MADC		0x00
+#define DEFAULT_MADCTL		0x00
 #endif
 
 #define pgm_read_byte(x) 	*((uint8_t*)(x))
-#define DELAY 				0x80
-#define STATE_INITIALYZED	(1<<0)
-#define STATE_LANDSCAPE		(1<<1)
+#define ST_CMD_DELAY		0x80
 
 static uint16_t _width, _height;
-static uint8_t madd, start_x, start_y, state;
+static uint8_t start_x, start_y;
 static uint8_t scratch[4];
 static spibus_t *spidev;
 
 static void LCD_CasRasSet(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 
 
-#if TFT_W == 128
+#if (TFT_W == 128) && (TFT_H == 160)
+#define st7735_init_seq st7735_128x160
 // Can't remember where I got this ...
 // Init for 7735R, part 1 (red or green tab)
-const uint8_t InitCmd[] = {
-		16,                       //  17 commands in list:
-		//ST7735_SWRESET,   DELAY,  //  1: Software reset, 0 args, w/delay
+static const uint8_t st7735_128x160[] = {
+		17,                       //  17 commands in list:
+		//ST7735_SWRESET,   ST_CMD_DELAY,  //  1: Software reset, this requires CS to go high
 		//150,                      //     150 ms delay
-		ST7735_SLPOUT ,   DELAY,  //  2: Out of sleep mode, 0 args, w/delay
+		ST7735_SLPOUT, ST_CMD_DELAY,  //  2: Out of sleep mode, 0 args, w/delay
 		255,                      //     500 ms delay
 		ST7735_FRMCTR1, 3      ,  //  3: Frame rate ctrl - normal mode, 3 args:
 		0x01, 0x2C, 0x2D,         //     Rate = fosc/(1x2+40) * (LINE+2C+2D)
@@ -78,21 +77,24 @@ const uint8_t InitCmd[] = {
 		0x2E, 0x2C, 0x29, 0x2D,
 		0x2E, 0x2E, 0x37, 0x3F,
 		0x00, 0x00, 0x02, 0x10,
-		ST7735_NORON  ,    DELAY, // 16: Normal display on, no args, w/delay
+		ST7735_MADCTL, 1      ,
+		DEFAULT_MADCTL,
+		ST7735_NORON  ,    ST_CMD_DELAY, // 16: Normal display on, no args, w/delay
 		10,                       //      10 ms delay
-		ST7735_DISPON ,    DELAY, // 17: Main screen turn on, no args w/delay
+		ST7735_DISPON ,    ST_CMD_DELAY, // 17: Main screen turn on, no args w/delay
 		100						  //      100 ms delay
 };
-#elif TFT_W == 80
+#elif (TFT_W == 80) && (TFT_H == 160)
+#define st7735_init_seq st7735_80x160
 /**
  * Values for 132x162 GRAM, visible 80x160
  * Looks good on small 80x160 IPS display
  */
-const uint8_t InitCmd [] = {
-	18,                       //  18 commands in list:
-	ST7735_SWRESET,   DELAY,  //  1: Software reset, 0 args, w/delay
-	120,                      //     120ms delay
-	ST7735_SLPOUT ,   DELAY,  //  2: Out of sleep mode, 0 args, w/delay
+static const uint8_t st7735_80x160 [] = {
+	17,                       //  18 commands in list:
+	//ST7735_SWRESET,   ST_CMD_DELAY,  //  1: Software reset, 0 args, w/delay
+	//120,                      //     120ms delay
+	ST7735_SLPOUT ,   ST_CMD_DELAY,  //  2: Out of sleep mode, 0 args, w/delay
 	255,                      //     500 ms delay	
 	ST7735_FRMCTR1, 3      ,  //  3: Frame rate ctrl - normal mode, 3 args:
 	0x05, 0x3A, 0x3A,         //     Rate = fosc/([05]x2+40) * (LINE+[3A]+[3A]+2)
@@ -132,14 +134,14 @@ const uint8_t InitCmd [] = {
 	0x00, 0x01, 0x04, 0x13,
 	ST7735_COLMOD , 1      ,  // 15: set color mode, 1 arg, no delay:
 	0x05,                     //     16-bit/pixel
-	ST7735_NORON  ,    DELAY, // 16: Normal display on, no args, w/delay
+	ST7735_NORON  ,    ST_CMD_DELAY, // 16: Normal display on, no args, w/delay
 	10,                       //     10 ms delay
 #ifdef TFT_BGR_FILTER
 	ST7735_INVON, 0        ,  // 17: invert display, no args, no delay
 #else
 	ST7735_INVOFF, 0       ,  // 17: Don't invert display, no args, no delay
 #endif
-	ST7735_DISPON ,    DELAY, // 18: Main screen turn on, no args w/delay
+	ST7735_DISPON ,    ST_CMD_DELAY, // 18: Main screen turn on, no args w/delay
 	100						  //     100 ms delay
 };
 #else
@@ -156,13 +158,6 @@ static void LCD_Command(uint8_t data){
 }
 
 /**
- * @brief End of transfer handler for DMA use
- * */
-static void LCD_EOTHandler(void){
-	LCD_CS1;
-}
-
-/**
  * @brief Write 16bit data with big-endian (msb first)
  */
 void LCD_Data(uint16_t data){
@@ -172,19 +167,39 @@ void LCD_Data(uint16_t data){
 }
 
 /**
+ * @brief Companion code to the above tables.  Reads and issues
+ * a series of LCD commands stored as byte array.
+ * */
+static void LCD_InitSequence(const uint8_t *addr) {
+	uint8_t  numCommands, numArgs;
+	uint16_t ms;
+
+	numCommands = pgm_read_byte(addr++);       // Number of commands to follow
+	while(numCommands--) {                     // For each command...
+		LCD_Command(pgm_read_byte(addr++));    //   Read, issue command
+		numArgs  = pgm_read_byte(addr++);      //   Number of args to follow
+		ms       = numArgs & ST_CMD_DELAY;            //   If hibit set, delay follows args
+		numArgs &= ~ST_CMD_DELAY;                     //   Mask out delay bit
+		while(numArgs--) {                     //   For each argument...
+			SPI_Transfer(spidev, (uint8_t*)addr++, 1);  	   //   Read, issue argument
+		}
+
+		if(ms) {
+			ms = pgm_read_byte(addr++);        // Read post-command delay time (ms)
+			if(ms == 255) ms = 500;
+			DelayMs(ms);
+		}
+	}
+}
+
+/**
  * @brief Write a block of data
  * 
  */
-void LCD_Write(uint16_t *data, uint32_t count){
-	if(!count){
-		return;
-	}
-
-	SPI_WaitEOT(spidev);
-
-	LCD_CS0;
+static void LCD_WriteData(uint16_t *data, uint32_t count){
 	if(spidev->dma.per != NULL){
-		SPI_TransferDMA(spidev, data, count);
+		spidev->flags |= SPI_16BIT;
+		SPI_TransferDMA(spidev, (uint8_t*)data, count);
 		//LCD_CS1; // SET by DMA handler
 	}else{
 		while(count--)
@@ -194,56 +209,12 @@ void LCD_Write(uint16_t *data, uint32_t count){
 }
 
 /**
- * @brief Sends same data multiple times
- *
- * \param data : Value to be sent to lcd
- * \param count : Number of transfers
- */
-static void LCD_Fill(uint16_t data, uint32_t count){
-	if(!count){
-		return;
-	}
-
+ * @brief End of transfer handler for DMA use
+ * */
+static void LCD_EOTHandler(void){
+	spidev->flags &= ~(SPI_DMA_NO_MINC | SPI_16BIT);
 	SPI_WaitEOT(spidev);
-
-	LCD_CS0;
-	if(spidev->dma.per != NULL){
-		spidev->flags |= SPI_DMA_NO_MINC;
-		SPI_TransferDMA(spidev, &data, count);
-		//LCD_CS1; // SET by DMA handler	
-	}else{
-		while(count--)
-			LCD_Data(data);
-		LCD_CS1;
-	}
-}
-
-/**
- * @brief Fill's area with same color
- * 
- * \param x :
- * \param y :
- * \param w :
- * \param h :
- * \param color :
- */
-void LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color){
-	LCD_Window(x, y, w, h);
-	LCD_Fill(color, (w * h));
-}
-
-/**
- * @brief Write data block to defined area
- *  
- * \param x :
- * \param y :
- * \param w :
- * \param h :
- * \param data : Pointer to data
- */
-void LCD_WriteArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *data){
-	LCD_Window(x, y, w, h);
-    LCD_Write(data, (w * h));
+	LCD_CS1;
 }
 
 /**
@@ -274,7 +245,7 @@ static void LCD_CasRasSet(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2){
 }
 
 /**
- * @brief Setup draw area
+ * @brief Setup draw area, LCD_CS must be managed by caller
  *
  * \param x : X position
  * \param y : Y position
@@ -282,15 +253,65 @@ static void LCD_CasRasSet(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2){
  * \param h : Height
  */
 void LCD_Window(uint16_t x, uint16_t y, uint16_t w, uint16_t h){
-
 	x += start_x;
 	y += start_y;
+
+	LCD_CasRasSet(x, y, x + (w - 1), y + (h - 1));
+}
+
+/**
+ * @brief Fill's area with same color
+ * 
+ * \param x :
+ * \param y :
+ * \param w :
+ * \param h :
+ * \param color :
+ */
+void LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color){
+	uint32_t count = w * h;
+
+	if(!count){
+        return;
+    }
 
 	SPI_WaitEOT(spidev);
 
 	LCD_CS0;
-	LCD_CasRasSet(x, y, x + (w - 1), y + (h - 1));
-	LCD_CS1;
+	LCD_Window(x, y, w, h);
+
+	if(spidev->dma.per != NULL){
+		spidev->flags |= SPI_DMA_NO_MINC | SPI_16BIT;
+		*((uint16_t*)scratch) = color;
+		SPI_TransferDMA(spidev, (uint8_t*)scratch, count);
+		//LCD_CS1; // SET by DMA handler	
+	}else{
+		while(count--)
+			LCD_Data(color);
+		LCD_CS1;
+	}
+}
+
+/**
+ * @brief Write data block to defined area
+ *  
+ * \param x :
+ * \param y :
+ * \param w :
+ * \param h :
+ * \param data : Pointer to data
+ */
+void LCD_WriteArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *data){
+	uint32_t count = w * h;
+    
+    if(!count){
+        return;
+    }
+
+	SPI_WaitEOT(spidev);
+    LCD_CS0;
+    LCD_Window(x, y, w, h);
+    LCD_WriteData(data, count);
 }
 
 /**
@@ -309,39 +330,11 @@ void LCD_Pixel(uint16_t x, uint16_t y, uint16_t color){
 	LCD_CS1;
 }
 
-/**
- * @brief Companion code to the above tables.  Reads and issues
- * a series of LCD commands stored as byte array.
- * */
-static void LCD_CommandList(const uint8_t *addr) {
-	uint8_t  numCommands, numArgs;
-	uint16_t ms;
-
-	numCommands = pgm_read_byte(addr++);       // Number of commands to follow
-	while(numCommands--) {                     // For each command...
-		LCD_Command(pgm_read_byte(addr++));    //   Read, issue command
-		numArgs  = pgm_read_byte(addr++);      //   Number of args to follow
-		ms       = numArgs & DELAY;            //   If hibit set, delay follows args
-		numArgs &= ~DELAY;                     //   Mask out delay bit
-		while(numArgs--) {                     //   For each argument...
-			SPI_Transfer(spidev, (uint8_t*)addr++, 1);  	   //   Read, issue argument
-		}
-
-		if(ms) {
-			ms = pgm_read_byte(addr++);        // Read post-command delay time (ms)
-			if(ms == 255) ms = 500;
-			DelayMs(ms);
-		}
-	}
-}
 
 /**
  * @brief Display initialisation
  * */
 void LCD_Init(void *spi){
-
-	//LCD_PIN_INIT; made on board level
-
 	spidev = (spibus_t*)spi;
 	if(spidev->dma.per != NULL){
 		spidev->eot_cb = LCD_EOTHandler;
@@ -350,25 +343,19 @@ void LCD_Init(void *spi){
 	LCD_CD1;
 	LCD_CS1;
 	LCD_BKL0;
+	LCD_RST0;
+	DelayMs(2);
 	LCD_RST1;
-	DelayMs(10);
+	DelayMs(5);
 
-	//LCD_RST0;
-	//DelayMs(2);
-	//LCD_RST1;
-	//DelayMs(5);
 	LCD_CS0;
 	LCD_Command(ST7735_SWRESET);
 	LCD_CS1;
 
 	DelayMs(150);
 
-	madd = DEFAULT_MADC;
-
 	LCD_CS0;
-	LCD_CommandList(InitCmd);
-	LCD_Command(ST7735_MADCTL);   // row addr/col addr, bottom to top refresh
-	SPI_Transfer(spidev, &madd, 1);
+	LCD_InitSequence(st7735_init_seq);
 	LCD_CS1;
 
 	// Set offset
@@ -376,7 +363,45 @@ void LCD_Init(void *spi){
 	start_y = TFT_OFFSET_GATE;
 	_width  = TFT_W;
 	_height = TFT_H;
-	state = STATE_INITIALYZED;
+}
+
+/**
+ * @brief
+ * */
+void LCD_SetOrientation(uint8_t m) {
+
+	switch (m) {
+    case LCD_PORTRAIT:
+        m = (ST7735_MADCTL_MX | ST7735_MADCTL_MY);
+        _width  = TFT_W;
+        _height = TFT_H;
+        break;
+    case LCD_LANDSCAPE:
+        m = (ST7735_MADCTL_MV | ST7735_MADCTL_MY);
+        _width  = TFT_H;
+        _height = TFT_W;
+        break;
+    case LCD_REVERSE_PORTRAIT:
+        m = (ST7735_MADCTL_MY);
+        _width  = TFT_W;
+        _height = TFT_H;
+        break;
+    case LCD_REVERSE_LANDSCAPE:
+        m = (ST7735_MADCTL_MV | ST7735_MADCTL_MX);
+        _width  = TFT_H;
+        _height = TFT_W;
+        break;
+
+    default:
+        return;
+    }
+
+	SPI_WaitEOT(spidev);
+
+	LCD_CS0;
+	LCD_Command(ST7735_MADCTL);
+	SPI_Transfer(spidev, &m, 1);
+	LCD_CS1;
 }
 
 /**
@@ -390,55 +415,6 @@ void LCD_Scroll(uint16_t sc){
 	LCD_CS0;
 	LCD_Command(ST7735_VSCSAD);
 	LCD_Data(sc);
-	LCD_CS1;
-}
-
-/**
- * @brief
- * */
-void LCD_SetOrientation(uint8_t m) {
-
-	madd &= ~(MADCTL_MY | MADCTL_MX | MADCTL_MV);
-
-	switch (m) {
-	case LCD_PORTRAIT:
-		madd |= (MADCTL_MX | MADCTL_MY);
-		state &= ~(STATE_LANDSCAPE);
-		break;
-	case LCD_LANDSCAPE:
-		madd |= (MADCTL_MY | MADCTL_MV);
-		state |= (STATE_LANDSCAPE);
-		break;
-	case LCD_REVERSE_PORTRAIT:
-		state &= ~(STATE_LANDSCAPE);
-		//madd |= 0;
-		break;
-	case LCD_REVERSE_LANDSCAPE:
-		state |= (STATE_LANDSCAPE);
-		madd |= (MADCTL_MV | MADCTL_MX);
-		break;
-
-	default:
-		return;
-	}
-
-	if(state & STATE_LANDSCAPE){
-		start_x = TFT_OFFSET_GATE;
-		start_y = TFT_OFFSET_SOURCE;
-		_width  = TFT_H;
-		_height = TFT_W;
-	}else{
-		start_x = TFT_OFFSET_SOURCE;
-		start_y = TFT_OFFSET_GATE;
-		_width  = TFT_W;
-		_height = TFT_H;
-	}
-
-	SPI_WaitEOT(spidev);
-
-	LCD_CS0;
-	LCD_Command(ST7735_MADCTL);
-	SPI_Transfer(spidev, &madd, 1);
 	LCD_CS1;
 }
 

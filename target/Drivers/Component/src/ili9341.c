@@ -71,7 +71,8 @@ static void LCD_InitSequence(const uint8_t *addr) {
 static void LCD_WriteData(uint16_t *data, uint32_t count){
     
 	if(spidev->dma.per != NULL){
-		SPI_TransferDMA(spidev, data, count);
+        spidev->flags |= SPI_16BIT;
+		SPI_TransferDMA(spidev, (uint8_t*)data, count);
 		//LCD_CS1; // SET by DMA handler
 	}else{
 		while(count--)
@@ -81,6 +82,8 @@ static void LCD_WriteData(uint16_t *data, uint32_t count){
 }
 
 static void LCD_EOTHandler(void){
+    spidev->flags &= ~(SPI_DMA_NO_MINC | SPI_16BIT);
+	SPI_WaitEOT(spidev);
 	LCD_CS1;
 }
 
@@ -136,8 +139,9 @@ void LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color
 	LCD_Window(x, y, w, h);
 
 	if(spidev->dma.per != NULL){
-		spidev->flags |= SPI_DMA_NO_MINC;
-		SPI_TransferDMA(spidev, &color, count);
+		spidev->flags |= SPI_DMA_NO_MINC | SPI_16BIT;
+        *((uint16_t*)scratch) = color;
+		SPI_TransferDMA(spidev, (uint8_t*)scratch, count);
 		//LCD_CS1; // SET by DMA handler	
 	}else{
         scratch[0] = color >> 8;
@@ -314,7 +318,11 @@ uint32_t LCD_GetSize(void){
  * @param state 
  */
 void LCD_Bkl(uint8_t state){
-    if(state != 0) {LCD_BKL1;}
-    else {LCD_BKL0;}
+    if(state != 0) {
+        LCD_BKL1;
+    }
+    else {
+        LCD_BKL0;
+    }
 }
 
