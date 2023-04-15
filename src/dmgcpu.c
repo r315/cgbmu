@@ -457,9 +457,10 @@ void initCpu(cpu_t *cpu)
 
 void bootCpu(cpu_t *cpu)
 {
-	cpu->PC = 0;
 
 	cartridgeInit(cpu, boot_rom);
+    initCpu(cpu);
+	cpu->PC = 0;
 
 	do{
 		decode(cpu);

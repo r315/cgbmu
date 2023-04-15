@@ -114,6 +114,7 @@ void cgbmu(const uint8_t *rom) {
 	
 	if(rom == NULL){
 		bootCpu(&dmgcpu);
+        return;
 	}else{
 		initCpu(&dmgcpu);
 		cartridgeInit(&dmgcpu, rom);
