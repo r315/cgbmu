@@ -90,7 +90,7 @@ uint32_t cur;
 void BUTTON_WaitEvent(int event){
  do{
      BUTTON_Read();
- }while(__button.events != event);    
+ }while(__button.events != (uint32_t)event);    
 }
 
 int BUTTON_Get(void){

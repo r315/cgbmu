@@ -2,12 +2,15 @@
 #include "decoder.h"
 #include "instrs.h"
 
+
 static uint8_t cb_decode(cpu_t*);
 
 #if TABLE_DECODER
 #define NOP nop
 
-static const uint8_t (*cb_opcodes[])(cpu_t*) = {
+typedef uint8_t(*oc_func)(cpu_t*);
+
+static const oc_func cb_opcodes[] = {
 	rlc_b, rlc_c, rlc_d, rlc_e, rlc_h, rlc_l, rlc_ind_hl, rlc_a, rrc_b, rrc_c, rrc_d, rrc_e, rrc_h, rrc_l, rrc_ind_hl, rrc_a,
 	rl_b, rl_c, rl_d, rl_e, rl_h, rl_l, rl_ind_hl, rl_a, rr_b, rr_c, rr_d, rr_e, rr_h, rr_l, rr_ind_hl, rr_a,
 	sla_b, sla_c, sla_d, sla_e, sla_h, sla_l, sla_ind_hl, sla_a, sra_b, sra_c, sra_d, sra_e, sra_h, sra_l, sra_ind_hl, sra_a,
@@ -27,7 +30,7 @@ static const uint8_t (*cb_opcodes[])(cpu_t*) = {
 };
 
 
-static const uint8_t (*opcodes[])(cpu_t*) = {
+static const oc_func opcodes[] = {
 	nop, ld_bc_d16, ld_ind_bc_a, inc_bc, inc_b, dec_b, ld_b_d8, rlca, ld_ind_a16_sp, add_hl_bc, ld_a_ind_bc, dec_bc, inc_c, dec_c, ld_c_d8, rrca,						  // 0x00
 	stop, ld_de_d16, ld_ind_de_a, inc_de, inc_d, dec_d, ld_d_d8, rla, jr_s8, add_hl_de, ld_a_ind_de, dec_de, inc_e, dec_e, ld_e_d8, rra,								  // 0x10
 	jr_nz_s8, ld_hl_d16, ld_ind_hli_a, inc_hl, inc_h, dec_h, ld_h_d8, daa, jr_z_s8, add_hl_hl, ld_a_ind_hli, dec_hl, inc_l, dec_l, ld_l_d8, cpl,						  // 0x20

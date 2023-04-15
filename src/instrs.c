@@ -228,7 +228,7 @@ static void bit(cpu_t *cpu, uint8_t b, uint8_t r){
 /**
  * @brief Misc/control instructions
  */
-uint8_t nop(cpu_t *cpu){ return ONE_CYCLE;}
+uint8_t nop(cpu_t *cpu){ (void)cpu; return ONE_CYCLE;}
 uint8_t stop(cpu_t *cpu){ cpu->stopped = 1; return ONE_CYCLE; } // TODO: Implement properly
 uint8_t scf(cpu_t *cpu){ PSW &= ~(FN | FH); PSW |= FC; return ONE_CYCLE; }
 uint8_t cpl(cpu_t *cpu){ REG_A = ~REG_A; PSW |= FN | FH; return ONE_CYCLE; }
@@ -632,7 +632,7 @@ uint8_t cp_ind_hl(cpu_t *cpu){alu(cpu, ALU_CP, memoryRead(cpu, REG_HL)); return 
 /**
  * @brief 8bit load/store/move instructions
  */
-uint8_t ld_a_a(cpu_t *cpu){return ONE_CYCLE;}
+uint8_t ld_a_a(cpu_t *cpu){(void)cpu; return ONE_CYCLE;}
 uint8_t ld_a_b(cpu_t *cpu){REG_A = REG_B; return ONE_CYCLE;}
 uint8_t ld_a_c(cpu_t *cpu){REG_A = REG_C; return ONE_CYCLE;}
 uint8_t ld_a_d(cpu_t *cpu){REG_A = REG_D; return ONE_CYCLE;}
@@ -649,7 +649,7 @@ uint8_t ld_a_ind_c(cpu_t *cpu){REG_A = memoryRead(cpu, 0xFF00 | REG_C); return T
 uint8_t ld_a_ind_a16(cpu_t *cpu){REG_A = memoryRead(cpu, memoryRead16(cpu, REG_PC)); REG_PC +=2; return FOUR_CYCLE;}
 uint8_t ld_a_ind_a8(cpu_t *cpu){REG_A = memoryRead(cpu, 0xFF00 | memoryRead(cpu, REG_PC++)); return THREE_CYCLE;}
 uint8_t ld_b_a(cpu_t *cpu){REG_B = REG_A; return ONE_CYCLE;}
-uint8_t ld_b_b(cpu_t *cpu){return ONE_CYCLE;}
+uint8_t ld_b_b(cpu_t *cpu){(void)cpu; return ONE_CYCLE;}
 uint8_t ld_b_c(cpu_t *cpu){REG_B = REG_C; return ONE_CYCLE;}
 uint8_t ld_b_d(cpu_t *cpu){REG_B = REG_D; return ONE_CYCLE;}
 uint8_t ld_b_e(cpu_t *cpu){REG_B = REG_E; return ONE_CYCLE;}
@@ -659,7 +659,7 @@ uint8_t ld_b_d8(cpu_t *cpu){ REG_B = memoryRead(cpu, REG_PC++); return TWO_CYCLE
 uint8_t ld_b_ind_hl(cpu_t *cpu){REG_B = memoryRead(cpu, REG_HL); return TWO_CYCLE;}
 uint8_t ld_c_a(cpu_t *cpu){REG_C = REG_A; return ONE_CYCLE;}
 uint8_t ld_c_b(cpu_t *cpu){REG_C = REG_B; return ONE_CYCLE;}
-uint8_t ld_c_c(cpu_t *cpu){return ONE_CYCLE;}
+uint8_t ld_c_c(cpu_t *cpu){(void)cpu; return ONE_CYCLE;}
 uint8_t ld_c_d(cpu_t *cpu){REG_C = REG_D; return ONE_CYCLE;}
 uint8_t ld_c_e(cpu_t *cpu){REG_C = REG_E; return ONE_CYCLE;}
 uint8_t ld_c_h(cpu_t *cpu){REG_C = REG_H; return ONE_CYCLE;}
@@ -669,7 +669,7 @@ uint8_t ld_c_ind_hl(cpu_t *cpu){REG_C = memoryRead(cpu, REG_HL); return TWO_CYCL
 uint8_t ld_d_a(cpu_t *cpu){REG_D = REG_A; return ONE_CYCLE;}
 uint8_t ld_d_b(cpu_t *cpu){REG_D = REG_B; return ONE_CYCLE;}
 uint8_t ld_d_c(cpu_t *cpu){REG_D = REG_C; return ONE_CYCLE;}
-uint8_t ld_d_d(cpu_t *cpu){return ONE_CYCLE;}
+uint8_t ld_d_d(cpu_t *cpu){(void)cpu; return ONE_CYCLE;}
 uint8_t ld_d_e(cpu_t *cpu){REG_D = REG_E; return ONE_CYCLE;}
 uint8_t ld_d_h(cpu_t *cpu){REG_D = REG_H; return ONE_CYCLE;}
 uint8_t ld_d_l(cpu_t *cpu){REG_D = REG_L; return ONE_CYCLE;}
@@ -679,7 +679,7 @@ uint8_t ld_e_a(cpu_t *cpu){REG_E = REG_A; return ONE_CYCLE;}
 uint8_t ld_e_b(cpu_t *cpu){REG_E = REG_B; return ONE_CYCLE;}
 uint8_t ld_e_c(cpu_t *cpu){REG_E = REG_C; return ONE_CYCLE;}
 uint8_t ld_e_d(cpu_t *cpu){REG_E = REG_D; return ONE_CYCLE;}
-uint8_t ld_e_e(cpu_t *cpu){return ONE_CYCLE;}
+uint8_t ld_e_e(cpu_t *cpu){(void)cpu; return ONE_CYCLE;}
 uint8_t ld_e_h(cpu_t *cpu){REG_E = REG_H; return ONE_CYCLE;}
 uint8_t ld_e_l(cpu_t *cpu){REG_E = REG_L; return ONE_CYCLE;}
 uint8_t ld_e_d8(cpu_t *cpu){ REG_E = memoryRead(cpu, REG_PC++); return TWO_CYCLE; }
@@ -689,7 +689,7 @@ uint8_t ld_h_b(cpu_t *cpu){REG_H = REG_B; return ONE_CYCLE;}
 uint8_t ld_h_c(cpu_t *cpu){REG_H = REG_C; return ONE_CYCLE;}
 uint8_t ld_h_d(cpu_t *cpu){REG_H = REG_D; return ONE_CYCLE;}
 uint8_t ld_h_e(cpu_t *cpu){REG_H = REG_E; return ONE_CYCLE;}
-uint8_t ld_h_h(cpu_t *cpu){return ONE_CYCLE;}
+uint8_t ld_h_h(cpu_t *cpu){(void)cpu; return ONE_CYCLE;}
 uint8_t ld_h_l(cpu_t *cpu){REG_H = REG_L; return ONE_CYCLE;}
 uint8_t ld_h_d8(cpu_t *cpu){ REG_H = memoryRead(cpu, REG_PC++); return TWO_CYCLE; }
 uint8_t ld_h_ind_hl(cpu_t *cpu){REG_H = memoryRead(cpu, REG_HL); return TWO_CYCLE;}
@@ -699,7 +699,7 @@ uint8_t ld_l_c(cpu_t *cpu){REG_L = REG_C; return ONE_CYCLE;}
 uint8_t ld_l_d(cpu_t *cpu){REG_L = REG_D; return ONE_CYCLE;}
 uint8_t ld_l_e(cpu_t *cpu){REG_L = REG_E; return ONE_CYCLE;}
 uint8_t ld_l_h(cpu_t *cpu){REG_L = REG_H; return ONE_CYCLE;}
-uint8_t ld_l_l(cpu_t *cpu){return ONE_CYCLE;}
+uint8_t ld_l_l(cpu_t *cpu){(void)cpu; return ONE_CYCLE;}
 uint8_t ld_l_d8(cpu_t *cpu){REG_L = memoryRead(cpu, REG_PC++); return TWO_CYCLE;}
 uint8_t ld_l_ind_hl(cpu_t *cpu){REG_L = memoryRead(cpu, REG_HL); return TWO_CYCLE;}
 uint8_t ld_ind_hl_a(cpu_t *cpu){memoryWrite(cpu, REG_HL, REG_A); return TWO_CYCLE;}
