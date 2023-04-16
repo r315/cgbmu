@@ -69,9 +69,9 @@ static uint16_t drawCharDouble(uint16_t x, uint16_t y, uint8_t *char_data, uint1
 
     (void)buffer;
 
-    lib2d.buffer_offset = 0; // use full buffer
+    lib2d.buffer_offset = 0; // Access full buffer
 
-    for(z = 0; z < 4; z++){
+    for(z = 0; z < 4; z++){  // But use half each iteration (4 * 16 pixel)
         p1 = lib2d.buffer + lib2d.buffer_offset;
         p2 = p1 + lib2d.font->w * 2;
 
@@ -95,7 +95,7 @@ static uint16_t drawCharDouble(uint16_t x, uint16_t y, uint8_t *char_data, uint1
             char_data += 1;
         }
 
-        LCD_WriteArea(x, y, lib2d.font->w * 2, lib2d.font->h, lib2d.buffer + lib2d.buffer_offset);
+        LCD_WriteArea(x, y, lib2d.font->w * 2, lib2d.font->h / 2, lib2d.buffer + lib2d.buffer_offset);
         y += 4;        
         lib2d.buffer_offset ^= 8*8; // swap buffer
     }
