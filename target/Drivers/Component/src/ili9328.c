@@ -170,6 +170,8 @@ void LCD_Scroll(uint16_t y)
 //--------------------------------------------------------
 void LCD_Init(void *param){
 	
+    (void)param;
+    
 	LCD_IO_INIT;
 	
 	LCDCS1;LCDWR1;LCDRD1;

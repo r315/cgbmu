@@ -90,7 +90,7 @@ $(EMU_PATH)/src/decoder.c \
 $(EMU_PATH)/src/cgbmu.c \
 $(EMU_PATH)/src/video.c \
 
-ROM_FILE=$(ROMS_PATH)/cpu_instrs.gb
+ROM_FILE :=$(ROMS_PATH)/cpu_instrs.gb
 
 # AS includes
 AS_INCLUDES = 

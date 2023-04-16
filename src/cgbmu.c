@@ -122,7 +122,7 @@ void cgbmu(const uint8_t *rom) {
 	
 	if (mode == SINGLE_STEP) {			// instruction loop		
 		while (!done) {
-			if(runOneStep()){			
+			if(runOneStep()){
 				ticks = GetTick() - ticks;
 				updateFps();
 				if (ticks < FRAME_TIME){

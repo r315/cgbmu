@@ -63,7 +63,7 @@ $(EMU_PATH)/src/cgbmu.c \
 # ASM sources
 #ASM_SOURCES =startup_at32f415cbt7.s
 
-ROM_FILE=$(ROMS_PATH)/cpu_instrs.gb
+ROM_FILE :=$(ROMS_PATH)/cpu_instrs.gb
 #######################################
 # Misc files
 #######################################

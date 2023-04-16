@@ -30,7 +30,7 @@ $(BSP_PATH)/src/spi.c \
 $(FATFS_PATH)/pff.c \
 $(FATFS_PATH)/mmc.c \
 
-ROM_FILE=$(ROMS_PATH)/cpu_instrs.gb
+ROM_FILE :=$(ROMS_PATH)/cpu_instrs.gb
 
 C_INCLUDES  = \
 $(BOARD_PATH) \
