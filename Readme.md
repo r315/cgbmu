@@ -16,11 +16,11 @@ For individual targets run bellow commands
 
 `make bb`  - Target Blueboard, NXP LPC1768 based development board.
 
-`make disco`  - Target STM32f769I discovery board
+`make disco`  - Target STM32f769I discovery board.
 
-`make artery`  - Custom board based on Artery AT32F415CBT7 low cost microcontroller
+`make artery`  - Custom board based on Artery AT32F415CBT7 low cost microcontroller.
 
-form more build rules see makefile
+for more build rules see makefile
 
 ## Change rom
 

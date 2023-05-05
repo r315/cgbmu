@@ -70,7 +70,7 @@ uint8_t opa = REG_A;
 			
 		case ALU_CP:
 			PSW = FN;	
-			if( opa == opb ) PSW |= FZ;
+			if( opa == opb ) { PSW |= FZ; return; }
 			if((opa & 0x0F) < (opb & 0x0f)) PSW |= FH;
 			if(opa < opb)	PSW |= FC;
 			return;		

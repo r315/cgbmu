@@ -1,6 +1,10 @@
 #ifndef _cgbmu_h_
 #define _cgbmu_h_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include "dmgcpu.h" 
 
@@ -19,4 +23,9 @@ int loadRom(const uint8_t **dst, const char *rom_name);
 uint8_t readButtons(void);
 void pushScanLine(cpu_t *cpu);
 int drawInt(int x, int y, unsigned int v, char radix, char digitos);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _common_h_ */

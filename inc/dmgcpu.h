@@ -28,6 +28,10 @@ http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
 #ifndef _dmgcpu_h_
 #define _dmgcpu_h_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 #define CLOCK_CYCLE     4
@@ -266,4 +270,9 @@ uint8_t joyPad(cpu_t *cpu);
 void bootCpu(cpu_t *cpu);
 void setInt(cpu_t *cpu, uint8_t irq);
 void serial(cpu_t *cpu);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

@@ -1,6 +1,10 @@
 #ifndef _cartridge_h_
 #define _cartridge_h_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include "dmgcpu.h"
 
@@ -20,4 +24,9 @@
 #define MCB1_RAM_EN				0x0A
 
 void cartridgeInit(cpu_t *cpu, const uint8_t *ptr);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

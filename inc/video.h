@@ -45,6 +45,10 @@ STAT Int enable : | LYC=LY | OAM | V-Blank | H-Blank | - | - | - |
 
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "dmgcpu.h"
 
 #ifndef _video_h_
@@ -113,4 +117,9 @@ void scanOAM(cpu_t *cpu);
 void writeLCDC(cpu_t *cpu, uint8_t newlcdc);
 void writeSTAT(cpu_t *cpu, uint8_t newstat);
 void writeLYC(cpu_t *cpu, uint8_t newstat);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

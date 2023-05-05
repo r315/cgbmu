@@ -1,6 +1,10 @@
 #ifndef _instrs_h_
 #define _instrs_h_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include "decoder.h"
 #include "dmgcpu.h"
@@ -528,6 +532,10 @@ void srl(cpu_t *cpu, uint8_t *r);
 void bit(cpu_t *cpu, uint8_t b, uint8_t *r);
 void res(cpu_t *cpu, uint8_t b, uint8_t *r);
 void set(cpu_t *cpu, uint8_t b, uint8_t *r);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif
