@@ -46,7 +46,7 @@ const char *test_roms[] = {
 	"09-op r,r.gb",
 	"10-bit ops.gb",
 	"11-op a,(hl).gb",
-	"instr_timing.gb",	// https://github.com/retrio/gb-test-roms/tree/master/instr_timing
+	"instr_timing.gb",	  // https://github.com/retrio/gb-test-roms/tree/master/instr_timing
 	"interrupt_time.gb",  // 13
 	"phys.gb"             // 14
 };
@@ -122,7 +122,7 @@ int loadRom(const uint8_t **dst, const char *file)
 {
 	char cwd[1024];
 	FILE *fp;
-	int n;
+	int rom_size;
 
 	if (getcwd(cwd, sizeof(cwd)))
 		printf("Current working dir: %s\n", cwd);
@@ -151,13 +151,24 @@ int loadRom(const uint8_t **dst, const char *file)
 
 	uint8_t *rom_data = (uint8_t*)malloc(sz);
 
-	n = fread(rom_data, 1, sz, fp);
+    rom_size = fread(rom_data, 1, sz, fp);
 
 	uint8_t card_type = rom_data[CARTRIDGE_TYPE_OFFSET];
 
 	printf("Card type: %s\n", card_types[card_type]);
 
-	printf("Game Title: %s\n", (char*)&rom_data[CARTRIDGE_TITLE_OFFSET]);
+    char *title = (char*)&rom_data[CARTRIDGE_TITLE_OFFSET];
+
+    memset(cwd, '\0', 16);
+
+    for (int i = 0; i < 14; i++, title++) {
+        cwd[i] = *title;
+        if (*title == '\0') {
+            break;
+        }
+    }
+
+	printf("Game Title: %s\n", cwd);
 
 	if (card_type > CARTRIDGE_MBC1) {
 		printf("Warning ONLY CARTRIDGE MBC1 SUPPORTED \n");
@@ -167,7 +178,7 @@ int loadRom(const uint8_t **dst, const char *file)
 	fclose(fp);
 
 	*dst = rom_data;
-	return n;
+	return rom_size;
 }
 //-----------------------------------------
 //
