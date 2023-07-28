@@ -18,7 +18,6 @@
 #include "tests.h"
 #include "lib2d.h"
 
-#define MULTIPLE_CPUS	0 // Ensure dynamic allocation for cartridgs and SDL window with proper size
 
 typedef struct threadparam_s {
 	cpu_t *cpu;
@@ -316,7 +315,7 @@ void drawFps(cpu_t *cpu) {
 int loadTestRom(uint8_t nr) {
 	char *path = malloc(128);
 
-	strcpy(path, (const char*)ROMS_PATH"/tests");
+	strcpy(path, (const char*)ROM_PATH"/tests");
 
 	int len = strlen(path);
 	*(path + len) = '/';
@@ -408,7 +407,7 @@ int main (int argc, char *argv[])
 	threadparam_t thread1_param = { &cpu_1, (const char*)ROM_PATH"/dkl.gb" };
 	threadparam_t thread2_param = { &cpu_2, (const char*)ROM_PATH"/mario.gb" };
 	threadparam_t thread3_param = { &cpu_3, (const char*)ROM_PATH"/Alleyway.gb" };
-	threadparam_t thread4_param = { &cpu_4, (const char*)ROM_PATH"/tetris.gb" };
+	threadparam_t thread4_param = { &cpu_4, (const char*)ROM_PATH"/rogerrabbit.gb" };
 
 	threads[0] = CreateThread(NULL, 0, threadRun, &thread1_param, 0, NULL);
 	threads[1] = CreateThread(NULL, 0, threadRun, &thread2_param, 0, NULL);

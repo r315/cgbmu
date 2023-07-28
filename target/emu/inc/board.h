@@ -12,9 +12,17 @@
 	#include <SDL.h>
 #endif
 
+#define MULTIPLE_CPUS	        0 // Ensure dynamic allocation for cartridgs and SDL window with proper size
 #define LCD_AUTO_UPDATE_TIME    0 //30ms => 33fps, 0: manual update 
+
+#if MULTIPLE_CPUS
+#define LCD_W		600
+#define LCD_H		320
+#else
 #define LCD_W		320
 #define LCD_H		144
+#endif
+
 #define LCD_SIZE    (LCD_W * LCD_H)
 
 #define DBG_PIN_TOGGLE

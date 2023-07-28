@@ -74,7 +74,7 @@ SDL_Window *Window_Init(Lcd *plcd){
 #if LCD_AUTO_UPDATE_TIME
     plcd->auto_update = 1;
   
-    SDL_AddTimer(UPDATE_TIME, LCD_Auto_Update, plcd);
+    SDL_AddTimer(LCD_AUTO_UPDATE_TIME, LCD_Auto_Update, plcd);
 #endif
 	SDL_SetWindowPosition(plcd->window, 20, 50);
     return plcd->window;
