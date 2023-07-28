@@ -233,6 +233,7 @@ typedef struct cpu_s{
 	uint32_t div_cycles;
     uint32_t serial_cycles;
     uint32_t serial_bit;
+    uint32_t win_cnt;
 
 	obj_t **visible_objs;       // use pointers to avoid 
 	uint8_t *screen_line;       // out of bound offsets

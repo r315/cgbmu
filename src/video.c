@@ -92,14 +92,14 @@ void blitObjectData(cpu_t *cpu, obj_t *obj, uint8_t *dst) {
 /**
 * @brief Combine one line of background/window tiles to screen buffer line
 *
+* @param dst			Destination buffer for pixel color
 * @param cpu            cpu structure were palettes and video buffers reside
 * @param tilemapline	Source tile map with added offset (LY + SCY)
-* @param dst			Destination buffer for pixel color
-* @param pixeloffset	Start pixel for current scanline (SCX)
-* @param line           Current screen line being drawn  (SCY + LY)
-* @param size			Number of pixel to blit
+* @param pixeloffset	Start pixel within line
+* @param line           Screen line to be drawn
+* @param count			Number of pixel to blit
 * */
-void blitTileData(cpu_t *cpu, uint8_t *tilemapline, uint8_t *dst, uint8_t pixeloffset, uint8_t line, uint32_t count) {
+void blitTileData(uint8_t* dst, cpu_t *cpu, uint8_t *tilemapline, uint8_t pixeloffset, uint8_t line, uint32_t count) {
     uint8_t tilepattern, msb, lsb, color;
     uint8_t *pal;
     tiledata_t *td;
@@ -107,7 +107,7 @@ void blitTileData(cpu_t *cpu, uint8_t *tilemapline, uint8_t *dst, uint8_t pixelo
     line = TILE_LINE(line);                   // Mask line within the tile
     pal = cpu->bgpal;
 
-    uint32_t npixel = TILE_LINE(pixeloffset); // SCX offset is only affects start tile
+    uint32_t npixel = TILE_LINE(pixeloffset); // get pixel offset within a tile
     uint32_t mask = (0x80 >> npixel);		  // create correct mask for first tile
     npixel = TILE_W - npixel;                 // Compute number of pixel to blit on first tile
 
@@ -118,6 +118,9 @@ void blitTileData(cpu_t *cpu, uint8_t *tilemapline, uint8_t *dst, uint8_t pixelo
         msb = td->line[line].msb;
         lsb = td->line[line].lsb;
         // Update counters
+        if (npixel > count) {
+            npixel = count;
+        }
         pixeloffset += npixel;
         count -= npixel;
         // loop for all/remaining pixels of one tile
@@ -188,15 +191,35 @@ void scanline(cpu_t *cpu) {
     tilemapline += TILE_LINE_INDEX(line);
 
     memset(sld, 0, SCREEN_W);
-    blitTileData(cpu, tilemapline, sld, cpu->IOSCX, line, SCREEN_W);
+    blitTileData(sld, cpu, tilemapline, cpu->IOSCX, line, SCREEN_W);
     // Draw window if active and visible
     if (lcdc & W_DISPLAY && ly >= cpu->IOWY && cpu->IOWX < SCREEN_W + 7)
     {
-        line = ly - cpu->IOWY;						// Calculate y offset from start of window
-        sld = cpu->screen_line + cpu->IOWX - 7;		// Calculate x offset from start of window, WX has an offset of 7
+        if (ly == cpu->IOWY) {
+            cpu->win_cnt = ly;  // Reset window internal counter
+        }
+        else {
+            cpu->win_cnt++;
+        }
+
+        line = cpu->win_cnt - cpu->IOWY;    // Calculate y offset from start of window
         tilemapline = (uint8_t*)(cpu->vram + ((lcdc & W_MAP) ? TILE_MAP1_BASE : TILE_MAP0_BASE));
         tilemapline += TILE_LINE_INDEX(line);
-        blitTileData(cpu, tilemapline, sld, 0, line, SCREEN_W - cpu->IOWX + 7);
+
+        if (cpu->IOWX < 7) {
+            // Start of window is outside of screen start
+            blitTileData(sld, cpu, tilemapline, 7 - cpu->IOWX, line, SCREEN_W);
+        }
+        else {
+            if (cpu->IOWX == 166) {
+                // on this conndition window is fully displayed
+                blitTileData(sld, cpu, tilemapline, 8, line, SCREEN_W);
+            }
+            else {
+                sld += cpu->IOWX - 7; // skip WX pixels by advancing destination buffer pointer
+                blitTileData(sld, cpu, tilemapline, 0, line, SCREEN_W - (cpu->IOWX - 7));
+            }
+        }
     }
 
     uint32_t idx = 0;
