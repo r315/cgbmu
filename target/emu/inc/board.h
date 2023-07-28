@@ -12,6 +12,7 @@
 	#include <SDL.h>
 #endif
 
+#define LCD_AUTO_UPDATE_TIME    0 //30ms => 33fps, 0: manual update 
 #define LCD_W		320
 #define LCD_H		144
 #define LCD_SIZE    (LCD_W * LCD_H)

@@ -6,8 +6,6 @@
 #include <string.h>
 #include "board.h"
 
-#define UPDATE_TIME 30 //30ms => 33fps
-
 #define WINDOW_W	LCD_W
 #define WINDOW_H	LCD_H
 
@@ -73,11 +71,11 @@ SDL_Window *Window_Init(Lcd *plcd){
     fprintf(stdout,"LCDSDL: Window size %dx%d %dbpp\n",plcd->surface->w, plcd->surface->h, plcd->surface->format->BitsPerPixel);    
       
     SDL_FillRect(plcd->surface, NULL, SDL_MapRGB(plcd->surface->format, 0x00, 0x0, 0x0 ) );    
-    
+#if LCD_AUTO_UPDATE_TIME
     plcd->auto_update = 1;
   
     SDL_AddTimer(UPDATE_TIME, LCD_Auto_Update, plcd);
-
+#endif
 	SDL_SetWindowPosition(plcd->window, 20, 50);
     return plcd->window;
 }

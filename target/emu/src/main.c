@@ -261,6 +261,13 @@ void pushScanLine(cpu_t *cpu) {
 	while (pixel < end) {
 		LCD_Data(lcd_pal[*pixel++]);
 	}
+
+#if (LCD_AUTO_UPDATE_TIME == 0)
+    if (cpu->IOLY == 143) {
+        LCD_Update();
+    }
+#endif
+
 #if _WIN32 && MULTIPLE_CPUS
 	ReleaseMutex(ghMutex);
 #endif
