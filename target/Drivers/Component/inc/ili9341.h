@@ -1,7 +1,7 @@
 /**
 * @file     ili9341.h
 * @brief    Contains the ILI9341 lcd controller API headers and symbols.
-*           
+*
 * @version  1.0
 * @date     5 Nov. 2016
 * @author   Hugo Reis
@@ -11,11 +11,6 @@
 #define _ili9341_h_
 
 #include <stdint.h>
-
-#define TFT_ILI9341
-
-#define TFT_W 240
-#define TFT_H 320
 
 #define ILI9341_SWRST    0x01
 #define ILI9341_RDDID    0x04

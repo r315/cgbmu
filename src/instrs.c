@@ -22,67 +22,68 @@ void alu(cpu_t *cpu, uint8_t op, uint8_t opb)
 uint16_t sum;
 uint8_t ci = 0;
 uint8_t opa = REG_A;
-	
+
 	switch(op)
-	{				
+	{
 		case ALU_ADC:
 			if(PSW & FC) ci = 1;
+            //__attribute__ ((fallthrough));
 		case ALU_ADD:
-			PSW = 0 ;						
+			PSW = 0 ;
 			if( ((opa & 0x0F) + (opb & 0x0f) + ci) > 0x0F) PSW |= FH;
 			sum = opa + opb + ci;
-			if( (sum & 0xFF00) ) PSW |= FC;				
+			if( (sum & 0xFF00) ) PSW |= FC;
 			opa = (uint8_t)sum;
 			break;
-		
+
 		case ALU_SUB:
-			PSW = FN;					
+			PSW = FN;
 			if(( opa & 0x0F) < (opb&0x0F)) PSW |= FH;
-			if(opa < opb) PSW |= FC;					
+			if(opa < opb) PSW |= FC;
 			opa -= opb;
 			break;
-			
+
 		case ALU_SBC: // Source from DMGBoy
-			if(PSW & FC) ci = 1;			
-			PSW = FN;			
-			sum = opb + ci;	
+			if(PSW & FC) ci = 1;
+			PSW = FN;
+			sum = opb + ci;
 			if( (opa & 0x0f) < (opb & 0x0f))     PSW |= FH;
 			else if((opa & 0x0f) < (sum & 0x0f)) PSW |= FH;
-			else if( ((opa & 0x0f)==(opb & 0x0f)) && ((opb & 0x0f)==0x0f) && ci) PSW |= FH;			
-			if( opa < sum) PSW |= FC;			
+			else if( ((opa & 0x0f)==(opb & 0x0f)) && ((opb & 0x0f)==0x0f) && ci) PSW |= FH;
+			if( opa < sum) PSW |= FC;
 			opa -= sum ;
-			break;		
-			
+			break;
+
 		case ALU_AND:
 			PSW = FH;
 			opa &= opb;
 			break;
-			
+
 		case ALU_XOR:
 			PSW = 0;
 			opa ^= opb;
 			break;
-			
+
 		case ALU_OR:
 			PSW = 0;
 			opa |= opb;
-			break;	
-			
+			break;
+
 		case ALU_CP:
-			PSW = FN;	
+			PSW = FN;
 			if( opa == opb ) { PSW |= FZ; return; }
 			if((opa & 0x0F) < (opb & 0x0f)) PSW |= FH;
 			if(opa < opb)	PSW |= FC;
-			return;		
+			return;
 	}
-		
+
 	if(!opa)
 		PSW |= FZ;
 	REG_A = opa;
 }
 //-----------------------------------------
 // decimal adjust
-// source form DMGBoy 
+// source form DMGBoy
 // https://code.google.com/p/dmgboy/
 //
 // Details:
@@ -90,12 +91,12 @@ uint8_t opa = REG_A;
 //-----------------------------------------
 uint8_t daa(cpu_t *cpu){
 	uint16_t opa = REG_A;
-    
+
     if (!(PSW & FN))
     {
         if ((PSW & FH) || ((opa & 0xF) > 9))
             opa += 0x06;
-        
+
         if ((PSW & FC) || (opa > 0x9F))
             opa += 0x60;
     }
@@ -103,27 +104,28 @@ uint8_t daa(cpu_t *cpu){
     {
         if (PSW & FH)
             opa = (opa - 6) & 0xFF;
-        
+
         if (PSW & FC)
             opa -= 0x60;
     }
-    
+
 	PSW &= ~(FZ | FH);
-    
+
     if ((opa & 0x100) == 0x100)
         PSW |= FC;
-    
+
     REG_A = (uint8_t)opa;
-    
-    if (!REG_A)
+
+    if (!REG_A){
         PSW |= FZ;
+    }
 
 	return ONE_CYCLE;
 }
 #if TABLE_DECODER
 //-----------------------------------------
 // rotate register left
-// flags: Z,0,0,C  b7 to carry  
+// flags: Z,0,0,C  b7 to carry
 //-----------------------------------------
 static uint8_t rlc(cpu_t *cpu, uint8_t r)
 {
@@ -135,19 +137,19 @@ static uint8_t rlc(cpu_t *cpu, uint8_t r)
 }
 //-----------------------------------------
 // rotate register right
-// flags: Z,0,0,C  b0 to carry   
+// flags: Z,0,0,C  b0 to carry
 //-----------------------------------------
 static uint8_t rrc(cpu_t *cpu, uint8_t r)
 {
-	uint8_t MSb;	
-	MSb = r << 7;    	
+	uint8_t MSb;
+	MSb = r << 7;
 	PSW = (MSb ==0)? 0 : FC;
-    r = MSb | (r >> 1);    
-    if(r == 0) PSW |= FZ; 
+    r = MSb | (r >> 1);
+    if(r == 0) PSW |= FZ;
 	return r;
 }
 //-----------------------------------------
-// rotate register left through carry  
+// rotate register left through carry
 // flags: Z,0,0,C  carry to b0, b7 to carry
 //-----------------------------------------
 static uint8_t rl(cpu_t *cpu, uint8_t r)
@@ -160,7 +162,7 @@ static uint8_t rl(cpu_t *cpu, uint8_t r)
 	return r;
 }
 //-----------------------------------------
-// rotate register right through carry   
+// rotate register right through carry
 // flags: Z,0,0,C  carry to b7, b0 to carry
 //-----------------------------------------
 static uint8_t rr(cpu_t *cpu, uint8_t r)
@@ -178,7 +180,7 @@ static uint8_t rr(cpu_t *cpu, uint8_t r)
 //-----------------------------------------
 static uint8_t sla(cpu_t *cpu, uint8_t r)
 {
-	PSW = (r & (1<<7)) ? FC : 0;		
+	PSW = (r & (1<<7)) ? FC : 0;
 	r = r << 1;
     if(r == 0) PSW |= FZ;
 	return r;
@@ -280,7 +282,7 @@ uint8_t add_sp_s8(cpu_t *cpu){
 	uint8_t aux = memoryRead(cpu, REG_PC++);
 	PSW = 0;
 	if( ((REG_SP & 0xff) + aux) > 0xFF) PSW = FC;
-	if( ((REG_SP & 0x0f) + (aux & 0x0f)) > 0x0f) PSW |= FH;	
+	if( ((REG_SP & 0x0f) + (aux & 0x0f)) > 0x0f) PSW |= FH;
 	REG_SP += (signed char)aux;
 	return FOUR_CYCLE;
 }
@@ -291,28 +293,28 @@ uint8_t jr_s8(cpu_t *cpu){
 	REG_PC = REG_PC + (signed char)memoryRead(cpu, REG_PC) + 1;
 	return THREE_CYCLE;
 }
-uint8_t jr_nz_s8(cpu_t *cpu){	
+uint8_t jr_nz_s8(cpu_t *cpu){
 	if (!(PSW & FZ)) {
 		REG_PC = REG_PC + (signed char)memoryRead(cpu, REG_PC) + 1;
 		return THREE_CYCLE;
 	}else
-		REG_PC++;				
+		REG_PC++;
 	return TWO_CYCLE;
 }
-uint8_t jr_nc_s8(cpu_t *cpu){	
+uint8_t jr_nc_s8(cpu_t *cpu){
 	if (!(PSW & FC)) {
 		REG_PC = REG_PC + (signed char)memoryRead(cpu, REG_PC) + 1;
 		return THREE_CYCLE;
 	}else
-		REG_PC++;				
+		REG_PC++;
 	return TWO_CYCLE;
 }
-uint8_t jr_z_s8(cpu_t *cpu){	
+uint8_t jr_z_s8(cpu_t *cpu){
 	if (PSW & FZ) {
 		REG_PC = REG_PC + (signed char)memoryRead(cpu, REG_PC) + 1;
 		return THREE_CYCLE;
 	}else
-		REG_PC++;				
+		REG_PC++;
 	return TWO_CYCLE;
 }
 uint8_t jr_c_s8(cpu_t *cpu){
@@ -320,7 +322,7 @@ uint8_t jr_c_s8(cpu_t *cpu){
 		REG_PC = REG_PC + (signed char)memoryRead(cpu, REG_PC) + 1;
 		return THREE_CYCLE;
 	}else
-		REG_PC++;				
+		REG_PC++;
 	return TWO_CYCLE;
 }
 uint8_t ret_nz(cpu_t *cpu){
@@ -342,7 +344,7 @@ uint8_t jp_nz_a16(cpu_t *cpu){
 		REG_PC = memoryRead16(cpu, REG_PC);
 		return FOUR_CYCLE;
 	}
-	else	
+	else
 		REG_PC += 2;
 	return THREE_CYCLE;
 }
@@ -351,7 +353,7 @@ uint8_t jp_nc_a16(cpu_t *cpu){
 		REG_PC = memoryRead16(cpu, REG_PC);
 		return FOUR_CYCLE;
 	}
-	else	
+	else
 		REG_PC += 2;
 	return THREE_CYCLE;
 }
@@ -406,7 +408,7 @@ uint8_t jp_z_a16(cpu_t *cpu){
 		REG_PC = memoryRead16(cpu, REG_PC);
 		return FOUR_CYCLE;
 	}
-	else	
+	else
 		REG_PC += 2;
 	return THREE_CYCLE;
 }
@@ -415,7 +417,7 @@ uint8_t jp_c_a16(cpu_t *cpu){
 		REG_PC = memoryRead16(cpu, REG_PC);
 		return FOUR_CYCLE;
 	}
-	else	
+	else
 		REG_PC += 2;
 	return THREE_CYCLE;
 }
@@ -425,7 +427,7 @@ uint8_t call_z_a16(cpu_t *cpu){
 		REG_PC = memoryRead16(cpu, REG_PC);
 		return SIX_CYCLE;
 	}
-	else	
+	else
 		REG_PC += 2;
 	return THREE_CYCLE;
 }
@@ -435,7 +437,7 @@ uint8_t call_c_a16(cpu_t *cpu){
 		REG_PC = memoryRead16(cpu, REG_PC);
 		return SIX_CYCLE;
 	}
-	else	
+	else
 		REG_PC += 2;
 	return THREE_CYCLE;
 }
@@ -446,40 +448,40 @@ uint8_t call_a16(cpu_t *cpu){
 }
 /**
  * @brief 8bit arithmetic/logical instructions
- */	
+ */
 uint8_t inc_a(cpu_t *cpu){
-	PSW &= ~(FZ | FN | FH);	
+	PSW &= ~(FZ | FN | FH);
 	if((REG_A & 0x0F) == 0x0F) PSW |= FH;
 	if(++REG_A == 0) PSW |= FZ;
 	return ONE_CYCLE;
 }
 uint8_t inc_b(cpu_t *cpu){
-	PSW &= ~(FZ | FN | FH);	
+	PSW &= ~(FZ | FN | FH);
 	if((REG_B & 0x0F) == 0x0F) PSW |= FH;
 	if(++REG_B == 0) PSW |= FZ;
 	return ONE_CYCLE;
 }
 uint8_t inc_c(cpu_t *cpu){
-	PSW &= ~(FZ | FN | FH);	
+	PSW &= ~(FZ | FN | FH);
 	if((REG_C & 0x0F) == 0x0F)	PSW |= FH;
 	if(++REG_C == 0) PSW |= FZ;
 	return ONE_CYCLE;
 }
 uint8_t inc_d(cpu_t *cpu){
-	PSW &= ~(FZ | FN | FH);	
+	PSW &= ~(FZ | FN | FH);
 	if((REG_D & 0x0F) == 0x0F) PSW |= FH;
 	if(++REG_D == 0) PSW |= FZ;
 	return ONE_CYCLE;
 }
 uint8_t inc_e(cpu_t *cpu){
-	PSW &= ~(FZ | FN | FH);	
+	PSW &= ~(FZ | FN | FH);
 	if((REG_E & 0x0F) == 0x0F) PSW |= FH;
 	if(++REG_E == 0) PSW |= FZ;
 	return ONE_CYCLE;
 }
 uint8_t inc_h(cpu_t *cpu){
-	PSW &= ~(FZ | FN | FH);	
-	if((REG_H & 0x0F) == 0x0F) PSW |= FH;		
+	PSW &= ~(FZ | FN | FH);
+	if((REG_H & 0x0F) == 0x0F) PSW |= FH;
 	if(++REG_H == 0) PSW |= FZ;
 	return ONE_CYCLE;
 }
@@ -507,21 +509,21 @@ uint8_t dec_a(cpu_t *cpu) {
 uint8_t dec_b(cpu_t *cpu) {
 	PSW &= ~(FZ | FH);
 	PSW |= FN;
-	if(!(REG_B & 0x0f)) PSW |= FH;		
+	if(!(REG_B & 0x0f)) PSW |= FH;
     if(--REG_B == 0) PSW |= FZ;
 	return ONE_CYCLE;
 }
 uint8_t dec_c(cpu_t *cpu){
 	PSW &= ~(FZ | FH);
-	PSW |= FN;	
-	if(!(REG_C & 0x0f)) PSW |= FH;		
+	PSW |= FN;
+	if(!(REG_C & 0x0f)) PSW |= FH;
     if(--REG_C == 0) PSW |= FZ;
 	return ONE_CYCLE;
 }
 uint8_t dec_d(cpu_t *cpu) {
 	PSW &= ~(FZ | FH);
 	PSW |= FN;
-	if(!(REG_D & 0x0f)) PSW |= FH;		
+	if(!(REG_D & 0x0f)) PSW |= FH;
     if(--REG_D == 0) PSW |= FZ;
 	return ONE_CYCLE;
 }
@@ -542,7 +544,7 @@ uint8_t dec_h(cpu_t *cpu) {
 uint8_t dec_l(cpu_t *cpu) {
 	PSW &= ~(FZ | FH);
 	PSW |= FN;
-	if(!(REG_L & 0x0f)) PSW |= FH;		
+	if(!(REG_L & 0x0f)) PSW |= FH;
     if(--REG_L == 0) PSW |= FZ;
 	return ONE_CYCLE;
 }
@@ -721,28 +723,28 @@ uint8_t ld_ind_a16_a(cpu_t *cpu){memoryWrite(cpu, memoryRead16(cpu, REG_PC), REG
  * @brief 8bit rotations/shifts and bit instructions
  */
 uint8_t rlca(cpu_t *cpu){
-	uint8_t aux = REG_A >> 7;		
-	PSW = (aux == 0) ? 0 : FC;	
-    REG_A = (REG_A << 1) | aux;		
+	uint8_t aux = REG_A >> 7;
+	PSW = (aux == 0) ? 0 : FC;
+    REG_A = (REG_A << 1) | aux;
 	return ONE_CYCLE;
 }
 uint8_t rla(cpu_t *cpu){
 	uint8_t aux = (PSW & FC) ? 1 : 0;
 	PSW = (REG_A & (1<<7)) ? FC : 0;
-	REG_A = (REG_A << 1) | aux;			
+	REG_A = (REG_A << 1) | aux;
 	return ONE_CYCLE;
 }
 uint8_t rrca(cpu_t *cpu){
-	uint8_t aux = REG_A << 7;    	
+	uint8_t aux = REG_A << 7;
 	PSW = (aux & (1<<7)) ? FC : 0;
-	REG_A = aux | (REG_A >> 1);    
+	REG_A = aux | (REG_A >> 1);
 	return ONE_CYCLE;
 }
 uint8_t rra(cpu_t *cpu){
 	uint8_t aux = (PSW & FC) ? (1<<7) : 0;
 	PSW = (REG_A & (1<<0)) ? FC : 0;
 	REG_A = aux | (REG_A >> 1);
-	return ONE_CYCLE;	
+	return ONE_CYCLE;
 }
 
 uint8_t rlc_a(cpu_t *cpu){REG_A = rlc(cpu, REG_A); return TWO_CYCLE;}
@@ -1004,22 +1006,22 @@ uint8_t set_7_ind_hl(cpu_t *cpu) { memoryWrite(cpu, REG_HL, memoryRead(cpu, REG_
 /**
  * @brief 	16bit load/store/move instructions
  */
-uint8_t ld_bc_d16(cpu_t *cpu){ 
+uint8_t ld_bc_d16(cpu_t *cpu){
 	REG_C = memoryRead(cpu, REG_PC++); // LSB
 	REG_B = memoryRead(cpu, REG_PC++); // MSB
 	return THREE_CYCLE;
 }
-uint8_t ld_de_d16(cpu_t *cpu){	
+uint8_t ld_de_d16(cpu_t *cpu){
 	REG_E = memoryRead(cpu, REG_PC++);
 	REG_D = memoryRead(cpu, REG_PC++);
 	return THREE_CYCLE;
 }
-uint8_t ld_hl_d16(cpu_t *cpu){	
+uint8_t ld_hl_d16(cpu_t *cpu){
 	REG_L = memoryRead(cpu, REG_PC++);
 	REG_H = memoryRead(cpu, REG_PC++);
 	return THREE_CYCLE;
 }
-uint8_t ld_sp_d16(cpu_t *cpu){	
+uint8_t ld_sp_d16(cpu_t *cpu){
 	REG_SP = memoryRead16(cpu, REG_PC);
 	REG_PC += 2;
 	return THREE_CYCLE;
@@ -1073,8 +1075,8 @@ uint8_t ld_hl_sp_s8(cpu_t *cpu){
 	uint8_t aux = memoryRead(cpu, REG_PC++);
 	PSW = 0;
 	if( ((REG_SP & 0xff) + aux) > 0xFF) PSW = FC;
-	if( ((REG_SP & 0x0f) + (aux & 0x0f)) > 0x0f) PSW |= FH;				
-	REG_HL = REG_SP + (signed char)aux;			
+	if( ((REG_SP & 0x0f) + (aux & 0x0f)) > 0x0f) PSW |= FH;
+	REG_HL = REG_SP + (signed char)aux;
 	return THREE_CYCLE;
 }
 uint8_t ld_sp_hl(cpu_t *cpu){
@@ -1091,13 +1093,13 @@ void add_hl_d16(cpu_t *cpu, uint16_t v)
 {
 uint32_t aux;
 
-	PSW &= ~(FN | FH| FC);	
+	PSW &= ~(FN | FH| FC);
 	aux = REG_HL;
-	
+
 	if(((aux & 0x0FFF) + (v & 0x0FFF) ) > 0x0FFF) PSW |= FH;
-		
+
 	if((aux+v) > 0xFFFF) PSW |= FC;
-	
+
 	aux += v;
 	REG_HL = aux & 0xFFFF;
 }
@@ -1107,9 +1109,9 @@ uint32_t aux;
 //-----------------------------------------
 void inc(cpu_t *cpu, uint8_t *r)
 {
-	PSW &= ~(FZ | FN | FH);	
-	if((*r & 0x0F) == 0x0F)	PSW |= FH;		
-	(*r)++; 
+	PSW &= ~(FZ | FN | FH);
+	if((*r & 0x0F) == 0x0F)	PSW |= FH;
+	(*r)++;
 	if(*r == 0) PSW |= FZ;
 }
 //-----------------------------------------
@@ -1120,37 +1122,37 @@ void dec(cpu_t *cpu, uint8_t *r)
 {
 	PSW &= ~(FZ | FH);
 	PSW |= FN;
-	
-	if(!(*r & 0x0f)) PSW |= FH;		
+
+	if(!(*r & 0x0f)) PSW |= FH;
 	(*r)--;
     if(*r == 0) PSW |= FZ;
 }
 //-----------------------------------------
 // rotate register left
-// flags: Z,0,0,C  b7 to carry  
+// flags: Z,0,0,C  b7 to carry
 //-----------------------------------------
 void rlc(cpu_t *cpu, uint8_t *r)
 {
 	uint8_t LSb;
-	LSb = *r >> 7;		
-	PSW = (LSb == 0)? 0 : FC;	
+	LSb = *r >> 7;
+	PSW = (LSb == 0)? 0 : FC;
     *r = (*r << 1) | LSb;
-    if(*r == 0) PSW |= FZ; 
+    if(*r == 0) PSW |= FZ;
 }
 //-----------------------------------------
 // rotate register right
-// flags: Z,0,0,C  b0 to carry   
+// flags: Z,0,0,C  b0 to carry
 //-----------------------------------------
 void rrc(cpu_t *cpu, uint8_t *r)
 {
 	uint8_t MSb;
-	MSb = *r << 7;    	
+	MSb = *r << 7;
 	PSW = (MSb ==0)? 0 : FC;
-    *r = MSb | (*r >> 1);    
-    if(*r == 0) PSW |= FZ; 
+    *r = MSb | (*r >> 1);
+    if(*r == 0) PSW |= FZ;
 }
 //-----------------------------------------
-// rotate register left through carry  
+// rotate register left through carry
 // flags: Z,0,0,C  carry to b0, b7 to carry
 //-----------------------------------------
 void rl(cpu_t *cpu, uint8_t *r)
@@ -1159,10 +1161,10 @@ void rl(cpu_t *cpu, uint8_t *r)
 	LSb = (PSW & FC) ? (1<<0) : 0;
 	PSW = (*r & (1<<7))? FC : 0;
 	*r = (*r<<1) | LSb;
-	if(*r == 0) PSW |= FZ;	
+	if(*r == 0) PSW |= FZ;
 }
 //-----------------------------------------
-// rotate register right through carry   
+// rotate register right through carry
 // flags: Z,0,0,C  carry to b7, b0 to carry
 //-----------------------------------------
 void rr(cpu_t *cpu, uint8_t *r)
@@ -1179,7 +1181,7 @@ void rr(cpu_t *cpu, uint8_t *r)
 //-----------------------------------------
 void sla(cpu_t *cpu, uint8_t *r)
 {
-	PSW = (*r & (1<<7)) ? FC : 0;		
+	PSW = (*r & (1<<7)) ? FC : 0;
 	*r = *r<<1;
     if(*r == 0) PSW |= FZ;
 }
@@ -1191,7 +1193,7 @@ void sra(cpu_t *cpu, uint8_t *r)
 {
 	PSW = (*r & (1<<0)) ? FC : 0;
 	*r = (*r & 0x80) | (*r>>1);
-	if(*r == 0) PSW |= FZ;	
+	if(*r == 0) PSW |= FZ;
 }
 //-----------------------------------------
 // shift right into carry MSb = 0
@@ -1222,7 +1224,7 @@ void bit(cpu_t *cpu, uint8_t b, uint8_t *r)
 	uint8_t aux;
 	PSW &= ~(FN | FZ);
 	PSW |=  FH;
-	
+
 	if(r == &PSW)
 	{
 		aux = memoryRead(cpu, REG_HL);
@@ -1230,8 +1232,8 @@ void bit(cpu_t *cpu, uint8_t b, uint8_t *r)
 	}
 	else
 		aux = *r;
-	
-	if(!(aux & (1<<b)))	PSW |= FZ;	
+
+	if(!(aux & (1<<b)))	PSW |= FZ;
 	SET_INSTR_CYCLES(TWO_CYCLE);
 }
 //-----------------------------------------
@@ -1241,7 +1243,7 @@ void bit(cpu_t *cpu, uint8_t b, uint8_t *r)
 void res(cpu_t *cpu, uint8_t b, uint8_t *r)
 {
 	uint8_t aux;
-	
+
 	if(r == &PSW)
 	{
 		aux = memoryRead(cpu, REG_HL);
@@ -1251,7 +1253,7 @@ void res(cpu_t *cpu, uint8_t b, uint8_t *r)
 	}
 	else
 		*r &= ~(1<<b);
-		
+
 	SET_INSTR_CYCLES(TWO_CYCLE);
 }
 //-----------------------------------------
@@ -1261,7 +1263,7 @@ void res(cpu_t *cpu, uint8_t b, uint8_t *r)
 void set(cpu_t *cpu, uint8_t b, uint8_t *r)
 {
 	uint8_t aux;
-	
+
 	if(r == &PSW)
 	{
 		aux = memoryRead(cpu, REG_HL);
@@ -1269,9 +1271,9 @@ void set(cpu_t *cpu, uint8_t b, uint8_t *r)
 		memoryWrite(cpu, REG_HL,aux);
 		SET_INSTR_CYCLES(TWO_CYCLE);
 	}
-	else	
+	else
 		*r |= (1<<b);
-		
+
 	SET_INSTR_CYCLES(TWO_CYCLE);
 }
 //-----------------------------------------------------

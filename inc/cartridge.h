@@ -23,7 +23,8 @@ extern "C" {
 
 #define MCB1_RAM_EN				0x0A
 
-void cartridgeInit(cpu_t *cpu, const uint8_t *ptr);
+void cartridgeInit(cpu_t *cpu, const uint8_t *rom);
+void cartridgeDeInit(cpu_t *cpu);
 
 #ifdef __cplusplus
 }

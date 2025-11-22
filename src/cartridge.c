@@ -2,9 +2,11 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <cgbmu.h>
 #include "cartridge.h"
 #include "dmgcpu.h"
+
 
 typedef struct mbc1_s{
 	uint8_t bank;
@@ -13,7 +15,9 @@ typedef struct mbc1_s{
 	uint8_t ram[CARTRIDGE_RAM_SIZE]; // 8kB
 }mbc1_t;
 
+#ifdef NO_MALLOC
 static mbc1_t _mbc1;
+#endif
 
 static uint8_t mbc1Read(cpu_t *cpu, uint16_t address) {
 	mbc1_t *mbc1 = (mbc1_t *)cpu->cartridge_data;
@@ -23,7 +27,7 @@ static uint8_t mbc1Read(cpu_t *cpu, uint16_t address) {
 	case 0:  // 0000-3FFF Fixed Rom bank 0
 		return cpu->rom0[address];
 
-	case 1:  // 4000-7FFF loadable rom banks		
+	case 1:  // 4000-7FFF loadable rom banks
 		return cpu->rombank[address & 0x3FFF];
 
 	case 2:  // A000-BFFF banking Ram
@@ -43,9 +47,9 @@ static void mbc1Write(cpu_t *cpu, uint16_t address, uint8_t data) {
 		mbc1->ram_en = data;
 		break;
 
-	case 2:	// 2000-3FFF Rom bank select area 
+	case 2:	// 2000-3FFF Rom bank select area
 	case 3:
-		if (data != mbc1->bank){		
+		if (data != mbc1->bank){
 			mbc1->bank = (data == 0) ? 1 : data;
 			cpu->rombank = cpu->rom0 + (mbc1->bank << 14);
 		}
@@ -84,8 +88,11 @@ void cartridgeInit(cpu_t *cpu, const uint8_t *rom) {
 	case CARTRIDGE_MBC1:
 	case CARTRIDGE_MBC1_RAM:
 	case CARTRIDGE_MBC1_RAM_BAT:
+        #ifdef NO_MALLOC
 		mbc1 = &_mbc1;
-		//mbc1 = (mbc1_t *)malloc(sizeof(mbc1_t)); // use for multiple cpu instances
+        #else
+		mbc1 = (mbc1_t *)malloc(sizeof(mbc1_t)); // use for multiple cpu instances
+        #endif
 		cpu->cartridge_data = mbc1;
 		cpu->cartridgeRead = mbc1Read;
 		cpu->cartridgeWrite = mbc1Write;
@@ -98,4 +105,17 @@ void cartridgeInit(cpu_t *cpu, const uint8_t *rom) {
 		cpu->cartridgeRead = NULL;
 		cpu->cartridgeWrite = NULL;
 	}
+}
+
+
+//----------------------------------------------------
+//
+//----------------------------------------------------
+void cartridgeDeInit(cpu_t *cpu)
+{
+#ifndef NO_MALLOC
+    free(cpu->cartridge_data);
+#endif
+    cpu->cartridgeRead = NULL;
+	cpu->cartridgeWrite = NULL;
 }

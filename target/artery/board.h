@@ -11,9 +11,6 @@ extern "C" {
 #include "at32f4xx.h"
 #include "gpio.h"
 #include "gpio_at32f4xx.h"
-//#include "ili9341.h"
-//#include "st7735.h"
-#include "st7789.h"
 
 #define BOARD_ARTERY
 
@@ -21,13 +18,23 @@ extern "C" {
 
 #define LCD_IO_SET(port, pinmask) port->BSRE = pinmask
 #define LCD_IO_RESET(port, pinmask) port->BRE = pinmask
-
+//TODO: Update display drivers as in libemb
 #ifdef TFT_ST7735S
+#include "st7735.h"
 #define TFT_W   128
 #define TFT_H   160
 #define SCREEN_OFFSET_X     0
 #define SCREEN_OFFSET_Y     0
-#elif defined(TFT_ILI9341)
+#elif defined(TFT_ST7789)
+#include "st7789.h"
+#define TFT_W   240
+#define TFT_H   240
+#define SCREEN_OFFSET_X     0
+#define SCREEN_OFFSET_Y     0
+#elif defined(BOARD_TDSO)
+#include "ili9341.h"
+#define TFT_W   230
+#define TFT_H   240
 #define SCREEN_OFFSET_X     80
 #define SCREEN_OFFSET_Y     48
 #else
@@ -62,7 +69,7 @@ extern "C" {
     GPIO_Config(LCD_BKL, GPIO_OUTPUT); \
     GPIO_Config(LCD_RST, GPIO_OUTPUT); \
     GPIO_Config(LCD_CD, GPIO_OUTPUT);  \
-    GPIO_Config(LCD_CS, GPIO_OUTPUT); 
+    GPIO_Config(LCD_CS, GPIO_OUTPUT);
 
 /**
  * @brief Button pins

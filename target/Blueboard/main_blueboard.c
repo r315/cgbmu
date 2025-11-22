@@ -14,14 +14,14 @@ uint8_t *cartridge = &_binary_rom_start;
 
 const unsigned short lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
 /**
- * @brief 
- * 
- * @param x 
- * @param y 
- * @param v 
- * @param radix 
- * @param digitos 
- * @return int 
+ * @brief
+ *
+ * @param x
+ * @param y
+ * @param v
+ * @param radix
+ * @param digitos
+ * @return int
  */
 int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 {
@@ -49,7 +49,7 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 void pushScanLine(cpu_t *cpu){
     uint8_t *pixel = cpu->screen_line;
 	uint8_t *end = cpu->screen_line + SCREEN_W;
-    
+
     LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + cpu->IOLY, SCREEN_W, 1);
     while(pixel < end){
 		LCD_Data(lcd_pal[*pixel++]);
@@ -66,7 +66,7 @@ int	keys = ~LPC_GPIO1->FIOPIN & BUTTON_MASK;
     button |= ( keys & BUTTON_DOWN) ? J_DOWN : 0;
     button |= ( keys & BUTTON_UP)  ? J_UP : 0;
     button |= ( keys & BUTTON_LEFT) ? J_LEFT : 0;
-    button |= ( keys & BUTTON_RIGHT) ? J_RIGHT : 0;		
+    button |= ( keys & BUTTON_RIGHT) ? J_RIGHT : 0;
     button |= ( keys & BUTTON_A) ? J_START : 0;
     return button;
 }
@@ -80,17 +80,17 @@ char* f_error(FRESULT res)
     static FATFS drive0;
     switch(res)
     {
-        case FR_OK: return "ok"  ;   
-            
-        case FR_DISK_ERR: 
+        case FR_OK: return "ok"  ;
+
+        case FR_DISK_ERR:
             return "disk error";
         case FR_NOT_READY:
             return "disk not ready";
-        case FR_NO_FILE:  
+        case FR_NO_FILE:
             return "no file";
-        case FR_NO_PATH:  
+        case FR_NO_PATH:
             return "invalid path";
-        case FR_NOT_OPENED: 
+        case FR_NOT_OPENED:
             return "cant open file";
         case FR_NOT_ENABLED:
             return "not enable";
@@ -109,7 +109,7 @@ void fsInit(void)
     DBG_Info(f_error(pf_mount(&drive0)));
     rom0 = (uint8_t*)0x2007C000;
     rombank = (uint8_t*)0x20080000;
-#endif    
+#endif
 }
 //--------------------------------------------------
 //
@@ -126,11 +126,14 @@ int loadRom(const uint8_t **dst, const char *fn)
     DBG_Info(f_error(pf_open(fn)));
     DBG_Info("Loading ROM0");
     DBG_Info(f_error(pf_read(rom0, ROM_SIZE, &n)));
-    loadRombank(1);	
+    loadRombank(1);
     return n;
 #else
     //cartridgeInit(cartridge);
     //return ROM_SIZE;
+    (void)dst;
+    (void)fn;
+
     return 0;
 #endif
 }
@@ -139,7 +142,8 @@ int loadRom(const uint8_t **dst, const char *fn)
 //--------------------------------------------------
 
 void testButtons(void) {
-    char *b, t;
+    char *b;
+    uint8_t t;
     cpu_t cpu;
     //printf("Buttons Test\n");
     while (readButtons() != 255) {
@@ -157,7 +161,8 @@ void testButtons(void) {
             break;
         }
         cpu.IOP1 = IOP15;
-        switch (joyPad(&cpu) & 0x0f) {
+        t = joyPad(&cpu) & 0x0f;
+        switch (t) {
         case 0x0e:   b = "[ RIGHT ] "; break;
         case 0x0d:   b = "[ LEFT  ] "; break;
         case 0x0b:   b = "[  UP  ]  "; break;
@@ -171,20 +176,20 @@ void testButtons(void) {
 //
 //--------------------------------------------------
 int main (void){
-    
-    BOARD_Init();	
+
+    BOARD_Init();
 
     LCD_SetOrientation(LCD_LANDSCAPE);
-    
+
     LIB2D_Print("CPU %uMHz\n", SystemCoreClock/1000000);
 
     DBG_PIN_INIT;
 
     loadRom(NULL, "mario.gb");
-    
+
     cgbmu(cartridge);
 
     testButtons();
-    
+
     return 0;
-}	
+}

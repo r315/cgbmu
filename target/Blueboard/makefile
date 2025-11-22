@@ -8,6 +8,15 @@ ROMS_PATH   :=$(EMU_PATH)/roms
 DRIVERS_COMPONENT_PATH =../Drivers/Component
 CMSIS_PATH  =../Drivers/CMSIS
 
+C_INCLUDES  = \
+$(BOARD_PATH) \
+$(BOARD_PATH)/Drivers/Costum/inc \
+$(CMSIS_PATH)/Device/NXP/LPC17xx/inc \
+$(CMSIS_PATH)/Core/Include \
+$(LIB_PATH)/inc \
+$(EMU_PATH)/inc \
+$(DRIVERS_COMPONENT_PATH)/inc/
+
 CSRCS = \
 $(CMSIS_PATH)/Device/NXP/LPC17xx/src/startup_LPC17xx.c \
 $(CMSIS_PATH)/Device/NXP/LPC17xx/src/system_LPC17xx.c \
@@ -32,22 +41,18 @@ $(FATFS_PATH)/mmc.c \
 
 ROM_FILE :=$(ROMS_PATH)/cpu_instrs.gb
 
-C_INCLUDES  = \
-$(BOARD_PATH) \
-$(BOARD_PATH)/Drivers/Costum/inc \
-$(CMSIS_PATH)/Device/NXP/LPC17xx/inc \
-$(CMSIS_PATH)/Core/Include \
-$(LIB_PATH)/inc \
-$(EMU_PATH)/inc \
-$(DRIVERS_COMPONENT_PATH)/inc/
-
-C_DEFS  =__BB__ NO_LCD_HW_SCROLL SCREEN_OFFSET_X=80 SCREEN_OFFSET_Y=48 USE_FAST_CODE
+C_DEFS  = \
+__BB__\
+NO_LCD_HW_SCROLL\
+SCREEN_OFFSET_X=80\
+SCREEN_OFFSET_Y=48\
+NO_MALLOC
 #########################################################################
 #  List of the objects files to be compiled/assembled
 # system sources and common includes and directories
 ROM_OBJ=$(BUILD_DIR)/rom.o
 OBJECTS = $(addprefix $(BUILD_DIR)/, $(notdir $(CSRCS:.c=.o)))
-#$(addprefix $(BUILD_DIR)/, $(CPPSRCS:.cpp=.o)) 
+#$(addprefix $(BUILD_DIR)/, $(CPPSRCS:.cpp=.o))
 LSCRIPT =$(BOARD_PATH)/lpc1768_gb.ld
 
 #########################################################################
@@ -58,15 +63,15 @@ CPU =-mcpu=cortex-m3 -mthumb
 
 MCU =$(CPU)
 
-OPT =-Og -g -gdwarf-2 -Wall -Wextra 
+OPT =-Og -g -gdwarf-2 -Wall -Wextra
 
 ifdef SEMIHOSTING
 SPECS =--specs=rdimon.specs
-LDLIBS =-nostartfiles -lc -lrdimon
+LIBS =-nostartfiles -lc -lrdimon
 else
 SPECS =--specs=nano.specs
-#-nostdlib -lstd++ -lnosys -lm 
-LDLIBS =
+#-nostdlib -lstd++ -lnosys -lm
+LIBS =
 endif
 
 ifndef V
@@ -75,8 +80,8 @@ else
 VERBOSE =
 endif
 
-GCFLAGS =$(MCU) $(OPT) $(addprefix -D, $(C_DEFS)) $(addprefix -I, $(C_INCLUDES)) -ffunction-sections -fdata-sections -std=gnu11 #-fno-stack-protector
-LDFLAGS =$(MCU) $(SPECS) -Wl,-Map=$(TARGET).map,--cref,--gc-sections #-nostdlib
+GCFLAGS =$(MCU) $(OPT) $(addprefix -D, $(C_DEFS)) $(addprefix -I, $(C_INCLUDES)) -std=gnu11 -ffunction-sections -fdata-sections -fno-builtin
+LDFLAGS =$(MCU) $(SPECS) -Wl,-Map=$(TARGET).map,-gc-sections,-cref
 ASFLAGS =$(LISTING) -mcpu=cortex-m3 -mthumb
 
 VPATH +=$(sort $(dir $(CSRCS)))
@@ -106,19 +111,19 @@ all: $(TARGET).elf size
 
 $(TARGET).elf: $(OBJECTS) $(ROM_OBJ)
 	@echo "[LD]  $@"
-	$(VERBOSE)$(LD) $(LDFLAGS) -T $(LSCRIPT) $^ -o $@
+	$(VERBOSE)$(LD) -T$(LSCRIPT) $(LDFLAGS) $^ $(LIBS) -o $@
 
-$(TARGET).bin: $(TARGET).elf 
+$(TARGET).bin: $(TARGET).elf
 	$(OBJCOPY) -O binary $(TARGET).elf $@
 #hd -n 128 $@
 	@echo "[CK] $@"
 	@$(CHECKSUM) $@
 
 #https://balau82.wordpress.com/2012/02/19/linking-a-binary-blob-with-gcc
-$(ROM_OBJ): $(ROM_FILE) 
+$(ROM_OBJ): $(ROM_FILE)
 	$(OBJCOPY) -I binary -O elf32-littlearm --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0 $< $@
 	@$(OBJDUMP) -t $@
-	
+
 $(TARGET)_.cfg:
 	@echo "Creating configuration file for st-link probe"
 	@echo "adapter driver st-link" > $@
@@ -133,7 +138,7 @@ $(TARGET).cfg: #openocd with jlink probe
 	@echo "adapter driver jlink" >> $@
 	@echo "transport select "swd"" >> $@
 	@echo "source [find board/mcb1700.cfg]" >> $@
-	
+
 $(TARGET).jlink: $(TARGET).bin
 	@echo "Creating Jlink configuration file"
 	@echo "loadfile $< 0x00000000" >> $@
@@ -149,7 +154,7 @@ size: $(TARGET).elf
 	@$(SIZE) -A -x $<
 
 clean:
-	$(REMOVE) $(BUILD_DIR) 
+	$(REMOVE) $(BUILD_DIR)
 
 clean-rom:
 	$(VERBOSE)-rm -f $(ROM_OBJ)

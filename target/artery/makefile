@@ -42,8 +42,8 @@ $(DRIVERS_STD_PATH)/src/at32f4xx_rcc.c \
 $(DRIVERS_COSTUM_PATH)/src/spi_at32f4xx.c \
 $(DRIVERS_COSTUM_PATH)/src/dma_at32f4xx.c \
 $(DRIVERS_COSTUM_PATH)/src/gpio_at32f4xx.c \
-$(DRIVERS_COMPONENT_PATH)/src/st7789.c \
-#$(DRIVERS_COMPONENT_PATH)/src/ili9341.c \
+$(DRIVERS_COMPONENT_PATH)/src/ili9341.c \
+#$(DRIVERS_COMPONENT_PATH)/src/st7789.c \
 #$(DRIVERS_COMPONENT_PATH)/src/st7735.c \
 
 
@@ -77,11 +77,13 @@ OCD_CONFIG =$(BOARD_PATH)/at32f415.cfg
 # C defines
 C_DEFS +=\
 $(DEVICE) \
-USE_STDPERIPH_DRIVER
+BOARD_TDSO \
+USE_STDPERIPH_DRIVER \
+NO_MALLOC
 #######################################
 # binaries
 #######################################
-BINPATH = 
+BINPATH =
 PREFIX = arm-none-eabi-
 CC =$(BINPATH)$(PREFIX)gcc
 CPP =$(BINPATH)$(PREFIX)g++
@@ -113,7 +115,7 @@ CPU =-mcpu=cortex-m4 -mthumb
 
 # fpu
 #at43f415 does not have FPU
-#FPU =-mfloat-abi=hard -mfpu=fpv4-sp-d16 
+#FPU =-mfloat-abi=hard -mfpu=fpv4-sp-d16
 
 # float-abi
 FLOAT-ABI = #-u_printf_float
@@ -141,7 +143,7 @@ SPECS =--specs=rdimon.specs
 LDLIBS =-nostartfiles -lc -lrdimon
 else
 SPECS =--specs=nano.specs
-#-nostdlib -lstd++ -lnosys -lm 
+#-nostdlib -lstd++ -lnosys -lm
 LDLIBS =
 endif
 
@@ -172,7 +174,7 @@ VPATH +=$(sort $(dir $(CSRCS)))
 #######################################
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf size
-#$(BUILD_DIR)/$(TARGET).bin 
+#$(BUILD_DIR)/$(TARGET).bin
 
 bin: $(BUILD_DIR)/$(TARGET).bin
 
@@ -197,19 +199,19 @@ $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) $(ROM_OBJ)
 
 $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	$(VERBOSE)$(HEX) $< $@
-	
+
 $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
-	$(VERBOSE)$(BIN) $< $@	
-	
+	$(VERBOSE)$(BIN) $< $@
+
 $(BUILD_DIR):
-	mkdir -p $@		
+	mkdir -p $@
 
 size: $(BUILD_DIR)/$(TARGET).elf
 	@echo "--- Size ---"
 	$(VERBOSE)$(SZ) -A -x $<
 	$(VERBOSE)$(SZ) -B $<
 
-$(ROM_OBJ): $(ROM_FILE) 
+$(ROM_OBJ): $(ROM_FILE)
 	$(OBJCOPY) -I binary -O elf32-littlearm --rename-section .data=.rodata --add-symbol _binary_rom_start=.rodata:0  $< $@
 	@$(OBJDUMP) -t $@
 #--rename-section .data=.rodata

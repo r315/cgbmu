@@ -17,7 +17,7 @@ UART_HandleTypeDef huart1;
   *   DO NOT FORGET to implement
   *   void HAL_UART_MspInit(UART_HandleTypeDef* huart);
   *   on xxxxxxx_hal_msp.c
-  * 
+  *
   * @param None
   * @retval None
   */
@@ -33,14 +33,13 @@ void Serial_Init(void){
     huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
     huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
     HAL_UART_Init(&huart1);
-    fifo_init(&rx_fifo, rx_buffer, UART_BUF_SIZE);  
+    fifo_init(&rx_fifo, rx_buffer, UART_BUF_SIZE);
     NVIC_SetPriority(USART1_IRQn, NVIC_PRIORITYGROUP_0);
-    NVIC_EnableIRQ(USART1_IRQn);    
+    NVIC_EnableIRQ(USART1_IRQn);
 }
 
 void SERIAL_PutChar(char ch){
     HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
-    return 1;
 }
 
 int SERIAL_GetChar(void){
@@ -59,6 +58,6 @@ void SERIAL_PutString(const char* str, uint32_t size){
 void USART1_IRQHandler(void)
 {
     uint8_t data = USART1->RDR;
-    fifo_put(&rx_fifo, data);  
+    fifo_put(&rx_fifo, data);
     BSP_LED_Toggle(LED_RED);
 }

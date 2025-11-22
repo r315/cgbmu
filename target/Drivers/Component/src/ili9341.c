@@ -8,7 +8,7 @@ static uint16_t _width, _height;
 static spibus_t *spidev;
 static uint8_t scratch[4];
 
-static const uint8_t ili9341_init_seq[] = 
+static const uint8_t ili9341_init_seq[] =
 {
     16,     // Number of commands
     ILI9341_PCONB, 3, 0x00, 0xC1, 0x30,
@@ -30,7 +30,7 @@ static const uint8_t ili9341_init_seq[] =
 };
 
 static void LCD_Command(uint8_t cmd){
-    LCD_CD0;    
+    LCD_CD0;
     SPI_Transfer(spidev, &cmd, 1);
     LCD_CD1;
 }
@@ -51,11 +51,11 @@ static void LCD_InitSequence(const uint8_t *addr) {
 	uint16_t ms;
 
 	numCommands = *addr++;          // Get total number os commands
-	while(numCommands--) {                     
+	while(numCommands--) {
 		LCD_Command(*addr++);       // Send command
 		numArgs  = *addr++;         // Get number of args
 		ms       = numArgs;         // Get argument
-		numArgs &= ~DELAY;          // Clear delay flag           
+		numArgs &= ~DELAY;          // Clear delay flag
 		SPI_Transfer(spidev, (uint8_t*)addr, numArgs); // Send arguments
 		addr += numArgs;            // Move to next command
 
@@ -69,7 +69,7 @@ static void LCD_InitSequence(const uint8_t *addr) {
 
 
 static void LCD_WriteData(uint16_t *data, uint32_t count){
-    
+
 	if(spidev->dma.per != NULL){
         spidev->flags |= SPI_16BIT;
 		SPI_TransferDMA(spidev, (uint8_t*)data, count);
@@ -78,7 +78,7 @@ static void LCD_WriteData(uint16_t *data, uint32_t count){
 		while(count--)
 			LCD_Data(*data++);
 		LCD_CS1;
-	}	
+	}
 }
 
 static void LCD_EOTHandler(void){
@@ -93,7 +93,7 @@ static void LCD_CasRasSet(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2){
 	scratch[1] = x1;
 	scratch[2] = x2 >> 8;
 	scratch[3] = x2;
-	SPI_Transfer(spidev, scratch, 4);	
+	SPI_Transfer(spidev, scratch, 4);
 
 	LCD_Command(ILI9341_PASET);
 	scratch[0] = y1 >> 8;
@@ -106,20 +106,20 @@ static void LCD_CasRasSet(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2){
 }
 
 /**
- * @brief 
- * 
- * @param x 
- * @param y 
- * @param w 
- * @param h 
+ * @brief
+ *
+ * @param x
+ * @param y
+ * @param w
+ * @param h
  */
-static void LCD_Window(uint16_t x, uint16_t y, uint16_t w, uint16_t h){
+void LCD_Window(uint16_t x, uint16_t y, uint16_t w, uint16_t h){
 	LCD_CasRasSet(x, y, x + (w - 1), y + (h - 1));
 }
 
 /**
  * @brief Fill's area with same color
- * 
+ *
  * \param x :
  * \param y :
  * \param w :
@@ -128,13 +128,13 @@ static void LCD_Window(uint16_t x, uint16_t y, uint16_t w, uint16_t h){
  */
 void LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color){
     uint32_t count = w * h;
-    
+
     if(!count){
         return;
     }
 
     SPI_WaitEOT(spidev);
-	    
+
 	LCD_CS0;
 	LCD_Window(x, y, w, h);
 
@@ -142,11 +142,11 @@ void LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color
 		spidev->flags |= SPI_DMA_NO_MINC | SPI_16BIT;
         *((uint16_t*)scratch) = color;
 		SPI_TransferDMA(spidev, (uint8_t*)scratch, count);
-		//LCD_CS1; // SET by DMA handler	
+		//LCD_CS1; // SET by DMA handler
 	}else{
         scratch[0] = color >> 8;
         scratch[1] = color;
-		while(count--){            
+		while(count--){
 	        SPI_Transfer(spidev, scratch, 2);
         }
 		LCD_CS1;
@@ -155,7 +155,7 @@ void LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color
 
 /**
  * @brief Write data block to defined area
- *  
+ *
  * \param x :
  * \param y :
  * \param w :
@@ -164,7 +164,7 @@ void LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color
  */
 void LCD_WriteArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *data){
     uint32_t count = w * h;
-    
+
     if(!count){
         return;
     }
@@ -176,16 +176,16 @@ void LCD_WriteArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *dat
 }
 
 /**
- * @brief 
- * 
- * @param x 
- * @param y 
- * @param c 
+ * @brief
+ *
+ * @param x
+ * @param y
+ * @param c
  */
 void LCD_Pixel(uint16_t x, uint16_t y, uint16_t color){
-    
+
     SPI_WaitEOT(spidev);
-    
+
     LCD_CS0;
     LCD_CasRasSet(x, y, x, y);
     LCD_Data(color);
@@ -193,9 +193,9 @@ void LCD_Pixel(uint16_t x, uint16_t y, uint16_t color){
 }
 
 /**
- * @brief 
- * 
- * @param spi 
+ * @brief
+ *
+ * @param spi
  */
 void LCD_Init(void *spi){
 
@@ -230,9 +230,9 @@ void LCD_Init(void *spi){
 }
 
 /**
- * @brief 
- * 
- * @param m 
+ * @brief
+ *
+ * @param m
  */
 void LCD_SetOrientation(uint8_t m) {
 
@@ -261,7 +261,7 @@ void LCD_SetOrientation(uint8_t m) {
         default:
          return;
     }
-    
+
     SPI_WaitEOT(spidev);
 
     LCD_CS0;
@@ -271,9 +271,9 @@ void LCD_SetOrientation(uint8_t m) {
 }
 
 /**
- * @brief 
- * 
- * @param sc 
+ * @brief
+ *
+ * @param sc
  */
 void LCD_Scroll(uint16_t sc){
 
@@ -286,36 +286,36 @@ void LCD_Scroll(uint16_t sc){
 }
 
 /**
- * @brief 
- * 
- * @return uint16_t 
+ * @brief
+ *
+ * @return uint16_t
  */
 uint16_t LCD_GetWidth(void){
    return _width;
 }
 
 /**
- * @brief 
- * 
- * @return uint16_t 
+ * @brief
+ *
+ * @return uint16_t
  */
 uint16_t LCD_GetHeight(void){
    return _height;
 }
 
 /**
- * @brief 
- * 
- * @return uint32_t 
+ * @brief
+ *
+ * @return uint32_t
  */
 uint32_t LCD_GetSize(void){
    return _height*_width;
 }
 
 /**
- * @brief 
- * 
- * @param state 
+ * @brief
+ *
+ * @param state
  */
 void LCD_Bkl(uint8_t state){
     if(state != 0) {
