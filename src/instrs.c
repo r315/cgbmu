@@ -28,6 +28,7 @@ uint8_t opa = REG_A;
 		case ALU_ADC:
 			if(PSW & FC) ci = 1;
             //__attribute__ ((fallthrough));
+            // fall through
 		case ALU_ADD:
 			PSW = 0 ;
 			if( ((opa & 0x0F) + (opb & 0x0f) + ci) > 0x0F) PSW |= FH;
