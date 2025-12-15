@@ -368,6 +368,7 @@ void printHelp(void) {
 		"\t -t   tests\n"
 		"\t -i   Instruction mode loop\n");
 }
+
 //-----------------------------------------------------------
 //instructions test
 //-----------------------------------------------------------
@@ -378,7 +379,7 @@ int main (int argc, char *argv[])
 	opt_t options[] = {
 		{"-d", NULL, RUN_FLAG_DEBUG, &flags, optParseFlag},
 		{"-t", NULL, RUN_FLAG_TEST, &flags, optParseFlag},
-		{"-r", NULL, RUN_FLAG_FILE, &romfile,optParseStr},
+		{"-r", NULL, RUN_FLAG_FILE, &romfile, optParseStr},
 		//{"-i", NULL, RUN_FLAG_MODE, &instrs_test_rom_path, optParseStr}
 	};
 	
@@ -404,10 +405,11 @@ int main (int argc, char *argv[])
 	cpu_2.id = 2;
 	cpu_3.id = 3;
 	cpu_4.id = 4;
-	threadparam_t thread1_param = { &cpu_1, (const char*)ROM_PATH"/dkl.gb" };
-	threadparam_t thread2_param = { &cpu_2, (const char*)ROM_PATH"/mario.gb" };
-	threadparam_t thread3_param = { &cpu_3, (const char*)ROM_PATH"/Alleyway.gb" };
-	threadparam_t thread4_param = { &cpu_4, (const char*)ROM_PATH"/rogerrabbit.gb" };
+
+	threadparam_t thread1_param = { &cpu_1, (const char*)ROM_PATH"/dkl.gb"};
+	threadparam_t thread2_param = { &cpu_2, (const char*)ROM_PATH"/mario.gb"};
+	threadparam_t thread3_param = { &cpu_3, (const char*)ROM_PATH"/Alleyway.gb"};
+	threadparam_t thread4_param = { &cpu_4, (const char*)ROM_PATH"/rogerrabbit.gb"};
 
 	threads[0] = CreateThread(NULL, 0, threadRun, &thread1_param, 0, NULL);
 	threads[1] = CreateThread(NULL, 0, threadRun, &thread2_param, 0, NULL);
@@ -415,7 +417,7 @@ int main (int argc, char *argv[])
 	threads[3] = CreateThread(NULL, 0, threadRun, &thread4_param, 0, NULL);
 
 	WaitForMultipleObjects(4, threads, true, INFINITE);
-#endif
+#else
 	
 #if 1
 	if(loadRom(&mbc1_rom, romfile) > 0) {
@@ -430,7 +432,7 @@ int main (int argc, char *argv[])
 		LIB2D_Text(0, 4, "Fail to load rom");
 		SDL_Delay(5000);
 	}
-
+#endif
 	LCD_Close();
 
 	if(mbc1_rom)

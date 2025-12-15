@@ -13,7 +13,7 @@
 #endif
 
 #define MULTIPLE_CPUS	        0 // Ensure dynamic allocation for cartridgs and SDL window with proper size
-#define LCD_AUTO_UPDATE_TIME    0 //30ms => 33fps, 0: manual update 
+#define LCD_AUTO_UPDATE_TIME    0 //30ms => 33fps, 0: manual update
 
 #if MULTIPLE_CPUS
 #define LCD_W		600

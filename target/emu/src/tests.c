@@ -9,7 +9,7 @@
 #include "debugger.h"
 #include "decoder.h"
 #include "tests.h"
-#include "liblcd.h"
+#include "drvlcd.h"
 #include "lib2d.h"
 
 #if 0
@@ -101,7 +101,7 @@ void TEST_BGmap(void) {
 			case J_UP: IOSCY--; DBG_DumpRegisters(); break;
 			case J_DOWN: IOSCY++; DBG_DumpRegisters(); break;
 			case J_LEFT: IOSCX--; DBG_DumpRegisters(); break;
-			case J_RIGHT: IOSCX++; DBG_DumpRegisters(); break;			
+			case J_RIGHT: IOSCX++; DBG_DumpRegisters(); break;
 		}
 		DelayMs(16);
 	}
@@ -177,7 +177,7 @@ void TEST_buttons(void) {
 		}
 
 #if defined(_WIN32) || defined(linux)
-		//LCD_Update();		
+		//LCD_Update();
 		SDL_Delay(20);
 #endif
 	}
@@ -194,7 +194,7 @@ void TEST_run(void) {
 	//TEST_Sprites(0);
 	LCD_Close();
 	#if defined(_WIN32_)
-	system("PAUSE");	
+	system("PAUSE");
 	#endif
 	exit(0);
 }
