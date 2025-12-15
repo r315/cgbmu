@@ -1,7 +1,7 @@
 /**
 * @file		i2c.h
 * @brief	Contains the i2c API header.
-*     		
+*
 * @version	1.0
 * @date		6 Apr. 2017
 * @author	Hugo Reis
@@ -19,7 +19,7 @@ typedef struct {
 }i2cbus_t;
 
 
-void I2C_Init(i2cbus_t *i2c);
+//void I2C_Init(i2cbus_t *i2c); /* SOLVE Conflict with at32f4xx_i2c.h*/
 uint32_t I2C_Write(i2cbus_t *i2c, uint8_t *data, uint32_t size);
 uint32_t I2C_Read(i2cbus_t *i2c, uint8_t *data, uint32_t size);
 #endif

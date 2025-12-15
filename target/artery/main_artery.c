@@ -1,7 +1,7 @@
 #include "board.h"
 #include "libbutton.h"
 #include "lib2d.h"
-#include "liblcd.h"
+#include "drvlcd.h"
 #include "cgbmu.h"
 #include "cartridge.h"
 #include "video.h"
@@ -73,8 +73,6 @@ uint8_t readButtons(void)
 int main(void)
 {
     BOARD_Init();
-
-    LCD_SetOrientation(LCD_REVERSE_LANDSCAPE);
 
     LIB2D_Init();
     LIB2D_Print("CPU %uMHz\n", SystemCoreClock/1000000);

@@ -1,7 +1,7 @@
 /**
 * @file     st7789.h
 * @brief    Contains the st7789 lcd controller API headers and symbols.
-*           
+*
 * @version  1.0
 * @date     1 April 2023
 * @author   Hugo Reis
@@ -10,16 +10,12 @@
 #ifndef _st7789_h_
 #define _st7789_h_
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define TFT_ST7789
-
-#define TFT_W 240
-#define TFT_H 240
+#include <stdint.h>
+#include "drvlcd.h"
 
 // commands
 #define ST7789_NOP       0x00
@@ -115,25 +111,8 @@ extern "C" {
 #define COLOR_MODE_18BIT  0x06
 #define COLOR_MODE_16M    0x07
 
-enum {
-    LCD_PORTRAIT = 0,
-    LCD_LANDSCAPE,
-    LCD_REVERSE_PORTRAIT,
-    LCD_REVERSE_LANDSCAPE
-};
 
-void LCD_Init(void *ptr);
-void LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
-void LCD_WriteArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *data);
-void LCD_Pixel(uint16_t x, uint16_t y, uint16_t color);
-void LCD_Scroll(uint16_t sc);
-void LCD_SetOrientation(uint8_t m);
-void LCD_Window(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
-void LCD_Data(uint16_t data);
-void LCD_Bkl(uint8_t state);
-uint16_t LCD_GetWidth(void);
-uint16_t LCD_GetHeight(void);
-uint32_t LCD_GetSize(void);
+extern const drvlcd_t st7789_drv;
 
 #ifdef  __cplusplus
 }

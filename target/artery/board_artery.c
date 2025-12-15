@@ -2,9 +2,10 @@
 #include "spi.h"
 #include "gpio.h"
 #include "libbutton.h"
-#include "liblcd.h"
+#include "drvlcd.h"
 
-static spibus_t spibus;
+static spibus_t spidev;
+static drvlcdspi_t drvlcd;
 
 static void InitTimeBase(void){
 #if (USE_TIMER_SYSTICK == 1)
@@ -44,27 +45,45 @@ inline uint32_t GetTick(void)
 #endif
 
 void BOARD_Init(void)
-{	
+{
 	SystemInit();
-	SystemCoreClockUpdate(); 
+	SystemCoreClockUpdate();
+
+    RCC->APB2EN |= RCC_APB2EN_AFIOEN | RCC_APB2EN_GPIOAEN | RCC_APB2EN_GPIOBEN | RCC_APB2EN_GPIOCEN;
+    AFIO->MAP = AFIO_MAP_SWJTAG_CONF_JTAGDISABLE;
 
 	InitTimeBase();
 
-    spibus.bus = SPI_BUS0;
-    spibus.freq = SPI_FREQ;
-    spibus.flags = SPI_HW_CS;
-    SPI_Init(&spibus);
+    spidev.bus = SPI_BUS1;
+    spidev.freq = SPI_FREQ;
+    spidev.cfg = SPI_CFG_DMA;
+    SPI_Init(&spidev);
 
 	LED1_PIN_INIT;
     LCD_PIN_INIT;
 
 	BUTTON_Init(BUTTON_DEFAULT_HOLD_TIME);
-    
-    LCD_Init(&spibus);
 
-	LCD_Clear(LCD_BLACK);
-    
+    #if defined(BOARD_PWRKT)
+    drvlcd.w = 240;
+    drvlcd.h = 240;
+    drvlcd.cs = PB_12;
+    drvlcd.cd = PA_15;
+    drvlcd.rst = 255;
+    drvlcd.bkl = PB_2;
+    drvlcd.spidev = &spidev;
+
+    GPIO_Config(drvlcd.cs, GPO_PP);
+    GPIO_Config(drvlcd.cd, GPO_PP);
+    GPIO_Config(drvlcd.bkl, GPO_PP);
+
+    AFIO->MAP = AFIO_MAP_SWJTAG_CONF_JTAGDISABLE;
+    LCD_Init(&drvlcd);
+    LCD_SetOrientation(LCD_LANDSCAPE);
+    #endif
+
 	LCD_Bkl(ON);
+	LCD_FillRect(0,0, drvlcd.w, drvlcd.h, LCD_BLACK);
 }
 
 void __debugbreak(void){

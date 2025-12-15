@@ -1,39 +1,13 @@
 #ifndef _at32f4xx_h_
 #define _at32f4xx_h_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// Mode bits
-#define GPIO_MODE_IN       0 // Input
-#define GPIO_MODE_LARGE    1 // Large output source
-#define GPIO_MODE_NOR      2 // Normal output source
-#define GPIO_MODE_MAX      3 // Maximum output source
-#define GPIO_MODE_MASK     3
-// Configuration bits
-#define GPIO_IN_ANALOG      (0 << 2)
-#define GPIO_IN_FLOAT       (1 << 2)
-#define GPIO_IN_PD          (2 << 2)
-#define GPIO_IN_PU          (3 << 2)
-#define GPIO_OUT_PP         (0 << 2)
-#define GPIO_OUT_OD         (1 << 2)
-#define GPIO_MUX_PP         (2 << 2)
-#define GPIO_MUX_OD         (3 << 2)
-#define GPIO_CFG_MASK       (3 << 2)
+#include <stdint.h>
 
-#define GPIO_OUTPUT         (GPIO_OUT_PP | GPIO_MODE_NOR)
-#define GPIO_OUTPUT_OD      (GPIO_OUT_PP | GPIO_MODE_NOR)
-#define GPIO_INPUT          (GPIO_IN_FLOAT | GPIO_MODE_NOR)
-#define GPIO_INPUT_PU       (GPIO_IN_PU | GPIO_MODE_NOR)
-#define GPIO_INPUT_PD       (GPIO_IN_PD | GPIO_MODE_NOR)
-
-#define GPIO_SPI_SCK        (GPIO_MUX_PP | GPIO_MODE_NOR)
-#define GPIO_SPI_MISO       (GPIO_MUX_PP | GPIO_MODE_NOR)
-#define GPIO_SPI_MOSI       (GPIO_MUX_PP | GPIO_MODE_NOR)
-#define GPIO_SPI_CS         (GPIO_MUX_PP | GPIO_MODE_NOR)
-
-#define GPIO_GET_PORT(name) ((name >> 4) & 15)
-#define GPIO_GET_PIN(name) (name & 15)
-
-enum {
+typedef enum {
     PA_0 = 0,
     PA_1,
     PA_2,
@@ -135,5 +109,91 @@ enum {
     PF_13,
     PF_14,
     PF_15,
-};
+}pinName_e;
+
+// Mode Option
+#define GPIO_IOM_IN         0 // Input
+#define GPIO_IOM_LARGE      1 // Large output source
+#define GPIO_IOM_NOR        2 // Normal output source
+#define GPIO_IOM_MAX        3 // Maximum output source
+// Configuration option input
+#define GPIO_IOF_AN         (0 << 2)
+#define GPIO_IOF_FLT        (1 << 2)
+#define GPIO_IOF_PD         (2 << 2)
+#define GPIO_IOF_PU         (3 << 2)
+// Configuration option output
+#define GPIO_IOF_PP         (0 << 2)
+#define GPIO_IOF_OD         (1 << 2)
+#define GPIO_IOF_AF         (2 << 2)
+#define GPIO_IOF_AF_OD      (3 << 2)
+
+#define GPI_ANALOG          (GPIO_IOM_IN)
+#define GPI_FLOAT           (GPIO_IOF_FLT | GPIO_IOM_IN)
+#define GPI_PD              (GPIO_IOF_PD | GPIO_IOM_IN)
+#define GPI_PU              (GPIO_IOF_PU | GPIO_IOM_IN)
+#define GPIO_RESET_STATE    GPI_FLOAT
+
+#define GPO_LS              (GPIO_IOM_NOR)
+#define GPO_MS              (GPIO_IOM_LARGE)
+#define GPO_HS              (GPIO_IOM_MAX)
+#define GPO_LS_OD           (GPIO_IOF_OD | GPIO_IOM_NOR)
+#define GPO_MS_OD           (GPIO_IOF_OD | GPIO_IOM_LARGE)
+#define GPO_HS_OD           (GPIO_IOF_OD | GPIO_IOM_MAX)
+#define GPO_LS_AF           (GPIO_IOF_AF | GPIO_IOM_NOR)
+#define GPO_MS_AF           (GPIO_IOF_AF | GPIO_IOM_LARGE)
+#define GPO_HS_AF           (GPIO_IOF_AF | GPIO_IOM_MAX)
+#define GPO_LS_AF_OD        (GPIO_IOF_AF_OD | GPIO_IOM_NOR)
+#define GPO_MS_AF_OD        (GPIO_IOF_AF_OD | GPIO_IOM_LARGE)
+#define GPO_HS_AF_OD        (GPIO_IOF_AF_OD | GPIO_IOM_MAX)
+#define GPO_PP              GPO_LS
+
+#define GPIO_NAME_TO_PORT(name)     (name >> 4)
+#define GPIO_NAME_TO_PIN(name)      (name & 15)
+#define GPIO_CFG_MASK(cfg)          (cfg & 15)
+#define GPIO_CFG_MODE_MASK(cfg)     (cfg & 3)
+#define GPIO_CFG_FUNC_MASK(cfg)     ((cfg >> & 3)
+
+#define GPIO_SPI1_CS        (GPO_MS_AF)
+#define GPIO_SPI1_SCK       (GPO_HS_AF)
+#define GPIO_SPI1_MOSI      (GPO_HS_AF)
+#define GPIO_SPI1_MISO      (GPO_HS_AF)
+#define GPIO_SPI2_CS        (GPO_MS_AF)
+#define GPIO_SPI2_SCK       (GPO_HS_AF)
+#define GPIO_SPI2_MOSI      (GPO_HS_AF)
+#define GPIO_SPI2_MISO      (GPO_HS_AF)
+#define GPIO_USART1_TX      (GPO_MS_AF)
+#define GPIO_USART1_RX      (GPI_FLOAT)
+#define GPIO_USART2_TX      (GPO_MS_AF)
+#define GPIO_USART2_RX      (GPO_MS_AF)
+#define GPIO_USART3_TX      (GPO_MS_AF)
+#define GPIO_USART3_RX      (GPO_MS_AF)
+#define GPIO_SPI1_SD        (GPO_MS_AF)
+#define GPIO_SPI1_WS        (GPO_MS_AF)
+#define GPIO_SPI1_CK        (GPO_MS_AF)
+#define GPIO_I2C1_SCL       (GPO_MS_AF_OD)
+#define GPIO_I2C1_SDA       (GPO_MS_AF_OD)
+
+// Alternative functions remapping (wip)
+#define GPIO_AF_REMAP       (1 << 7)
+#define GPIO_AF_USART1      (0)
+#define GPIO_AF_USART2      (1)
+#define GPIO_AF_USART3      (2)
+#define GPIO_AF_I2C1        (3)
+#define GPIO_AF_I2C2        (4)
+#define GPIO_AF_SPI1        (5)
+#define GPIO_AF_SPI2        (6)
+#define GPIO_AF_I2S1        (7)
+#define GPIO_AF_I2S2        (8)
+#define GPIO_AF_TMR2        (9)
+
+#define GPIO_PB3_SPI1_SCK   (GPIO_AF_REMAP | GPIO_AF_SPI1)
+#define GPIO_PB3_SPI2_SCK   (GPIO_AF_REMAP | GPIO_AF_SPI2)
+#define GPIO_PB3_I2S1_CK    (GPIO_AF_REMAP | GPIO_AF_I2S1)
+#define GPIO_PB3_I2S2_CK    (GPIO_AF_REMAP | GPIO_AF_I2S2)
+#define GPIO_PB3_TMR2_CH2   (GPIO_AF_REMAP | GPIO_AF_TMR2)
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

@@ -1,7 +1,7 @@
-#include "liblcd.h"
+#include "drvlcd.h"
 
 
-void LCD_Clear(uint16_t color){	
+void LCD_Clear(uint16_t color){
 	LCD_FillRect(0, 0, LCD_GetWidth(), LCD_GetHeight(), color);
 }
 
@@ -16,15 +16,15 @@ void LCD_FillRoundRect(uint16_t x, uint16_t y,  uint16_t w, uint16_t h, uint16_t
 }
 
 void LCD_Rect(uint16_t x, uint16_t y,  uint16_t w, uint16_t h, uint16_t color){
-    LCD_FillRect(x, y, w, 1, color);	
-	LCD_FillRect(x + w , y, 1, h+1, color);	
-	LCD_FillRect(x, y + h , w, 1, color);	
-	LCD_FillRect(x ,y ,1, h, color);    
+    LCD_FillRect(x, y, w, 1, color);
+	LCD_FillRect(x + w , y, 1, h+1, color);
+	LCD_FillRect(x, y + h , w, 1, color);
+	LCD_FillRect(x ,y ,1, h, color);
 }
 
 /**
- * 
- **/ 
+ *
+ **/
 inline void LCD_HLine(uint16_t x, uint16_t y, uint16_t width, uint16_t color){
     LCD_FillRect(x, y, width, 1, color);
 }
@@ -43,7 +43,7 @@ void LCD_Line(uint16_t x1, uint16_t y1,  uint16_t x2, uint16_t y2, uint16_t colo
     signed int dy = y2 - y1;
     signed int dx = x2 - x1;
     signed int stepx, stepy;
-    signed int fraction;   
+    signed int fraction;
 
     if (dy < 0) { dy = -dy;  stepy = -1; } else { stepy = 1; }
     if (dx < 0) { dx = -dx;  stepx = -1; } else { stepx = 1; }
@@ -60,39 +60,39 @@ void LCD_Line(uint16_t x1, uint16_t y1,  uint16_t x2, uint16_t y2, uint16_t colo
 
     dy <<= 1;
     dx <<= 1;
-    
+
     LCD_Pixel(x1, y1,color);
 
-    if (dx > dy) 
+    if (dx > dy)
     {
         fraction = dy - (dx >> 1);
-        while (x1 != x2) 
+        while (x1 != x2)
         {
-            if (fraction >= 0) 
+            if (fraction >= 0)
             {
                 y1 += stepy;
                 fraction -= dx;
             }
             x1 += stepx;
-            fraction += dy;	
+            fraction += dy;
             LCD_Pixel(x1, y1,color);
         }
-    } 
-    else 
+    }
+    else
     {
         fraction = dx - (dy >> 1);
-        while (y1 != y2) 
+        while (y1 != y2)
         {
-            if (fraction >= 0) 
+            if (fraction >= 0)
             {
                 x1 += stepx;
                 fraction -= dy;
             }
             y1 += stepy;
             fraction += dx;
-            LCD_Pixel(x1, y1,color);            
+            LCD_Pixel(x1, y1,color);
         }
-    }  
+    }
 }
 
 

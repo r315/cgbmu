@@ -4,7 +4,7 @@ extern "C" {
 #endif
 
 #include "board.h"
-#include "liblcd.h"
+#include "drvlcd.h"
 #include "libbutton.h"
 #include "lib2d.h"
 
@@ -43,45 +43,45 @@ void BB_InitTimeBase(void){
 }
 
 //---------------------------------------------------
-//	
+//
 //---------------------------------------------------
 void BOARD_Init(void)
-{	
+{
 	SystemInit();
-	SystemCoreClockUpdate(); 
+	SystemCoreClockUpdate();
 
 	BB_InitTimeBase();
 
 	LEDS_INIT;
 	BUTTON_Init(BUTTON_DEFAULT_HOLD_TIME);
 	LCD_Init(NULL);
-	
+
 	LCD_FillRect(0, 0, LCD_GetWidth(), LCD_GetHeight(), LCD_BLACK);
 	LCD_Bkl(ON);
 
 	LIB2D_Init();
 }
 //---------------------------------------------------
-//	
+//
 //---------------------------------------------------
 void BB_ClockOut(uint8_t en){
 	if(en){
 		LPC_SC->CLKOUTCFG = (1<<4)|/* CCLK/2 */ (1<<8);/* CLKOU_EN*/
-		LPC_PINCON->PINSEL3 |= (1<<22);// P1.27 CLKOUT 
+		LPC_PINCON->PINSEL3 |= (1<<22);// P1.27 CLKOUT
 	}else{
 		LPC_SC->CLKOUTCFG = (1<<4)|/* CCLK/2 */ (1<<8);/* CLKOU_EN*/
 		LPC_PINCON->PINSEL3 &= ~(1<<22);
 	}
 }
 
-void _SPI_Init (void) 
+void _SPI_Init (void)
 {
   // Initialize and enable the SSP Interface module.
-  LPC_SC->PCONP       |= (1 << 21);           /* Enable power to SSPI0 block */ 
+  LPC_SC->PCONP       |= (1 << 21);           /* Enable power to SSPI0 block */
   LPC_SSP0->CR0        = 0x0000;
-  LPC_SSP0->CR1        = 0x0000; 
+  LPC_SSP0->CR1        = 0x0000;
 
-  // SCK, MISO, MOSI are SSP pins. 
+  // SCK, MISO, MOSI are SSP pins.
   LPC_PINCON->PINSEL0 &= ~(3UL<<30);          /* P0.15 cleared               */
   LPC_PINCON->PINSEL0 |=  (2UL<<30);          /* P0.15 SCK0                  */
   LPC_PINCON->PINSEL1 &= ~((3<<2) | (3<<4)); /* P0.17, P0.18 cleared        */
@@ -91,11 +91,11 @@ void _SPI_Init (void)
   LPC_SC->PCLKSEL1    |=  (1<<10);            /* PCLKSP0 = CCLK   (100MHz)   */
 
   LPC_SSP0->CPSR       = 250;                 /* 100MHz / 250 = 400kBit      */
-                                              /* maximum of 18MHz is possible*/    
+                                              /* maximum of 18MHz is possible*/
   LPC_SSP0->CR0        = 0x0007;              /* 8Bit, CPOL=0, CPHA=0        */
   LPC_SSP0->CR1        = 0x0002;              /* SSP0 enable, master         */
 
-} 
+}
 
 #if (USE_TIMER_SYSTICK == 1)
 inline uint32_t GetTick(void){
@@ -106,37 +106,37 @@ void DelayMs(uint32_t dl){
 	uint32_t n;
 	while(dl--){
 		n = LPC_TIM3->TC;
-		while (n == LPC_TIM3->TC);		
-	} 
+		while (n == LPC_TIM3->TC);
+	}
 }
 #else
 static volatile uint32_t systicks = 0;
-//-----------------------------------------------------									   
-// SysTick Interrupt Handler (1ms)   
+//-----------------------------------------------------
+// SysTick Interrupt Handler (1ms)
 //-----------------------------------------------------
 void SysTick_Handler(void)
 {
 	systicks++;
-	//LPC_GPIO1->FIOPIN ^= TEST_LED; 
+	//LPC_GPIO1->FIOPIN ^= TEST_LED;
 }
-//-----------------------------------------------------		
+//-----------------------------------------------------
 //
-//-----------------------------------------------------		
+//-----------------------------------------------------
 uint32_t GetTick(void)
 {
 	return systicks;
 }
-//-----------------------------------------------------		
+//-----------------------------------------------------
 //
-//-----------------------------------------------------		
+//-----------------------------------------------------
 void DelayMs(uint32_t dl)
 {
 uint32_t n;
 	while(dl--)
 	{
 		n = systicks;
-		while (n == systicks);		
-	} 
+		while (n == systicks);
+	}
 }
 #endif
 
@@ -144,9 +144,9 @@ uint32_t ElapsedTicks(uint32_t start_ticks){
 	int32_t delta = GetTick() - start_ticks;
     return (delta < 0) ? -delta : delta;
 }
-//-----------------------------------------------------		
+//-----------------------------------------------------
 //
-//-----------------------------------------------------		
+//-----------------------------------------------------
 void __debugbreak(void){
 	 asm volatile
     (

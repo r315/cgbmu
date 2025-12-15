@@ -2,7 +2,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include "lib2d.h"
-#include "liblcd.h"
+#include "drvlcd.h"
 #include "font.h"
 
 #define LIB2D_FLOAT_MAX_PRECISION 		8
@@ -33,9 +33,9 @@ static lib2d_t lib2d;
 static uint16_t drawCharSimple(uint16_t x, uint16_t y, uint8_t *char_data, uint16_t *buffer){
 	uint8_t w,h;
 	uint16_t *pbuf = buffer;
-	
-	for (h=0; h < lib2d.font->h; h++){ 	
-		for(w=0; w < lib2d.font->w; w++){			
+
+	for (h=0; h < lib2d.font->h; h++){
+		for(w=0; w < lib2d.font->w; w++){
 			*pbuf++ = (*char_data & (0x80 >> w)) ? lib2d.forecolor : lib2d.backcolor;
 		}
 		char_data += 1;
@@ -48,14 +48,14 @@ static uint16_t drawCharSimple(uint16_t x, uint16_t y, uint8_t *char_data, uint1
 static uint16_t drawCharTransparent(uint16_t x, uint16_t y, uint8_t *char_data, uint16_t *buffer)
 {
 	uint8_t w,h;
-    
+
     (void)buffer;
 
 	for (h=0; h < lib2d.font->h; h++){
 		for(w=0;w<lib2d.font->w; w++){
 			if(*char_data & (0x80 >> w))
-				LCD_Pixel(x + w, y + h, lib2d.forecolor);							
-		}	
+				LCD_Pixel(x + w, y + h, lib2d.forecolor);
+		}
 		char_data += 1;
 	}
 
@@ -96,7 +96,7 @@ static uint16_t drawCharDouble(uint16_t x, uint16_t y, uint8_t *char_data, uint1
         }
 
         LCD_WriteArea(x, y, lib2d.font->w * 2, lib2d.font->h / 2, lib2d.buffer + lib2d.buffer_offset);
-        y += 4;        
+        y += 4;
         lib2d.buffer_offset ^= 8*8; // swap buffer
     }
 
@@ -135,7 +135,7 @@ uint16_t LIB2D_Char(uint16_t x, uint16_t y, uint8_t c)
 //
 //----------------------------------------------------------
 uint16_t LIB2D_Text(uint16_t x, uint16_t y, const char *s)
-{   
+{
     while(*s){
         x = LIB2D_Char(x, y, *s++);
     }
@@ -177,7 +177,7 @@ void LIB2D_SetFont(font_t *fnt)
 
 	lib2d.vspace = (h - 1) - lib2d.font->h;
 
-#endif			
+#endif
 }
 //----------------------------------------------------------
 //
@@ -209,10 +209,10 @@ void LIB2D_VLine(uint16_t x, uint16_t y, uint16_t height)
 	LCD_FillRect(x, y, 1, height, lib2d.forecolor);
 }
 
-void LIB2D_Line(uint16_t x1, uint16_t y1,  uint16_t x2, uint16_t y2)
-{
-	LCD_Line(x1, y1, x2, y2, lib2d.forecolor);
-}
+//void LIB2D_Line(uint16_t x1, uint16_t y1,  uint16_t x2, uint16_t y2)
+//{
+	//LCD_Line(x1, y1, x2, y2, lib2d.forecolor);
+//}
 
 void LIB2D_FillRect(uint16_t x, uint16_t y,  uint16_t w, uint16_t h)
 {
@@ -221,10 +221,10 @@ void LIB2D_FillRect(uint16_t x, uint16_t y,  uint16_t w, uint16_t h)
 
 void LIB2D_Rect(uint16_t x, uint16_t y,  uint16_t w, uint16_t h)
 {
-	LCD_FillRect(x, y, w, 1, lib2d.forecolor);	
-	LCD_FillRect(x + w , y, 1, h+1, lib2d.forecolor);	
-	LCD_FillRect(x, y + h , w, 1, lib2d.forecolor);	
-	LCD_FillRect(x ,y ,1, h, lib2d.forecolor);   
+	LCD_FillRect(x, y, w, 1, lib2d.forecolor);
+	LCD_FillRect(x + w , y, 1, h+1, lib2d.forecolor);
+	LCD_FillRect(x, y + h , w, 1, lib2d.forecolor);
+	LCD_FillRect(x ,y ,1, h, lib2d.forecolor);
 }
 
 void LIB2D_FillRoundRect(uint16_t x, uint16_t y,  uint16_t w, uint16_t h)
@@ -251,24 +251,24 @@ void LIB2D_Putc(char c)
 		}
 		if(lib2d.sc){
 			LCD_Scroll(lib2d.cy + lib2d.font->h + lib2d.vspace);
-			LCD_FillRect(0, lib2d.cy, LCD_GetWidth(), lib2d.font->h + lib2d.vspace, lib2d.backcolor);		
+			LCD_FillRect(0, lib2d.cy, LCD_GetWidth(), lib2d.font->h + lib2d.vspace, lib2d.backcolor);
 			lib2d.cx = 0;
 		}
 		if(c == '\n')
-			return;	
+			return;
 	}
 	if(c == '\r'){
 		lib2d.cx = 0;
 		return;
-	}	
+	}
 	lib2d.cx = LIB2D_Char(lib2d.cx, lib2d.cy, c);
 }
 //-----------------------------------------------------------
 //
 //-----------------------------------------------------------
-void LIB2D_String(const char *s){   
+void LIB2D_String(const char *s){
     while(*s)
-        LIB2D_Putc(*s++);	
+        LIB2D_Putc(*s++);
 }
 //-----------------------------------------------------------
 //
@@ -285,17 +285,17 @@ void xitoa (long val, signed char radix, signed char len){
 			sgn = '-';
 		}
 	}
-	
+
 	v = val;
 	r = radix;
-	
+
 	if (len < 0) {
 		len = -len;
 		pad = '0';
 	}
-	
+
 	if (len > 16) len = 16;
-	
+
 	do {
 		c = (unsigned char)(v % r);
 		if (c >= 10) c += 7;
@@ -303,13 +303,13 @@ void xitoa (long val, signed char radix, signed char len){
 		s[i++] = c;
 		v /= r;
 	} while (v);
-	
-	if(sgn) 
+
+	if(sgn)
 		s[i++] = sgn;
-	
+
 	while (i < len)
 		s[i++] = pad;
-		
+
 	do{
 		LIB2D_Putc(s[--i]);
 	}while (i);
@@ -321,22 +321,22 @@ void xitoa (long val, signed char radix, signed char len){
 void xftoa(double f, char places){
 long int_part, frac_part;
 char prec;
-  
-    int_part = (long)(f);  
-    
+
+    int_part = (long)(f);
+
 	if(places > LIB2D_FLOAT_MAX_PRECISION)
 		places = LIB2D_FLOAT_MAX_PRECISION;
-		
+
 	frac_part = 0;
 	prec = 0;
 	while ((prec++) < places){
 			f *= 10;
-			frac_part = (frac_part * 10) + (long)f - ((long)f / 10) * 10;  //((long)f%10);			
+			frac_part = (frac_part * 10) + (long)f - ((long)f / 10) * 10;  //((long)f%10);
 	}
 
     xitoa(int_part, -10, 0);
-    LIB2D_Putc('.');   
-    xitoa(abs(frac_part), 10, -places);  
+    LIB2D_Putc('.');
+    xitoa(abs(frac_part), 10, -places);
 }
 //-----------------------------------------------------------
 //
@@ -349,45 +349,45 @@ void LIB2D_Print(const char* str, ...){
 
 	while ((d = *str++) != 0) {
 		if (d != '%') {
-			LIB2D_Putc(d); 
+			LIB2D_Putc(d);
 			continue;
 		}
-		
-		d = *str++; 
+
+		d = *str++;
 		w = r = s = l = f = 0;
-		
+
 		if(d == '.'){
             f = 1;
-			d = *str++; 
-		}		
-		
+			d = *str++;
+		}
+
 		if (d == '0') {  // printf("%2X",3) produces  3, printf("%02X",3) produces in 03
             s = 1;
-			d = *str++; 
+			d = *str++;
 		}
-		
+
 		while ((d >= '0')&&(d <= '9')) {
 			w += (w * 10) + (d - '0');
 			d = *str++;
-		}		
-		
+		}
+
 		if (d == 'l') {
 			l = 1;
 			d = *str++;
 		}
-		
+
 		if (!d) break;
-		
+
 		if (d == 's') {
 			LIB2D_String(va_arg(arp, char*));
 			continue;
 		}
-		
+
 		if (d == 'c') {
 			LIB2D_Putc(va_arg(arp, int));
 			continue;
 		}
-		
+
 		if (d == 'u') r = 10;
 		if (d == 'd') r = -10;
 		if (d == 'X' || d == 'x') r = 16;
@@ -396,19 +396,19 @@ void LIB2D_Print(const char* str, ...){
 		if(d == 'p'){
 			LIB2D_String("0x");
 			r = 16;
-		}		
-		
+		}
+
 		if(d == 'f'){
 			if(!f)
 				w = 6;						// dafault 6 decimal places
-			xftoa(va_arg(arp, double), w);			
+			xftoa(va_arg(arp, double), w);
 			continue;
-		}		
-		
+		}
+
 		if (!r) break;
-		
+
 		if (s) w = -w;
-		
+
 		if (l) {
 			xitoa(va_arg(arp, long), r, w);
 		} else {

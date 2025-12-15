@@ -1,7 +1,7 @@
 /**
 * @file     st7735.h
 * @brief    Contains the st7735 lcd controller API headers and symbols.
-*           
+*
 * @version  1.0
 * @date     8 Jun. 2018
 * @author   Hugo Reis
@@ -11,8 +11,6 @@
 #define _st7735_h_
 
 #include <stdint.h>
-
-#define TFT_ST7735S
 
 // System Function Commands
 #define ST7735_NOP     0x00

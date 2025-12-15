@@ -42,8 +42,8 @@ $(DRIVERS_STD_PATH)/src/at32f4xx_rcc.c \
 $(DRIVERS_COSTUM_PATH)/src/spi_at32f4xx.c \
 $(DRIVERS_COSTUM_PATH)/src/dma_at32f4xx.c \
 $(DRIVERS_COSTUM_PATH)/src/gpio_at32f4xx.c \
-$(DRIVERS_COMPONENT_PATH)/src/ili9341.c \
-#$(DRIVERS_COMPONENT_PATH)/src/st7789.c \
+$(DRIVERS_COMPONENT_PATH)/src/st7789.c \
+#$(DRIVERS_COMPONENT_PATH)/src/ili9341.c \
 #$(DRIVERS_COMPONENT_PATH)/src/st7735.c \
 
 
@@ -77,7 +77,8 @@ OCD_CONFIG =$(BOARD_PATH)/at32f415.cfg
 # C defines
 C_DEFS +=\
 $(DEVICE) \
-BOARD_TDSO \
+_BOARD_415DK \
+BOARD_PWRKT \
 USE_STDPERIPH_DRIVER \
 NO_MALLOC
 #######################################
@@ -104,7 +105,7 @@ endif
 ifeq ($(shell uname -s), Linux)
 JLK ="/opt/SEGGER/JLink/JLinkExe"
 else
-JLK =$(JLINK)/jlink
+JLK =JLink
 endif
 #######################################
 # CFLAGS
@@ -218,7 +219,7 @@ $(ROM_OBJ): $(ROM_FILE)
 
 $(BUILD_DIR)/$(TARGET).jlink: $(BUILD_DIR)/$(TARGET).bin
 	@echo "Creating Jlink configuration file"
-	@echo "loadfile $< 0x00000000" > $@
+	@echo "loadfile $< 0x08000000" > $@
 	@echo "r" >> $@
 	@echo "q" >> $@
 #######################################
