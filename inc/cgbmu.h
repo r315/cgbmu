@@ -6,22 +6,29 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include "dmgcpu.h" 
+#include "dmgcpu.h"
 
 #define FRAME_TIME 16
 
-void cgbmuExit(void);
-void cgbmu(const uint8_t *rom);
-uint8_t runOneStep(void);
-uint8_t runOneFrame(void);
-void updateFps(void);
+enum emures{
+    EMU_RES_OK,
+    EMU_RES_BOOT_ROM,
+    EMU_RES_VBLANK,
+    EMU_RES_HBLANK,
+    EMU_RES_END
+};
+
+enum emures cgbmuInit(const uint8_t *rom);
+enum emures  cgbmu(void);
+void cgbmuAbort(void);
+uint16_t cgbmuFps(void);
+const uint8_t* cgbmuLine(void);
 
 // Implemented by target
 uint32_t GetTick(void);
 void DelayMs(uint32_t ms);
 uint8_t readButtons(void);
-void pushScanLine(cpu_t *cpu);
-int drawInt(int x, int y, unsigned int v, char radix, char digitos);
+void scanlineDraw(cpu_t *cpu);
 
 #ifdef __cplusplus
 }

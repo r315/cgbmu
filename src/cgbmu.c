@@ -5,26 +5,32 @@
 #include "dmgcpu.h"
 #include "decoder.h"
 
-enum{ SINGLE_FRAME, SINGLE_STEP, FAST_RUN};
+enum cgbmustates {
+    EMU_STATE_INIT,
+    EMU_STATE_BOOT_ROM,
+    EMU_STATE_SINGLE_FRAME,
+    EMU_STATE_LIMITED_RUN,
+    EMU_STATE_FAST_RUN,
+    EMU_STATE_ENDED
+};
 
-static uint8_t done;
 static cpu_t dmgcpu;
+static enum cgbmustates state;
+static uint16_t fps, fps_counter;
 
-void cgbmuExit(void){
-	done = 1;
-}
+static uint8_t updateFps(void)
+{
+    static uint32_t fpsupdatetick = 0;
+    fps_counter++;
 
-void updateFps(void) {
-	static uint32_t fpsupdatetick = 0;
-	static uint16_t fps = 0;
-	fps++;
-
-	if (GetTick() > fpsupdatetick)
-	{
-		drawInt(SCREEN_W + 8, 0, fps, 10, 4);
-		fps = 0;
+	if (GetTick() > fpsupdatetick){
 		fpsupdatetick = GetTick() + 1000;
+        fps = fps_counter;
+		fps_counter = 0;
+        return 1;
 	}
+
+    return 0;
 }
 
 #if 0
@@ -88,18 +94,59 @@ uint8_t runOneFrame(void) {
 	return 1;
 }
 #endif
+
 /**
  * @brief
- *
+ * @param
+ * @return
  */
-uint8_t runOneStep(void) {
-	uint8_t frame;
-	decode(&dmgcpu);
-	frame = video(&dmgcpu);
-	timer(&dmgcpu);
-	serial(&dmgcpu);
-	interrupts(&dmgcpu);
-	return frame;
+enum videoint cgbmuSingle(void)
+{
+    enum videoint vid;
+
+    decode(&dmgcpu);
+    vid = video(&dmgcpu);
+    timer(&dmgcpu);
+    serial(&dmgcpu);
+    interrupts(&dmgcpu);
+
+    return vid;
+}
+
+/**
+ * @brief
+ * @param
+ * @return
+ */
+uint16_t cgbmuFps(void)
+{
+    return fps;
+}
+
+/**
+ * @brief
+ * @param
+ * @return
+ */
+const uint8_t* cgbmuLine(void)
+{
+    return dmgcpu.screen_line;
+}
+
+/**
+ * @brief
+ */
+enum emures cgbmuInit(const uint8_t *rom)
+{
+    if(rom == NULL){
+        cartridgeInit(&dmgcpu, boot_rom);
+		state = EMU_STATE_BOOT_ROM;
+	}else{
+		cartridgeInit(&dmgcpu, rom);
+        state = EMU_STATE_INIT;
+	}
+
+    return EMU_RES_OK;
 }
 
 /**
@@ -107,45 +154,67 @@ uint8_t runOneStep(void) {
  *
  * @param rom
  */
-void cgbmu(const uint8_t *rom) {
-	uint8_t mode = SINGLE_STEP;
-	uint32_t ticks = 0;
-	done = 0;
-	
-	if(rom == NULL){
-		bootCpu(&dmgcpu);
-        return;
-	}else{
-		initCpu(&dmgcpu);
-		cartridgeInit(&dmgcpu, rom);
-	}
-	
-	if (mode == SINGLE_STEP) {			// instruction loop		
-		while (!done) {
-			if(runOneStep()){
-				ticks = GetTick() - ticks;
-				updateFps();
-				if (ticks < FRAME_TIME){
-					DelayMs(FRAME_TIME - ticks);
-				}
-				ticks = GetTick();
-			}
-		}
-	}
-	else if (mode == FAST_RUN) {
-		while (!done) {
-			decode(&dmgcpu);
-			if(video(&dmgcpu))
-				updateFps();
-			timer(&dmgcpu);
-			serial(&dmgcpu);
-			interrupts(&dmgcpu);
-		}
-	}
-	else {				// frame loop
-		while (!done) {
-			//runOneFrame();
-			//updateFps();
-		}
-	}	
+enum emures cgbmu(void)
+{
+	static uint32_t ticks = 0;
+    static uint8_t frame = 0;
+    enum emures res = EMU_RES_OK;
+    enum videoint vid = VIDEO_NONE;
+
+    switch(state){
+        case EMU_STATE_BOOT_ROM:
+            initCpu(&dmgcpu);
+            dmgcpu.PC = 0;
+            state = EMU_STATE_LIMITED_RUN;
+            break;
+
+        case EMU_STATE_INIT:
+            initCpu(&dmgcpu);
+            state = EMU_STATE_FAST_RUN;
+            break;
+
+        case EMU_STATE_LIMITED_RUN:
+
+            if (!frame){
+                vid = cgbmuSingle();
+                frame = vid == VIDEO_VBLANK ? 1 : 0;
+            }
+
+            if(GetTick() - ticks > FRAME_TIME)
+            {
+                ticks = GetTick();
+                frame = 0;
+            }
+            break;
+
+        case EMU_STATE_FAST_RUN:
+            vid = cgbmuSingle();
+            break;
+
+        case EMU_STATE_ENDED:
+            return EMU_RES_END;
+
+        default:
+            break;
+    }
+
+    if(vid == VIDEO_VBLANK){
+        if(updateFps()){
+            return EMU_RES_VBLANK;
+        }
+    }else if(vid == VIDEO_HBLANK){
+        scanlineDraw(&dmgcpu);
+        return EMU_RES_HBLANK;
+    }
+
+    return res;
+}
+
+/**
+ * @brief
+ * @param
+ */
+void cgbmuAbort(void)
+{
+	state = EMU_STATE_ENDED;
 }

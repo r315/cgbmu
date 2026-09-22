@@ -80,8 +80,8 @@ void DBG_SingleStep(void) {
 	decode(&dbg_cpu);
 	if (video(&dbg_cpu)) {
 		frame_counter++;
-		updateFps();
 #if 0
+		updateFps();
 		static uint32_t dtics = GetTick() - dtics;
 		if (dtics < FRAME_TIME) {
 			SDL_Delay(FRAME_TIME - dtics);
@@ -109,7 +109,7 @@ void DBG_FrameStep(void)
 	cycles -= V_FRAME_CYCLE;
 
 	frame_counter++;
-	updateFps();
+	//updateFps();
 
 	dtics = GetTick() - dtics;
 	if (dtics < FRAME_TIME) {
