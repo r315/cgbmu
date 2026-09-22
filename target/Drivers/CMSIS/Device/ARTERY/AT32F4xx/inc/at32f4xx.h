@@ -232,8 +232,8 @@ extern "C" {
 #if !defined  USE_STDPERIPH_DRIVER
 /**
  * @brief Comment the line below if you will not use the peripherals drivers.
-   In this case, these drivers will not be included and the application code will 
-   be based on direct access to peripherals registers 
+   In this case, these drivers will not be included and the application code will
+   be based on direct access to peripherals registers
    */
   #ifdef _RTE_
     #include "RTE_Components.h"
@@ -251,7 +251,7 @@ extern "C" {
         can define the HSE value in your toolchain compiler preprocessor.
   */
 #if !defined  HSE_VALUE
-#define HSE_VALUE               ((uint32_t)8000000) /*!< Value of the External oscillator in Hz */
+#define HSE_VALUE               8000000/*!< Value of the External oscillator in Hz */
 #endif /* HSE_VALUE */
 
 
@@ -806,7 +806,7 @@ typedef enum IRQn
     USB_HP_IRQn                 = 73,     /*!< USB Device High Priority Interrupts                  */
     USB_LP_IRQn                 = 74,     /*!< USB Device Low Priority Interrupts                   */
     DMA2_Channel6_7_IRQn        = 75,     /*!< DMA2 Channel6 and Channel7 global interrupts         */
-#endif /* AT32F413Kx_MD || AT32F413Kx_HD  || 
+#endif /* AT32F413Kx_MD || AT32F413Kx_HD  ||
           AT32F413Tx_MD */
 
 #if defined (AT32F413Cx_MD) || defined (TS32F401CBU7)
@@ -1677,7 +1677,7 @@ typedef struct
     CAN_FilterRegister_Type FilterRegister[14];
 } CAN_Type;
 
-/** 
+/**
   * @brief SysTem Configuration
   */
 typedef struct
@@ -1688,7 +1688,7 @@ typedef struct
 } SYSCFG_Type;
 
 /**
-  * @brief Comparator 
+  * @brief Comparator
   */
 typedef struct
 {
@@ -1700,7 +1700,7 @@ typedef struct
 #endif
   __IO uint32_t G_FILTER_EN;
   __IO uint32_t HIGH_PULSE;
-  __IO uint32_t LOW_PULSE;    
+  __IO uint32_t LOW_PULSE;
 } COMP_Type;
 
 /**
@@ -1761,7 +1761,7 @@ typedef struct
     __IO uint32_t ICLR;
     uint32_t  RESERVED[38];
     __IO uint32_t DMA_SRC_SEL0;
-    __IO uint32_t DMA_SRC_SEL1;	
+    __IO uint32_t DMA_SRC_SEL1;
 } DMA_Type;
 
 /**
@@ -1790,7 +1790,7 @@ typedef struct
     __IO uint32_t ADDR;
     uint32_t RESERVED0;
     __IO uint32_t UOB;
-    __IO uint32_t WRPRT;  
+    __IO uint32_t WRPRT;
     uint32_t RESERVED1[8];
     __IO uint32_t FCKEY2;
     uint32_t RESERVED2;
@@ -1962,7 +1962,7 @@ typedef struct
     __IO uint32_t BSRE;
     __IO uint32_t BRE;
     __IO uint32_t LOCK;
-#if defined (AT32F403Axx) || defined (AT32F407xx) 
+#if defined (AT32F403Axx) || defined (AT32F407xx)
     uint32_t RESERVED0;
     __IO uint32_t SRCTR;
     uint32_t RESERVED1[6];
@@ -2278,7 +2278,7 @@ typedef struct
     __IO uint32_t STS;
 } WWDG_Type;
 
-/** 
+/**
   * @brief Ethernet MAC
   */
 
@@ -2917,7 +2917,7 @@ typedef struct
 #define  PWR_CTRL_PVDS_1                        ((uint16_t)0x0040)            /*!< Bit 1 */
 #define  PWR_CTRL_PVDS_2                        ((uint16_t)0x0080)            /*!< Bit 2 */
 
-/** PVD level configuration */                                                
+/** PVD level configuration */
 #define  PWR_CTRL_PVDS_2V2                      ((uint16_t)0x0000)            /*!< PVD level 2.2V */
 #define  PWR_CTRL_PVDS_2V3                      ((uint16_t)0x0020)            /*!< PVD level 2.3V */
 #define  PWR_CTRL_PVDS_2V4                      ((uint16_t)0x0040)            /*!< PVD level 2.4V */
@@ -3414,7 +3414,7 @@ typedef struct
     defined (AT32F403Vx_XL) || defined (AT32F403Zx_XL) || \
     defined (AT32F403Axx)   || defined (AT32F407xx)
  #define  RCC_APB1RST_SPI4RST                   ((uint32_t)0x00010000)        /*!< SPI 4 reset */
-#endif /* AT32F403Vx_HD || AT32F403Zx_HD || AT32F403Vx_XL || AT32F403Zx_XL 
+#endif /* AT32F403Vx_HD || AT32F403Zx_HD || AT32F403Vx_XL || AT32F403Zx_XL
           AT32F403Axx   || AT32F407xx */
 
 #if !defined (AT32F413Kx_MD) && !defined (AT32F413Kx_HD) && \
@@ -3612,7 +3612,7 @@ typedef struct
     defined (AT32F403Vx_XL) || defined (AT32F403Zx_XL) || \
     defined (AT32F403Axx)   || defined (AT32F407xx)
  #define  RCC_APB1EN_SPI4EN                     ((uint32_t)0x00010000)        /*!< SPI 4 clock enable */
-#endif /* AT32F403Vx_HD || AT32F403Zx_HD || AT32F403Vx_XL || AT32F403Zx_XL 
+#endif /* AT32F403Vx_HD || AT32F403Zx_HD || AT32F403Vx_XL || AT32F403Zx_XL
           AT32F403Axx   || AT32F407xx */
 
 #if !defined (AT32F413Kx_MD) && !defined (AT32F413Kx_HD) && \
@@ -3667,7 +3667,7 @@ typedef struct
  #define  RCC_BDC_RTCSEL_0                      ((uint32_t)0x00000100)        /*!< Bit 0 */
  #define  RCC_BDC_RTCSEL_1                      ((uint32_t)0x00000200)        /*!< Bit 1 */
 
- /** RTC congiguration */                       
+ /** RTC congiguration */
  #define  RCC_BDC_RTCSEL_NOCLK                  ((uint32_t)0x00000000)        /*!< No clock */
  #define  RCC_BDC_RTCSEL_LSE                    ((uint32_t)0x00000100)        /*!< LSE oscillator clock used as RTC clock */
  #define  RCC_BDC_RTCSEL_LSI                    ((uint32_t)0x00000200)        /*!< LSI oscillator clock used as RTC clock */
@@ -3684,7 +3684,7 @@ typedef struct
  #define  RCC_BDC_ERTCSEL_0                     ((uint32_t)0x00000100)        /*!< Bit 0 */
  #define  RCC_BDC_ERTCSEL_1                     ((uint32_t)0x00000200)        /*!< Bit 1 */
 
- /** ERTC congiguration */                      
+ /** ERTC congiguration */
  #define  RCC_BDC_ERTCSEL_NOCLK                 ((uint32_t)0x00000000)        /*!< No clock */
  #define  RCC_BDC_ERTCSEL_LSE                   ((uint32_t)0x00000100)        /*!< LSE oscillator clock used as ERTC clock */
  #define  RCC_BDC_ERTCSEL_LSI                   ((uint32_t)0x00000200)        /*!< LSI oscillator clock used as ERTC clock */
@@ -4368,8 +4368,8 @@ typedef struct
 #define AFIO_MAP6_UART4_GRMP                    ((uint32_t)0x10000000)        /*!< UART4 Alternate Function mapping */
 
 /******************  Bit definition for AFIO_MAP7 register  ******************/
-#define AFIO_MAP7_SPIF_GRMP_1000                ((uint32_t)0x00000008)        /*!< EXT_FLASH Alternate Function mapping */ 
-#define AFIO_MAP7_SPIF_GRMP_1001                ((uint32_t)0x00000009)        /*!< EXT_FLASH Alternate Function enable */ 
+#define AFIO_MAP7_SPIF_GRMP_1000                ((uint32_t)0x00000008)        /*!< EXT_FLASH Alternate Function mapping */
+#define AFIO_MAP7_SPIF_GRMP_1001                ((uint32_t)0x00000009)        /*!< EXT_FLASH Alternate Function enable */
 #define AFIO_MAP7_ADC1_GRMP_01                  ((uint32_t)0x00000010)        /*!< ADC1 External Trigger Injected Conversion remapping */
 #define AFIO_MAP7_ADC1_GRMP_10                  ((uint32_t)0x00000020)        /*!< ADC1 External Trigger Regular Conversion remapping */
 #define AFIO_MAP7_ADC1_GRMP_11                  ((uint32_t)0x00000030)        /*!< ADC1 External Trigger Regular & Injected Conversion remapping */
@@ -4379,7 +4379,7 @@ typedef struct
 #define AFIO_MAP7_SWJTAG_GRMP_001               ((uint32_t)0x00010000)        /*!< Full SWJ Enabled (JTAG-DP + SW-DP) but without JTRST */
 #define AFIO_MAP7_SWJTAG_GRMP_010               ((uint32_t)0x00020000)        /*!< JTAG-DP Disabled and SW-DP Enabled */
 #define AFIO_MAP7_SWJTAG_GRMP_100               ((uint32_t)0x00040000)        /*!< Full SWJ Disabled (JTAG-DP + SW-DP) */
-#define AFIO_MAP7_PD01_GRMP                     ((uint32_t)0x00100000)        /*!< PD01 Alternate Function mapping */ 
+#define AFIO_MAP7_PD01_GRMP                     ((uint32_t)0x00100000)        /*!< PD01 Alternate Function mapping */
 
 /*----------------------------------------------------------------------------*/
 #else /* AT32F421xx */
@@ -4982,7 +4982,7 @@ typedef struct
 #define  SCB_AIRCR_PRIGROUP_1                   ((uint32_t)0x00000200)        /*!< Bit 1 */
 #define  SCB_AIRCR_PRIGROUP_2                   ((uint32_t)0x00000400)        /*!< Bit 2  */
 
-/* prority group configuration */           
+/* prority group configuration */
 #define  SCB_AIRCR_PRIGROUP0                    ((uint32_t)0x00000000)        /*!< Priority group=0 (7 bits of pre-emption priority, 1 bit of subpriority) */
 #define  SCB_AIRCR_PRIGROUP1                    ((uint32_t)0x00000100)        /*!< Priority group=1 (6 bits of pre-emption priority, 2 bits of subpriority) */
 #define  SCB_AIRCR_PRIGROUP2                    ((uint32_t)0x00000200)        /*!< Priority group=2 (5 bits of pre-emption priority, 3 bits of subpriority) */
@@ -5037,14 +5037,14 @@ typedef struct
 #define  SCB_CFSR_MUNSTKERR                     ((uint32_t)0x00000008)        /*!< Unstacking error */
 #define  SCB_CFSR_MSTKERR                       ((uint32_t)0x00000010)        /*!< Stacking error */
 #define  SCB_CFSR_MMARVALID                     ((uint32_t)0x00000080)        /*!< Memory Manage Address Register address valid flag */
-/** BFSR */                                  
+/** BFSR */
 #define  SCB_CFSR_IBUSERR                       ((uint32_t)0x00000100)        /*!< Instruction bus error flag */
 #define  SCB_CFSR_PRECISERR                     ((uint32_t)0x00000200)        /*!< Precise data bus error */
 #define  SCB_CFSR_IMPRECISERR                   ((uint32_t)0x00000400)        /*!< Imprecise data bus error */
 #define  SCB_CFSR_UNSTKERR                      ((uint32_t)0x00000800)        /*!< Unstacking error */
 #define  SCB_CFSR_STKERR                        ((uint32_t)0x00001000)        /*!< Stacking error */
 #define  SCB_CFSR_BFARVALID                     ((uint32_t)0x00008000)        /*!< Bus Fault Address Register address valid flag */
-/** UFSR */                                  
+/** UFSR */
 #define  SCB_CFSR_UNDEFINSTR                    ((uint32_t)0x00010000)        /*!< The processor attempt to execute an undefined instruction */
 #define  SCB_CFSR_INVSTATE                      ((uint32_t)0x00020000)        /*!< Invalid combination of EPSR and instruction */
 #define  SCB_CFSR_INVPC                         ((uint32_t)0x00040000)        /*!< Attempt to load EXC_RETURN into pc illegally */
@@ -6548,7 +6548,7 @@ typedef struct
 #define ERTC_TPAF_TMFREQ_2                      ((uint32_t)0x00000400)
 #define ERTC_TPAF_TMTS                          ((uint32_t)0x00000080)
 #define ERTC_TPAF_TM2TRG                        ((uint32_t)0x00000010)
-#define ERTC_TPAF_TM2E                          ((uint32_t)0x00000008) 
+#define ERTC_TPAF_TM2E                          ((uint32_t)0x00000008)
 #define ERTC_TPAF_TMIE                          ((uint32_t)0x00000004)
 #define ERTC_TPAF_TM1TRG                        ((uint32_t)0x00000002)
 #define ERTC_TPAF_TM1E                          ((uint32_t)0x00000001)
@@ -10190,7 +10190,7 @@ typedef struct
    Wake-UpFrame Filter Reg1 : Filter 1 Byte Mask
    Wake-UpFrame Filter Reg2 : Filter 2 Byte Mask
    Wake-UpFrame Filter Reg3 : Filter 3 Byte Mask
-   Wake-UpFrame Filter Reg4 : RSVD - Filter3 Command - RSVD - Filter2 Command - 
+   Wake-UpFrame Filter Reg4 : RSVD - Filter3 Command - RSVD - Filter2 Command -
                               RSVD - Filter1 Command - RSVD - Filter0 Command
    Wake-UpFrame Filter Re5 : Filter3 Offset - Filter2 Offset - Filter1 Offset - Filter0 Offset
    Wake-UpFrame Filter Re6 : Filter1 CRC16 - Filter0 CRC16

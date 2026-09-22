@@ -63,7 +63,9 @@ $(EMU_PATH)/src/cgbmu.c \
 # ASM sources
 #ASM_SOURCES =startup_at32f415cbt7.s
 
-ROM_FILE :=$(ROMS_PATH)/cpu_instrs.gb
+#ROM_FILE :=$(ROMS_PATH)/cpu_instrs.gb
+#ROM_FILE :=$(ROMS_PATH)/Joypad.gb
+ROM_FILE :=../../../../roms/mario.gb
 #######################################
 # Misc files
 #######################################
@@ -80,7 +82,8 @@ $(DEVICE) \
 _BOARD_415DK \
 BOARD_PWRKT \
 USE_STDPERIPH_DRIVER \
-NO_MALLOC
+NO_MALLOC \
+HSE_VALUE=24000000UL
 #######################################
 # binaries
 #######################################

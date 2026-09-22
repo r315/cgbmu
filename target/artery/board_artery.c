@@ -46,11 +46,19 @@ inline uint32_t GetTick(void)
 
 void BOARD_Init(void)
 {
-	SystemInit();
-	SystemCoreClockUpdate();
+#if HSE_VALUE == 8000000UL
+    SystemInit();
+#else
+    if(SystemConfigPll(RCC_CFG_PLLRC_HSE, HSE_VALUE, 240000000)){
+        SystemConfigClockSrc(RCC_CFG_SYSCLKSEL_PLL);
+    }
+#endif
+
+    SystemCoreClockUpdate();
 
     RCC->APB2EN |= RCC_APB2EN_AFIOEN | RCC_APB2EN_GPIOAEN | RCC_APB2EN_GPIOBEN | RCC_APB2EN_GPIOCEN;
     AFIO->MAP = AFIO_MAP_SWJTAG_CONF_JTAGDISABLE;
+
 
 	InitTimeBase();
 

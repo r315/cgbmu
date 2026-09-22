@@ -39,8 +39,8 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 	return x;
 }
 
-
-void pushScanLine(cpu_t *cpu){
+void scanlineDraw(cpu_t* cpu)
+{
     uint8_t *pixel = cpu->screen_line;
     uint16_t *dst = tft_line;
 	uint16_t *dst_end = dst + SCREEN_W;
@@ -48,10 +48,10 @@ void pushScanLine(cpu_t *cpu){
     while(dst < dst_end){
 		*dst++ = lcd_pal[*pixel++];
     }
-    // TODO: FIX: FPS counter print closing line window
-    if(cpu->IOLY == 0){
+
+    //if(cpu->IOLY == 0){
         LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + cpu->IOLY, SCREEN_W, 1);
-    }
+    //}
 
     LCD_WriteData((const uint16_t*)tft_line, SCREEN_W);
 }
@@ -71,17 +71,22 @@ uint8_t readButtons(void)
 
 int main(void)
 {
+    enum emures res;
     BOARD_Init();
 
     LIB2D_Init();
     LIB2D_Print("CPU %uMHz\n", SystemCoreClock/1000000);
 
-    cgbmu(cartridge);
+    cgbmuInit(cartridge);
 
     while (1)
     {
-        LED1_TOGGLE;
-        DelayMs(200);
+        res = cgbmu();
+
+        if(res == EMU_RES_VBLANK){
+            drawInt(SCREEN_W + 8, 0, cgbmuFps(), 10, 4);
+        }
+
     }
 
     return 0;
