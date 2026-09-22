@@ -10,9 +10,9 @@ TARGET_DISCO_PARAM =-C target/Discovery BUILD_DIR=$(BUILD_DIR)/discovery
 
 all: bb disco artery
 
-clean: 
+clean:
 	@${RM} -Rf $(BUILD_DIR)
-	
+
 emu:
 	@"$(MAKE)" $(TARGET_EMU_PARAM) $(EMU_PARAM)
 
@@ -24,7 +24,7 @@ bb-rebuild-rom:
 	@"$(MAKE)" $(TARGET_BB_PARAM) clean-rom
 	@"$(MAKE)" bb
 
-disco: 
+disco:
 	"$(MAKE)" $(TARGET_DISCO_PARAM) $(EMU_PARAM)
 disco-program: disco
 	@"$(MAKE)" $(TARGET_DISCO_PARAM) $(EMU_PARAM) program
@@ -32,10 +32,10 @@ disco-rebuild-rom:
 	@"$(MAKE)" $(TARGET_DISCO_PARAM) clean-rom
 	@"$(MAKE)" disco-program
 
-artery: 
+pwrkt:
 	@"$(MAKE)" $(TARGET_ARTERY_PARAM) $(EMU_PARAM)
-artery-program: artery
+pwrkt-program: pwrkt
 	@"$(MAKE)" $(TARGET_ARTERY_PARAM) $(EMU_PARAM) program
-artery-rebuild-rom:
+pwrkt-rebuild-rom:
 	@"$(MAKE)" $(TARGET_ARTERY_PARAM) clean-rom
-	@"$(MAKE)" artery
+	@"$(MAKE)" pwrkt

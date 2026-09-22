@@ -42,31 +42,29 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 
 void pushScanLine(cpu_t *cpu){
     uint8_t *pixel = cpu->screen_line;
-	uint8_t *end = pixel + SCREEN_W;
+    uint16_t *dst = tft_line;
+	uint16_t *dst_end = dst + SCREEN_W;
 
-    uint16_t *dst;
-
-    dst = tft_line;
-
-    while(pixel < end){
+    while(dst < dst_end){
 		*dst++ = lcd_pal[*pixel++];
     }
+    // TODO: FIX: FPS counter print closing line window
+    if(cpu->IOLY == 0){
+        LCD_Window(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + cpu->IOLY, SCREEN_W, 1);
+    }
 
-    LCD_WriteArea(SCREEN_OFFSET_X, SCREEN_OFFSET_Y + cpu->IOLY, SCREEN_W, 1, tft_line);
+    LCD_WriteData((const uint16_t*)tft_line, SCREEN_W);
 }
 
 
 uint8_t readButtons(void)
 {
     uint8_t button = 0;
-    //int	keys = ~LPC_GPIO1->FIOPIN & BUTTON_MASK;
-
-    /*button |= ( keys & BUTTON_DOWN) ? J_DOWN : 0;
-    button |= ( keys & BUTTON_UP)  ? J_UP : 0;
+    uint16_t keys = BUTTON_HW_READ;
     button |= ( keys & BUTTON_LEFT) ? J_LEFT : 0;
     button |= ( keys & BUTTON_RIGHT) ? J_RIGHT : 0;
-    button |= ( keys & BUTTON_A) ? J_START : 0;
-    */
+    button |= ( keys & BUTTON_CENTER) ? J_START : 0;
+
     return button;
 }
 

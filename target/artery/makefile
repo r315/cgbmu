@@ -129,7 +129,7 @@ DEBUG =0
 OPT   =-O2
 else
 DEBUG =1
-OPT   =-Og -g -gdwarf-2 -std=gnu11 -Wall -Wextra
+OPT   =-O0 -g -gdwarf-2 -std=gnu11 -Wall -Wextra
 endif
 
 

@@ -4,7 +4,12 @@
 #include "spi.h"
 #include "gpio.h"
 
-#define ST_CMD_DELAY 		0x80
+#define DRV_CMD_DELAY 		0x80
+#define DRV_CMD_PARM_NONE 	0
+#define DRV_CMD_PARM1 		1
+#define DRV_CMD_PARM2 		2
+#define DRV_CMD_PARM3 		3
+#define DRV_CMD_PARM4 		4
 #define DEFAULT_MADCTL      ST7789_MADCTL_RGB
 
 #define LCD_CS1     GPIO_Write(drvlcd->cs, GPIO_PIN_HIGH)
@@ -17,7 +22,7 @@
 #define LCD_RST0    GPIO_Write(drvlcd->rst, GPIO_PIN_LOW)
 
 static uint16_t _width, _height;
-static uint8_t scratch[4];
+static uint8_t scratch[5];
 static drvlcdspi_t *drvlcd;
 static spibus_t *spidev;
 
@@ -39,27 +44,38 @@ const drvlcd_t st7789_drv =
 };
 
 extern void DelayMs(uint32_t ms);
-
-const uint8_t st7789_240x240[] = {
-    8,                                  // Number of commands following this.
-    ST7789_SLPOUT, ST_CMD_DELAY, 120,
-    ST7789_COLMOD, 1, COLOR_MODE_65K | COLOR_MODE_16BIT,
-    ST7789_MADCTL, 1, DEFAULT_MADCTL,
-    ST7789_CASET, 4, 0,0,0, 240,
-    ST7789_RASET, 4, 0,0,0, 240,
-    ST7789_INVON, ST_CMD_DELAY, 10,      // Inversion ON
-    ST7789_NORON, ST_CMD_DELAY, 10,      // Normal display on, no args, w/delay
-    ST7789_DISPON, ST_CMD_DELAY, 10,     // Main screen turn on
+/**
+ * @brief Initialization sequence
+ *
+ * [0} Number of commands on sequence
+ *
+ * [0] number of parameters, bit 7 apply delay after command
+ * [1] command
+ * [2] parameter 1
+ * [n] parameter n / delay
+ *
+ * repeat from index 1
+ */
+static const uint8_t st7789_sequence[] = {
+    6,                                  // Number of commands in sequence
+    DRV_CMD_DELAY, ST7789_SLPOUT, 120,
+    DRV_CMD_PARM1, ST7789_COLMOD, (COLOR_MODE_65K | COLOR_MODE_16BIT),
+    DRV_CMD_PARM1, ST7789_MADCTL, DEFAULT_MADCTL,
+    DRV_CMD_DELAY, ST7789_INVON, 10,
+    DRV_CMD_DELAY, ST7789_NORON, 10,
+    DRV_CMD_DELAY, ST7789_DISPON, 10,
 };
 
 
 /**
  * @brief Writes command to display
  */
-static void LCD_Command(uint8_t data){
+static void LCD_Command(uint8_t *params, uint8_t len){
     LCD_CD0;
-    SPI_Transfer(spidev, &data, 1);
+    SPI_Transfer(spidev, params++, 1);
     LCD_CD1;
+    if(len)
+        SPI_Transfer(spidev, params, len);
 }
 
 /**
@@ -75,24 +91,24 @@ void LCD_Data(uint16_t data){
  * @brief Companion code to the above tables.  Reads and issues
  * a series of LCD commands stored as byte array.
  * */
-static void LCD_InitSequence(const uint8_t *addr) {
-    uint8_t  numCommands, numArgs;
+static void LCD_InitSequence(const uint8_t *seq) {
+    uint8_t  numCommands, numParm;
 	uint16_t ms;
 
-	numCommands = *addr++;          // Get total number of commands
-	while(numCommands--) {
-		LCD_Command(*addr++);       // Send command
-		numArgs  = *addr++;         // Get number of args
-		ms       = numArgs;         // Get argument
-		numArgs &= ~ST_CMD_DELAY;   // Clear delay flag
-		SPI_Transfer(spidev, (uint8_t*)addr, numArgs); // Send arguments
-		addr += numArgs;            // Move to next command
+	numCommands = *seq++;                           // Get number of commands in sequence
 
-		if(ms & ST_CMD_DELAY) {     // If argument was delay, do it
-			ms = *addr++;
-			if(ms == 255) ms = 500;
+	while(numCommands--) {
+		numParm = seq[0] & ~DRV_CMD_DELAY;          // Get number of parameters by masking delay bit
+		LCD_Command((uint8_t*)seq + 1, numParm);    // Send command and its parameters
+        numParm += 2;                               // skip len and command byte
+		if(seq[0] & DRV_CMD_DELAY) {                // If delay bit is set, do delay
+			ms = seq[numParm];
+			if(ms == 255)
+                ms = 500;
 			DelayMs(ms);
+            numParm++;                              // Delay value counts as one argument
 		}
+        seq += numParm;                             // Move to next command
 	}
 }
 
@@ -100,7 +116,7 @@ static void LCD_InitSequence(const uint8_t *addr) {
  * @brief Write a block of data
  *
  */
-static void LCD_WriteData(uint16_t *data, uint32_t count){
+void LCD_WriteData(const uint16_t *data, uint32_t count){
 
     if(spidev->cfg & SPI_CFG_DMA){
         spidev->cfg |= SPI_CFG_TRF_16BIT;
@@ -115,11 +131,15 @@ static void LCD_WriteData(uint16_t *data, uint32_t count){
 
 /**
  * @brief End of transfer handler for DMA use
+ * This is called from an interrupt, wait for
+ * EOT causes deadlock
  * */
 void LCD_DataEnd(void){
     spidev->cfg &= ~(SPI_CFG_TRF_16BIT | SPI_CFG_TRF_CONST);
+    //SPI_WaitEOT(spibus);
     LCD_CS1;
 }
+
 /**
  * @brief Define area to be writtem
  *
@@ -129,22 +149,24 @@ void LCD_DataEnd(void){
  * \param y2 :  End y
  * \param color :
  */
-static void LCD_CasRasSet(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2){
-    LCD_Command(ST7789_CASET);
-    scratch[0] = x1 >> 8;
-    scratch[1] = x1;
-    scratch[2] = x2 >> 8;
-    scratch[3] = x2;
-    SPI_Transfer(spidev, scratch, 4);
+static void LCD_CasRasSet(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
+{
+    scratch[0] = ST7789_CASET;
+    scratch[1] = x1 >> 8;
+    scratch[2] = x1;
+    scratch[3] = x2 >> 8;
+    scratch[4] = x2;
+    LCD_Command(scratch, DRV_CMD_PARM4);
 
-    LCD_Command(ST7789_RASET);
-    scratch[0] = y1 >> 8;
-    scratch[1] = y1;
-    scratch[2] = y2 >> 8;
-    scratch[3] = y2;
-    SPI_Transfer(spidev, scratch, 4);
+    scratch[0] = ST7789_RASET;
+    scratch[1] = y1 >> 8;
+    scratch[2] = y1;
+    scratch[3] = y2 >> 8;
+    scratch[4] = y2;
+    LCD_Command(scratch, DRV_CMD_PARM4);
 
-    LCD_Command(ST7789_RAMWR);
+    scratch[0] = ST7789_RAMWR;
+    LCD_Command(scratch, DRV_CMD_PARM_NONE);
 }
 
 /**
@@ -161,7 +183,6 @@ void LCD_Window(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
     LCD_CS0;
     LCD_CasRasSet(x, y, x + (w - 1), y + (h - 1));
 }
-
 
 /**
  * @brief Fill's area with same color
@@ -205,7 +226,7 @@ void LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color
  * \param h :
  * \param data : Pointer to data
  */
-void LCD_WriteArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *data){
+void LCD_WriteArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t *data){
     uint32_t count = w * h;
 
     if(!count){
@@ -258,13 +279,15 @@ uint8_t LCD_Init(void *driver)
     DelayMs(5);
 
     // SW Reset requires CS pin release
+    scratch[0] = ST7789_SWRESET;
     LCD_CS0;
-    LCD_Command(ST7789_SWRESET);
+    LCD_Command(scratch, DRV_CMD_PARM_NONE);
     LCD_CS1;
+
     DelayMs(5);
 
     LCD_CS0;
-    LCD_InitSequence(st7789_240x240);
+    LCD_InitSequence(st7789_sequence);
     LCD_CS1;
 
     _width  = drvlcd->w;
@@ -274,28 +297,30 @@ uint8_t LCD_Init(void *driver)
 }
 
 /**
- * @brief
+ * @brief command LCMCTRL can be used to
+ * facilitate orientation change
+ *
  * */
 void LCD_SetOrientation(drvlcdorientation_t m) {
 
     switch (m) {
     case LCD_PORTRAIT:
-        m = DEFAULT_MADCTL;
+        scratch[1] = DEFAULT_MADCTL;
         _width  = drvlcd->w;
         _height = drvlcd->h;
         break;
     case LCD_LANDSCAPE:
-        m = DEFAULT_MADCTL | (ST7789_MADCTL_MV | ST7789_MADCTL_MX);
+        scratch[1] = DEFAULT_MADCTL | (ST7789_MADCTL_MV | ST7789_MADCTL_MX);
         _width  = drvlcd->h;
         _height = drvlcd->w;
         break;
     case LCD_REVERSE_PORTRAIT:
-        m = DEFAULT_MADCTL | (ST7789_MADCTL_MY | ST7789_MADCTL_MX);
+        scratch[1] = DEFAULT_MADCTL | (ST7789_MADCTL_MY | ST7789_MADCTL_MX);
         _width  = drvlcd->w;
         _height = drvlcd->h;
         break;
     case LCD_REVERSE_LANDSCAPE:
-        m = DEFAULT_MADCTL | (ST7789_MADCTL_MV | ST7789_MADCTL_MY);
+        scratch[1] = DEFAULT_MADCTL | (ST7789_MADCTL_MV | ST7789_MADCTL_MY);
         _width  = drvlcd->h;
         _height = drvlcd->w;
         break;
@@ -306,9 +331,10 @@ void LCD_SetOrientation(drvlcdorientation_t m) {
 
     SPI_WaitEOT(spidev);
 
+    scratch[0] = ST7789_MADCTL;
+
     LCD_CS0;
-    LCD_Command(ST7789_MADCTL);
-    SPI_Transfer(spidev, &m, 1);
+    LCD_Command(scratch, DRV_CMD_PARM1);
     LCD_CS1;
 }
 
@@ -320,9 +346,11 @@ void LCD_Scroll(uint16_t sc){
 
     SPI_WaitEOT(spidev);
 
+    scratch[0] = ST7789_VSCSAD;
+    scratch[1] = sc;
+
     LCD_CS0;
-    LCD_Command(ST7789_VSCSAD);
-    LCD_Data(sc);
+    LCD_Command(scratch, DRV_CMD_PARM1);
     LCD_CS1;
 }
 
@@ -344,4 +372,73 @@ void LCD_Bkl(uint8_t state){
     }else {
         LCD_BKL0;
     }
+}
+
+/**
+ * @brief Driver specific functionality
+ * TODO: create command specification
+ *
+ * | FUN | PARMS ...
+ * @param ptr
+ * @return
+ */
+uint32_t LCD_DirectCommand(void *ptr)
+{
+    uint8_t *msg = ptr;
+
+    typedef struct {
+        uint8_t x,y,w,h; // This may cause problems since vres is 320pixel
+        uint8_t *data;
+    }pixel18bit_t;
+
+    SPI_WaitEOT(spidev);
+
+    switch (msg[0])
+    {
+        case 0x40: // direct command to controller
+            // FUN ! LEN | CMD | PARAM ...
+            LCD_CS0;
+            LCD_Command(msg + 2, msg[1]);
+            LCD_CS1;
+            break;
+
+        case 0x50: // Config 18bit data
+            scratch[0] = ST7789_COLMOD;
+            scratch[1] = COLOR_MODE_262K | COLOR_MODE_18BIT;
+
+            LCD_CS0;
+            LCD_Command(scratch, DRV_CMD_PARM1);
+            LCD_CS1;
+            break;
+
+        case 0x51: // Config 16bit data
+            scratch[0] = ST7789_COLMOD;
+            scratch[1] = COLOR_MODE_65K | COLOR_MODE_16BIT;
+
+            LCD_CS0;
+            LCD_Command(scratch, DRV_CMD_PARM1);
+            LCD_CS1;
+            break;
+
+        case 0x52: // transfer 18bit data
+        {
+            pixel18bit_t *buffer = (pixel18bit_t*)(msg + 4); // for this command, skip 4 bytes to keep struct aligned
+            uint8_t *data = buffer->data;
+            uint32_t count = buffer->w * buffer->h * 3;
+
+            LCD_CS0;
+            LCD_CasRasSet(buffer->x, buffer->y, buffer->x + (buffer->w - 1), buffer->y + (buffer->h - 1));
+
+            if(spidev->cfg & SPI_CFG_DMA){
+                SPI_TransferDMA(spidev, (uint8_t*)data, count);
+            }else{
+                while(count--)
+                    SPI_Transfer(spidev, data++, 1);
+                LCD_CS1;
+            }
+            break;
+        }
+    }
+
+    return 0;
 }

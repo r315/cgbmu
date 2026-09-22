@@ -65,44 +65,25 @@ extern "C" {
 #elif defined(BOARD_PWRKT)
 #define SPI_FREQ    24000 //kHz
 
-#define LCD_CS   PB_12
-#define LCD_CD   PA_15
-#define LCD_RST  255
-#define LCD_BKL  PB_2
-
-#define LCD_CS0  LCD_IO_RESET(GPIOB, 1 << 12)
-#define LCD_CS1  LCD_IO_SET(GPIOB, 1 << 12)
-#define LCD_CD0  LCD_IO_RESET(GPIOA, 1 << 15)
-#define LCD_CD1  LCD_IO_SET(GPIOA, 1 << 15)
-#define LCD_RST0
-#define LCD_RST1
-#define LCD_BKL0 LCD_IO_RESET(GPIOB, 1 << 2)
-#define LCD_BKL1 LCD_IO_SET(GPIOB, 1 << 2)
-
-#define TFT_DRV_ST7789
-
-/**
- * @brief Button pins
- * */
-#define BUTTON_LEFT  	(1<<15)
-#define BUTTON_RIGHT 	(1<<13)
-#define BUTTON_CENTER   (1<<14)
-#define BUTTON_A        BUTTON_CENTER
-
-#define BUTTON_LEFT2	(1<<9)
-#define BUTTON_RIGHT2	(1<<12)
-
-#define BUTTON_MASK     (BUTTON_LEFT | BUTTON_RIGHT | BUTTON_A | BUTTON_LEFT2 | BUTTON_RIGHT2)
-#define BUTTON_HW_READ  (~GPIOC->IPTDT & BUTTON_MASK)
+#define LCD_CS      PB_12
+#define LCD_CD      PA_15
+#define LCD_RST     255
+#define LCD_BKL     PB_2
 
 #define LED_PIN         PB_3
 #define LED1_PIN_INIT   GPIO_Config(LED_PIN, GPO_PP);
+
+#define BUTTON_HW_READ  (~GPIOC->IPTDT)
+#define BUTTON_LEFT  	(1<<15)
+#define BUTTON_RIGHT 	(1<<13)
+#define BUTTON_CENTER   (1<<14)
+
+#define TFT_DRV_ST7789
+
 #else
 #error "No board defined"
 #endif
 
-
-//TODO: Update display drivers as in libemb
 #ifdef TFT_DRV_ST7735S
 #include "st7735.h"
 #define TFT_W   128

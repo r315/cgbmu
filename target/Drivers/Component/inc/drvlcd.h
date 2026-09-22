@@ -75,7 +75,7 @@ typedef struct drvlcdparallel_s {
 typedef struct drvlcd_s{
     uint8_t (*init)(void *param);
     void (*drawFillRect)(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
-    void (*drawArea)(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *data);
+    void (*drawArea)(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t *data);
     void (*drawPixel)(uint16_t x, uint16_t y, uint16_t color);
     void (*scrollScreen)(uint16_t sc);
     void (*setOrientation)(drvlcdorientation_t m);
@@ -91,7 +91,8 @@ typedef struct drvlcd_s{
 
 uint8_t LCD_Init(void *param);  // void type, can be drvlcdspi/i2c/parallel
 void LCD_FillRect(uint16_t x, uint16_t y,  uint16_t w, uint16_t h, uint16_t color);
-void LCD_WriteArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *data);
+void LCD_WriteArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t *data);
+void LCD_WriteData(const uint16_t *data, uint32_t len);
 void LCD_Pixel(uint16_t x, uint16_t y, uint16_t color);
 void LCD_Scroll(uint16_t sc);
 void LCD_SetOrientation(drvlcdorientation_t m);
