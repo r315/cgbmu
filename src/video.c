@@ -225,8 +225,6 @@ void scanline(cpu_t *cpu) {
     uint32_t idx = 0;
     while (cpu->visible_objs[idx] != NULL)
         blitObjectData(cpu, cpu->visible_objs[idx++], cpu->screen_line);
-
-    pushScanLine(cpu);
 }
 
 //-----------------------------------------
@@ -265,13 +263,16 @@ void checkLine(cpu_t *cpu) {
         }
     }
 }
-//-----------------------------------------
-// return true if frame is starting
-//-----------------------------------------
-uint8_t video(cpu_t *cpu) {
 
+/**
+ * @brief Process video engine
+ *
+ * @return 1 if frame is starting
+ */
+enum videoint video(cpu_t *cpu)
+{
     if (!(cpu->IOLCDC & LCD_DISPLAY))
-        return 0;
+        return VIDEO_DISABLED;
 
     cpu->video_cycles += cpu->instr_cycles;
 
@@ -294,6 +295,7 @@ uint8_t video(cpu_t *cpu) {
             if (cpu->IOSTAT & HB_IE) 		    // LCD STAT & H-Blank IE
                 setInt(cpu, LCDC_IF);
             scanline(cpu);
+            return VIDEO_HBLANK;
         }
         break;
 
@@ -324,14 +326,13 @@ uint8_t video(cpu_t *cpu) {
                 cpu->IOLY = 0;
                 checkLine(cpu);                 // Next, Mode 2 searching oam
                 cpu->IOSTAT = (cpu->IOSTAT & ~V_MODE_MASK) | V_M2;
-                return 1;
+                return VIDEO_VBLANK;
             }
             cpu->IOLY++;
             checkLine(cpu);
-            return 0;
         }
         break;
     }
 
-    return 0;
+    return VIDEO_NONE;
 }

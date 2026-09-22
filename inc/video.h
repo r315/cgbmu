@@ -110,7 +110,14 @@ extern "C" {
 #define OBJECT_FLAG_XFLIP    (1<<5)
 #define OBJECT_FLAG_PAL      (1<<4)
 
-uint8_t video(cpu_t *cpu);
+enum videoint{
+    VIDEO_DISABLED,
+    VIDEO_NONE,
+    VIDEO_HBLANK,
+    VIDEO_VBLANK,
+};
+
+enum videoint video(cpu_t *cpu);
 void checkLine(cpu_t *cpu);
 void scanline(cpu_t *cpu);
 void scanOAM(cpu_t *cpu);
