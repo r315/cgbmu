@@ -20,8 +20,8 @@
 
 
 typedef struct threadparam_s {
-	cpu_t *cpu;
-	const char *romfile;
+	cpu_t cpu;
+	char romfile[128];
 }threadparam_t;
 
 typedef struct _opt{
@@ -83,9 +83,8 @@ static const char *card_types[] = {
 const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
 
 extern uint8_t done;
-static const uint8_t *mbc1_rom;
-static cpu_t cpu_1, cpu_2, cpu_3, cpu_4;
-#if _WIN32 && MULTIPLE_CPUS
+
+#if _WIN32 && MULTIPLE_EMULATORS
 HANDLE ghMutex;
 #endif
 
@@ -237,7 +236,7 @@ uint8_t readButtons(void)
 void pushScanLine(cpu_t *cpu) {
 	uint8_t *pixel = cpu->screen_line;
 	uint8_t *end = cpu->screen_line + SCREEN_W;
-#if _WIN32 && MULTIPLE_CPUS
+#if _WIN32 && MULTIPLE_EMULATORS
 	WaitForSingleObject(
 		ghMutex,    // handle to mutex
 		INFINITE);  // no
@@ -267,7 +266,7 @@ void pushScanLine(cpu_t *cpu) {
     }
 #endif
 
-#if _WIN32 && MULTIPLE_CPUS
+#if _WIN32 && MULTIPLE_EMULATORS
 	ReleaseMutex(ghMutex);
 #endif
 }
@@ -283,7 +282,7 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 		dig[i++] = c;
 	} while (v);
 
-#if _WIN32 && MULTIPLE_CPUS
+#if _WIN32 && MULTIPLE_EMULATORS
 	WaitForSingleObject(
 		ghMutex,    // handle to mutex
 		INFINITE);  // no
@@ -293,7 +292,7 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 
 	while (i--)
 		x = LIB2D_Char(x, y, dig[i]);
-#if _WIN32 && MULTIPLE_CPUS
+#if _WIN32 && MULTIPLE_EMULATORS
 	ReleaseMutex(ghMutex);
 #endif
 	return x;
@@ -311,11 +310,11 @@ void drawFps(cpu_t *cpu) {
 		fpsupdatetick = GetTick() + 1000;
 	}
 }
-
+#if 0
 int loadTestRom(uint8_t nr) {
 	char *path = malloc(128);
 
-	strcpy(path, (const char*)ROM_PATH"/tests");
+	strcpy(path, (const char*)ROM_DIR"/tests");
 
 	int len = strlen(path);
 	*(path + len) = '/';
@@ -323,23 +322,23 @@ int loadTestRom(uint8_t nr) {
 	
 	return loadRom(&mbc1_rom, path);
 }
+#endif
 
-
-#if _WIN32 && MULTIPLE_CPUS
+#if _WIN32 && MULTIPLE_EMULATORS
 DWORD WINAPI threadRun(LPVOID ptr){
 #else
-void threadRun(void *ptr) {
+int threadRun(void *ptr) {
 #endif
 
 	const uint8_t *rom_data;
-	threadparam_t *run = (threadparam_t*)ptr;
+	threadparam_t *param = (threadparam_t*)ptr;
 	cpu_t *cpu;
 
-	if(loadRom(&rom_data, run->romfile) == 0){
-		return;
+	if(loadRom(&rom_data, param->romfile) == 0){
+		return -1;
 	}
 
-	cpu = run->cpu;
+	cpu = &param->cpu;
 
 	cartridgeInit(cpu, rom_data);
 	initCpu(cpu);
@@ -359,6 +358,8 @@ void threadRun(void *ptr) {
 		runOneFrame();
 #endif
 	}
+
+    return 0;
 }
 
 void printHelp(void) {
@@ -375,12 +376,16 @@ void printHelp(void) {
 int main (int argc, char *argv[])
 {
 	char *romfile = NULL;
+    char *testromsdir = NULL;
+    const uint8_t *mbc1_rom;
+
 	uint8_t flags = 0;
 	opt_t options[] = {
 		{"-d", NULL, RUN_FLAG_DEBUG, &flags, optParseFlag},
 		{"-t", NULL, RUN_FLAG_TEST, &flags, optParseFlag},
 		{"-r", NULL, RUN_FLAG_FILE, &romfile, optParseStr},
 		//{"-i", NULL, RUN_FLAG_MODE, &instrs_test_rom_path, optParseStr}
+        {"-c", NULL, 0, &testromsdir, optParseStr},
 	};
 	
 	if(argc == 1) // no arguments
@@ -394,29 +399,28 @@ int main (int argc, char *argv[])
 	
 	parseOptions(argc, argv, sizeof(options)/sizeof(opt_t), options);
 
-#if _WIN32 && MULTIPLE_CPUS
+#if _WIN32 && MULTIPLE_EMULATORS
+#define NEMU    2
+    const char *testRoms[] = {
+        "dkl.gb", "DuckTales.gb", "Alleyway.gb", "rogerrabbit.gb"
+    };
+
 	ghMutex = CreateMutex(
 		NULL,              // default security attributes
 		FALSE,             // initially not owned
 		NULL);             // unnamed mutex
 
-	HANDLE threads[4];
-	cpu_1.id = 1;
-	cpu_2.id = 2;
-	cpu_3.id = 3;
-	cpu_4.id = 4;
+	HANDLE threads[NEMU];
+    threadparam_t thread_param[NEMU];
+    
+    for (int i = 0; i < NEMU; i++)
+    {
+        thread_param[i].cpu.id = i + 1;
+        snprintf(thread_param[i].romfile, sizeof(thread_param[i].romfile), "%s\\%s", testromsdir, testRoms[i]);
+	    threads[i] = CreateThread(NULL, 0, threadRun, &thread_param[i], 0, NULL);
+    }
 
-	threadparam_t thread1_param = { &cpu_1, (const char*)ROM_PATH"/dkl.gb"};
-	threadparam_t thread2_param = { &cpu_2, (const char*)ROM_PATH"/mario.gb"};
-	threadparam_t thread3_param = { &cpu_3, (const char*)ROM_PATH"/Alleyway.gb"};
-	threadparam_t thread4_param = { &cpu_4, (const char*)ROM_PATH"/rogerrabbit.gb"};
-
-	threads[0] = CreateThread(NULL, 0, threadRun, &thread1_param, 0, NULL);
-	threads[1] = CreateThread(NULL, 0, threadRun, &thread2_param, 0, NULL);
-	threads[2] = CreateThread(NULL, 0, threadRun, &thread3_param, 0, NULL);
-	threads[3] = CreateThread(NULL, 0, threadRun, &thread4_param, 0, NULL);
-
-	WaitForMultipleObjects(4, threads, true, INFINITE);
+	WaitForMultipleObjects(NEMU, threads, true, INFINITE);
 #else
 	
 #if 1
