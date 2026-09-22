@@ -18,7 +18,7 @@ extern "C" {
 #define LCD_YELLOW      RGB565(255,255,0)
 #define LCD_ORANGE      RGB565(255,128,0)
 #define LCD_CYAN        RGB565(0,255,255)
-#define LCD_MAGENTA     RGB565(255,0,255)
+#define LCD_PINK        RGB565(255,0,255)
 #define LCD_FBBLUE      RGB565(56,88,152)
 #define LCD_SILVER      0xC618
 #define LCD_SKYBLUE     0x867D

@@ -2,7 +2,7 @@
 #define _board_h_
 
 //#include "libemb.h"
-//#include "lcdsdl.h"
+#include "drvlcd.h"
 
 #ifdef _WIN32
 	#include <SDL.h>
@@ -12,10 +12,10 @@
 	#include <SDL.h>
 #endif
 
-#define MULTIPLE_CPUS	        0 // Ensure dynamic allocation for cartridgs and SDL window with proper size
+#define MULTIPLE_EMULATORS	    1 // Ensure dynamic allocation for cartridgs and SDL window with proper size
 #define LCD_AUTO_UPDATE_TIME    0 //30ms => 33fps, 0: manual update
 
-#if MULTIPLE_CPUS
+#if MULTIPLE_EMULATORS
 #define LCD_W		600
 #define LCD_H		320
 #else
@@ -32,15 +32,7 @@
 
 enum { OFF = 0, ON, false = OFF, true = ON };
 
-enum {
-	LCD_PORTRAIT = 0,
-	LCD_LANDSCAPE,
-	LCD_REVERSE_PORTRAIT,
-	LCD_REVERSE_LANDSCAPE
-};
-
 void LCD_Close(void);
-void LCD_Init(void *);
 void LCD_Update(void);
 void LCD_Data(uint16_t color);
 void LCD_WriteArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *data);

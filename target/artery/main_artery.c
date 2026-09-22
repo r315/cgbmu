@@ -39,6 +39,7 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 	return x;
 }
 
+
 void pushScanLine(cpu_t *cpu){
     uint8_t *pixel = cpu->screen_line;
 	uint8_t *end = pixel + SCREEN_W;

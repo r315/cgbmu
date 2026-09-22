@@ -64,7 +64,7 @@ static uint16_t drawCharTransparent(uint16_t x, uint16_t y, uint8_t *char_data, 
 
 static uint16_t drawCharDouble(uint16_t x, uint16_t y, uint8_t *char_data, uint16_t *buffer)
 {
-	uint32_t w, h, z;
+	uint8_t w, h, z;
     uint16_t *p1, *p2;
 
     (void)buffer;

@@ -80,11 +80,12 @@ SDL_Window *Window_Init(Lcd *plcd){
     return plcd->window;
 }
 
-void LCD_Init(void *ptr){
+uint8_t LCD_Init(void *ptr){
 	lcd.w = WINDOW_W;
 	lcd.h = WINDOW_H;
     lcd.title = "lcd emulator";
     Window_Init(&lcd);	
+    return 1;
 }
 
 void LCD_Close(void){

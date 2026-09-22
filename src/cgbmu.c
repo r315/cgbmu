@@ -29,9 +29,9 @@ void updateFps(void) {
 
 #if 0
 /**
- * @brief 
- * 
- * @param nTicks 
+ * @brief
+ *
+ * @param nTicks
  */
 static void runCpu(uint32_t nTicks) {
 	static uint32_t elapsed_cycles = 0;
@@ -48,7 +48,7 @@ static void runCpu(uint32_t nTicks) {
 /**
  * @brief should be faster, however does not work
  * properly
- * 
+ *
  */
 uint8_t runOneFrame(void) {
 
@@ -89,8 +89,8 @@ uint8_t runOneFrame(void) {
 }
 #endif
 /**
- * @brief 
- * 
+ * @brief
+ *
  */
 uint8_t runOneStep(void) {
 	uint8_t frame;
@@ -103,9 +103,9 @@ uint8_t runOneStep(void) {
 }
 
 /**
- * @brief 
- * 
- * @param rom 
+ * @brief
+ *
+ * @param rom
  */
 void cgbmu(const uint8_t *rom) {
 	uint8_t mode = SINGLE_STEP;
