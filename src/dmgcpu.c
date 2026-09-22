@@ -14,7 +14,7 @@ http://meatfighter.com/gameboy
 #include "instrs.h"
 
 
-static const uint8_t boot_rom [] = {
+const uint8_t boot_rom [] = {
 	0x31,0xFE,0xFF,0xAF,0x21,0xFF,0x9F,0x32,0xCB,0x7C,0x20,0xFB,0x21,0x26,0xFF,0x0E,
 	0x11,0x3E,0x80,0x32,0xE2,0x0C,0x3E,0xF3,0xE2,0x32,0x3E,0x77,0x77,0x3E,0xFC,0xE0,
 	0x47,0x11,0x04,0x01,0x21,0x10,0x80,0x1A,0xCD,0x95,0x00,0xCD,0x96,0x00,0x13,0x7B,
@@ -54,7 +54,7 @@ void setInt(cpu_t *cpu, uint8_t irq) {
 void interrupts(cpu_t *cpu)
 {
 	uint8_t irq;
-	
+
 	if(!cpu->IME){
 		return;
 	}
@@ -90,7 +90,7 @@ void interrupts(cpu_t *cpu)
 //-----------------------------------------
 void writeTAC(cpu_t *cpu, uint8_t newtac){
 	switch(newtac & 3)	{
-		case 0: // 4096Hz		
+		case 0: // 4096Hz
 			cpu->timer_ovf = 256 * CLOCK_CYCLE;
 			break;
 		case 1: // 262144Hz
@@ -101,7 +101,7 @@ void writeTAC(cpu_t *cpu, uint8_t newtac){
 			break;
 		case 3: // 16384Hz
 			cpu->timer_ovf = 64 * CLOCK_CYCLE;
-			break;		
+			break;
 	}
 
 	cpu->IOTAC = newtac;
@@ -118,7 +118,7 @@ void timer(cpu_t *cpu)
 
 	if(!(cpu->IOTAC & TIMER_STOP))
 		return;
-	
+
 	cpu->timer_cycles += cpu->instr_cycles;
 
 	while (cpu->timer_cycles >= cpu->timer_ovf) {
@@ -199,7 +199,7 @@ void writeDMA(cpu_t *cpu, uint8_t newdma){
 	uint8_t i, *pdst;
 	pdst = cpu->oam;
     for(i = 0; i < DMA_SIZE; i++, pdst++)
-		*pdst = memoryRead(cpu, src++);           
+		*pdst = memoryRead(cpu, src++);
 }
 
 /**----------------------------------------s
@@ -224,11 +224,11 @@ uint8_t joyPad(cpu_t *cpu) {
 	if (!(p1 & IOP15)) {
 		buttons >>= 4;			// shift nible when P15 is active, filters dpad keys
 	}
-	
+
 	buttons |= 0xF0;            // create mask
-	
+
 	cpu->IOP1 = p1 & buttons;   // Filter pressed keys
-	
+
 	return cpu->IOP1;
 }
 
@@ -237,7 +237,7 @@ uint8_t joyPad(cpu_t *cpu) {
 //-----------------------------------------
 
 uint8_t memoryRead(cpu_t *cpu, uint16_t address)
-{	
+{
 	switch(address>>12)
 	{
 		case 0: // 0000-3FFF, 16k Rom bank #0
@@ -245,35 +245,35 @@ uint8_t memoryRead(cpu_t *cpu, uint16_t address)
 		case 2:
 		case 3:
 			return cpu->rom0[address];
-			
+
 		case 4: // 4000-7FFF, 16kB switchable ROM bank
 		case 5:
 		case 6:
 		case 7:
 			return cpu->rombank[address & 0x3FFF];
-			
+
 		case 8: // 8000-9FFF, 8k video ram
 		case 9:
 			return cpu->vram[address & 0x1FFF];
-			
+
 		case 0x0A: // A000-BFFF, 8kB switchable RAM bank
 		case 0x0B:
-			return cpu->cartridgeRead(cpu, address);  
-		
+			return cpu->cartridgeRead(cpu, address);
+
 		case 0x0C: // C000-DFFF, kB internal ram
 		case 0x0D:
 			return cpu->iram[address & 0x1FFF];
-			
+
 		default: break;
-	}	
+	}
 	// E000-EDFF, 8k ram fold
 	if((address > 0xDFFF) && (address < 0xFE00))
 		return cpu->iram[address & 0x1FFF];
 	// FE00-FE9F, 160bytes oam
 	if ((address > 0xFDFF) && (address < 0xFEA0))
 		return cpu->oam[address & 0xFF];
-	// FF80-FFFE, 127 Bytes hram	
-	if((address > 0xFF7F) && (address < 0xFFFF))		
+	// FF80-FFFE, 127 Bytes hram
+	if((address > 0xFF7F) && (address < 0xFFFF))
 		return cpu->hram[address & 0x7f];
 
 	switch(address)
@@ -307,7 +307,7 @@ uint8_t memoryRead(cpu_t *cpu, uint16_t address)
 //-----------------------------------------
 
 void memoryWrite(cpu_t *cpu, uint16_t address, uint8_t data)
-{	
+{
 	switch(address>>12)
 	{
 		case 0: // 0000-7FFF
@@ -320,22 +320,22 @@ void memoryWrite(cpu_t *cpu, uint16_t address, uint8_t data)
 		case 7:
 			cpu->cartridgeWrite(cpu, address, data);
 			return;
-			
+
 		case 8:     // 8000-9FFF, 8k
 		case 9:
 			cpu->vram[address & 0x1FFF] = data;
 			return;
-			
+
 		case 0x0A:	// A000-BFFF, 8k
 		case 0x0B:
 			cpu->cartridgeWrite(cpu, address, data);
-			return; 
-		
+			return;
+
 		case 0x0C:  // C000-DFFF, 8k
 		case 0x0D:
 			cpu->iram[address & 0x1FFF] = data;
-			return; 
-			
+			return;
+
 		default: break;
 	}
 	// E000-EDFF, 8k ram fold
@@ -353,7 +353,7 @@ void memoryWrite(cpu_t *cpu, uint16_t address, uint8_t data)
 		cpu->hram[address & 0x7F] = data;
 		return ;
 	}
-		
+
 	switch(address)
 	{
 		case 0xFF00: cpu->IOP1 = (data | 0xCF); 	return;
@@ -370,7 +370,7 @@ void memoryWrite(cpu_t *cpu, uint16_t address, uint8_t data)
         case 0xFF43: cpu->IOSCX = data; 	return;
         case 0xFF44: return;				// read only
         case 0xFF45: writeLYC(cpu, data); return;
-		case 0xFF46: writeDMA(cpu, data); return;			
+		case 0xFF46: writeDMA(cpu, data); return;
         case 0xFF47: writeBGP(cpu, data); return;
         case 0xFF48: writeOBP0(cpu, data); return;
         case 0xFF49: writeOBP1(cpu, data); return;
@@ -384,7 +384,7 @@ void memoryWrite(cpu_t *cpu, uint16_t address, uint8_t data)
 //-----------------------------------------
 
 uint16_t memoryRead16(cpu_t *cpu, uint16_t address)
-{	
+{
 	return memoryRead(cpu, address) | (memoryRead(cpu, address+1) << 8);
 }
 //-----------------------------------------
@@ -394,7 +394,7 @@ uint16_t memoryRead16(cpu_t *cpu, uint16_t address)
 void memoryWrite16(cpu_t *cpu, uint16_t address, uint16_t data)
 {
 	memoryWrite(cpu, address++, (uint8_t)data);
-	memoryWrite(cpu, address, (uint8_t)(data>>8));	
+	memoryWrite(cpu, address, (uint8_t)(data>>8));
 }
 //-----------------------------------------
 //
@@ -408,11 +408,11 @@ void initCpu(cpu_t *cpu)
     REG_E = 0xD8;
     cpu->H = 0x01;
     cpu->L = 0x4D;
-    
+
     cpu->SP = 0xFFFE;
-    cpu->PC = 0x0100;    
+    cpu->PC = 0x0100;
 	cpu->F =  FZ | FH | FC;
-	
+
     cpu->IOTIMA = 0x00;
     cpu->IOTMA  = 0x00;
     cpu->IOTAC  = 0xF8;
@@ -422,15 +422,15 @@ void initCpu(cpu_t *cpu)
 	cpu->IOSTAT = 0x85;
     cpu->IOSCY  = 0x00;
     cpu->IOSCX  = 0x00;
-	cpu->IOLY   = 0x00; 	 
+	cpu->IOLY   = 0x00;
     cpu->IOLYC  = 0x00;
 	cpu->IODMA  = 0xFF;
 	writeBGP(cpu, 0xFC);
 	writeOBP0(cpu, 0xFF);
-	writeOBP1(cpu, 0xFF);    
+	writeOBP1(cpu, 0xFF);
     cpu->IOWY   = 0x00;
     cpu->IOWX   = 0x00;
-    
+
 	cpu->IOIF   = 0xE1;
     cpu->IOIE   = 0x00;
 
@@ -457,7 +457,6 @@ void initCpu(cpu_t *cpu)
 
 void bootCpu(cpu_t *cpu)
 {
-
 	cartridgeInit(cpu, boot_rom);
     initCpu(cpu);
 	cpu->PC = 0;

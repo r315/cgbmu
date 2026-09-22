@@ -107,7 +107,7 @@ extern "C" {
 #define VRAM_SIZE       0x2000      // 8k
 #define IRAM_SIZE       0x2000      // 8k
 #define OAM_SIZE        160         // 40 x 4
-#define DMA_SIZE        160			
+#define DMA_SIZE        160
 #define OAM_BASE        0xFE00
 
 /**
@@ -138,7 +138,7 @@ typedef struct obj_s{
     uint8_t y;
     uint8_t x;
     uint8_t pattern;
-    uint8_t flags;      // |priority | Y Flip | X Flip | Palette number | - | - | - | - | 
+    uint8_t flags;      // |priority | Y Flip | X Flip | Palette number | - | - | - | - |
 }obj_t;
 
 typedef struct tiledata_s {
@@ -166,32 +166,32 @@ typedef struct tiledata_s {
 */
 
 typedef struct cpu_s{
-    union{        
+    union{
         struct{
             uint8_t C;
             uint8_t B;
         };
-        uint16_t BC;        
+        uint16_t BC;
     };
     union{
         struct{
             uint8_t E;
             uint8_t D;
-        };            
+        };
         uint16_t DE;
     };
     union{
         struct{
             uint8_t L;
             uint8_t H;
-        };            
+        };
         uint16_t HL;
     };
     union{
         struct{
             uint8_t A;
             uint8_t F;  // Z|N|H|C|0|0|0|0
-        };            
+        };
         uint16_t AF;    // this reg is swaped for litle endian
     };
     uint16_t SP;
@@ -206,7 +206,7 @@ typedef struct cpu_s{
     uint8_t IOTAC;               // 0xFF07 timer control
     uint8_t IOIF;                // 0xFF0F interrupt flag  0|0|0| P1 | Serial | Timer | Lcdc | V-blank |
     uint8_t IOLCDC;              // 0xFF40 lcd control
-    uint8_t IOSTAT;              // 0xFF41 lcd status      
+    uint8_t IOSTAT;              // 0xFF41 lcd status
     uint8_t IOSCY;               // 0xFF42 scroll y
     uint8_t IOSCX;               // 0xFF43 scroll x
     uint8_t IOLY;                // 0xFF44 LY
@@ -225,7 +225,7 @@ typedef struct cpu_s{
     uint8_t halt;
     uint8_t stopped;
     uint8_t IME;                 // interrupt master enable  Set and reset by DI,EI instructions
-    
+
     uint32_t instr_cycles;
     uint32_t video_cycles;
     uint32_t timer_cycles;
@@ -235,7 +235,7 @@ typedef struct cpu_s{
     uint32_t serial_bit;
     uint32_t win_cnt;
 
-	obj_t **visible_objs;       // use pointers to avoid 
+	obj_t **visible_objs;       // use pointers to avoid
 	uint8_t *screen_line;       // out of bound offsets
 	uint8_t *oam;               // when indexing far structure members
 	uint8_t *hram;
@@ -259,6 +259,7 @@ typedef struct cpu_s{
 	uint8_t id;
 }cpu_t;
 
+extern const uint8_t boot_rom[];
 
 uint8_t memoryRead(cpu_t *cpu, uint16_t address);
 void memoryWrite(cpu_t *cpu, uint16_t address, uint8_t data);
