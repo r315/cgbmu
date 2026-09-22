@@ -82,9 +82,9 @@ static const char *card_types[] = {
 };
 const uint16_t lcd_pal[] = { 0xE7DA,0x8E0E,0x334A,0x08C4 };
 
-extern uint8_t done;
+static int done;
 
-#if _WIN32 && MULTIPLE_EMULATORS
+#if _WIN32 && NUM_EMULATORS > 1
 HANDLE ghMutex;
 #endif
 
@@ -181,62 +181,71 @@ int loadRom(const uint8_t **dst, const char *file)
 //-----------------------------------------
 //
 //-----------------------------------------
+static uint8_t sdlReadButtons(void)
+{
+    static uint8_t button = 0;
+    SDL_Event ev;
+    const Uint8 *keys;
+
+    if (!SDL_PollEvent(&ev))
+        return button;
+
+    if (ev.type == SDL_QUIT) {
+        done = 1;
+        return 255;
+    }
+
+    keys = SDL_GetKeyboardState(NULL);
+
+    if (keys[SDL_SCANCODE_ESCAPE]) {
+        done = 1;
+        return 255;
+    }
+
+    if (ev.type == SDL_KEYUP || ev.type == SDL_KEYDOWN)
+        button = 0;
+    else
+        return button;
+
+    if (keys[SDL_SCANCODE_X]) {
+        button = 0;
+        return 'x';
+    }
+
+    if (keys[SDL_SCANCODE_C]) {
+        button = 0;
+        return 'c';
+    }
+
+    button |= keys[SDL_SCANCODE_DOWN] ? J_DOWN : 0;
+    button |= keys[SDL_SCANCODE_UP] ? J_UP : 0;
+    button |= keys[SDL_SCANCODE_LEFT] ? J_LEFT : 0;
+    button |= keys[SDL_SCANCODE_RIGHT] ? J_RIGHT : 0;
+
+    button |= keys[SDL_SCANCODE_RETURN] ? J_START : 0;
+    button |= keys[SDL_SCANCODE_BACKSPACE] ? J_SELECT : 0;
+    button |= keys[SDL_SCANCODE_A] ? J_B : 0;
+    button |= keys[SDL_SCANCODE_S] ? J_A : 0;
+
+    button |= keys[SDL_SCANCODE_SPACE] ? J_A : 0;
+
+    return button;
+}
+
 uint8_t readButtons(void)
 {
-	static uint8_t button = 0;	
-	SDL_Event ev;
-	const Uint8 *keys;
-
-	if(!SDL_PollEvent( &ev )) 
-	    return button;	    
-	    
-	if(ev.type == SDL_QUIT){
-		cgbmuExit();
-	    return 255;
-	}
-	
-	keys  = SDL_GetKeyboardState(NULL);
-
-	if(keys[SDL_SCANCODE_ESCAPE]){
-		cgbmuExit();
-	    return 255;
-	} 
-
-	if (ev.type == SDL_KEYUP || ev.type == SDL_KEYDOWN)
-		button = 0;
-	else
-		return button;
-
-	if (keys[SDL_SCANCODE_X]) {
-		button = 0;
-		return 'x';
-	}
-
-	if (keys[SDL_SCANCODE_C]) {
-		button = 0;
-		return 'c';
-	}
-
-	button |= keys[SDL_SCANCODE_DOWN] ? J_DOWN : 0;
-	button |= keys[SDL_SCANCODE_UP]  ? J_UP : 0;
-	button |= keys[SDL_SCANCODE_LEFT] ? J_LEFT : 0;
-	button |= keys[SDL_SCANCODE_RIGHT] ? J_RIGHT : 0;
-		
-	button |= keys[SDL_SCANCODE_RETURN] ? J_START : 0;
-	button |= keys[SDL_SCANCODE_BACKSPACE] ? J_SELECT : 0;
-	button |= keys[SDL_SCANCODE_A] ? J_B : 0;
-    button |= keys[SDL_SCANCODE_S ] ? J_A : 0;
-
-    button |= keys[SDL_SCANCODE_SPACE ] ? J_A : 0;
-	
-	return button;
+#if NUM_EMULATORS > 1
+	return 0;
+#else
+    return sdlReadButtons();
+#endif	
 }
 
 
-void pushScanLine(cpu_t *cpu) {
+void scanlineDraw(cpu_t *cpu) {
 	uint8_t *pixel = cpu->screen_line;
 	uint8_t *end = cpu->screen_line + SCREEN_W;
-#if _WIN32 && MULTIPLE_EMULATORS
+#if _WIN32 && NUM_EMULATORS > 1
 	WaitForSingleObject(
 		ghMutex,    // handle to mutex
 		INFINITE);  // no
@@ -266,7 +275,7 @@ void pushScanLine(cpu_t *cpu) {
     }
 #endif
 
-#if _WIN32 && MULTIPLE_EMULATORS
+#if _WIN32 && NUM_EMULATORS > 1
 	ReleaseMutex(ghMutex);
 #endif
 }
@@ -282,7 +291,7 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 		dig[i++] = c;
 	} while (v);
 
-#if _WIN32 && MULTIPLE_EMULATORS
+#if _WIN32 && NUM_EMULATORS > 1
 	WaitForSingleObject(
 		ghMutex,    // handle to mutex
 		INFINITE);  // no
@@ -292,24 +301,12 @@ int drawInt(int x, int y, unsigned int v, char radix, char digitos)
 
 	while (i--)
 		x = LIB2D_Char(x, y, dig[i]);
-#if _WIN32 && MULTIPLE_EMULATORS
+#if _WIN32 && NUM_EMULATORS > 1
 	ReleaseMutex(ghMutex);
 #endif
 	return x;
 }
 
-void drawFps(cpu_t *cpu) {
-	static uint32_t fpsupdatetick = 0;
-	static uint16_t fps = 0;
-	fps++;
-
-	if (GetTick() > fpsupdatetick)
-	{
-		drawInt(SCREEN_W * 2 + 8, cpu->id * 10, fps, 10, 4);
-		fps = 0;
-		fpsupdatetick = GetTick() + 1000;
-	}
-}
 #if 0
 int loadTestRom(uint8_t nr) {
 	char *path = malloc(128);
@@ -324,15 +321,20 @@ int loadTestRom(uint8_t nr) {
 }
 #endif
 
-#if _WIN32 && MULTIPLE_EMULATORS
-DWORD WINAPI threadRun(LPVOID ptr){
+
+#if _WIN32 && NUM_EMULATORS > 1
+DWORD WINAPI threadRun(LPVOID ptr)
 #else
-int threadRun(void *ptr) {
+int threadRun(void *ptr)
 #endif
+{
+    uint32_t fpsupdatetick = 0;
+    uint16_t fps = 0;
 
 	const uint8_t *rom_data;
 	threadparam_t *param = (threadparam_t*)ptr;
 	cpu_t *cpu;
+    enum videores vid;
 
 	if(loadRom(&rom_data, param->romfile) == 0){
 		return -1;
@@ -343,16 +345,27 @@ int threadRun(void *ptr) {
 	cartridgeInit(cpu, rom_data);
 	initCpu(cpu);
 	
-	while (readButtons() != 255) {
+	while (!done) {
 #if 1
-		// slow path
 		decode(cpu);
-		if (video(cpu)) {
-			drawFps(cpu);
-		}
+        vid = video(cpu);
 		timer(cpu);
 		serial(cpu);
 		interrupts(cpu);
+
+        if (vid == VIDEO_VBLANK) {
+            fps++;
+
+            if (GetTick() > fpsupdatetick)
+            {
+                drawInt(SCREEN_W * 2 + 8, cpu->id * 10, fps, 10, 4);
+                fps = 0;
+                fpsupdatetick = GetTick() + 1000;
+            }
+        }
+        else if (vid == VIDEO_HBLANK) {
+            scanlineDraw(cpu);
+        }
 #else
 		// Fastest run
 		runOneFrame();
@@ -377,7 +390,7 @@ int main (int argc, char *argv[])
 {
 	char *romfile = NULL;
     char *testromsdir = NULL;
-    const uint8_t *mbc1_rom;
+    const uint8_t *mbc1_rom = NULL;
 
 	uint8_t flags = 0;
 	opt_t options[] = {
@@ -388,8 +401,7 @@ int main (int argc, char *argv[])
         {"-c", NULL, 0, &testromsdir, optParseStr},
 	};
 	
-	if(argc == 1) // no arguments
-	{
+	if(argc == 1){
 		printHelp();
 		return 0;
 	}
@@ -399,8 +411,7 @@ int main (int argc, char *argv[])
 	
 	parseOptions(argc, argv, sizeof(options)/sizeof(opt_t), options);
 
-#if _WIN32 && MULTIPLE_EMULATORS
-#define NEMU    2
+#if _WIN32 && NUM_EMULATORS > 1
     const char *testRoms[] = {
         "dkl.gb", "DuckTales.gb", "Alleyway.gb", "rogerrabbit.gb"
     };
@@ -410,27 +421,41 @@ int main (int argc, char *argv[])
 		FALSE,             // initially not owned
 		NULL);             // unnamed mutex
 
-	HANDLE threads[NEMU];
-    threadparam_t thread_param[NEMU];
+	HANDLE threads[NUM_EMULATORS];
+    threadparam_t thread_param[NUM_EMULATORS];
     
-    for (int i = 0; i < NEMU; i++)
+    for (int i = 0; i < NUM_EMULATORS; i++)
     {
         thread_param[i].cpu.id = i + 1;
         snprintf(thread_param[i].romfile, sizeof(thread_param[i].romfile), "%s\\%s", testromsdir, testRoms[i]);
 	    threads[i] = CreateThread(NULL, 0, threadRun, &thread_param[i], 0, NULL);
     }
 
-	WaitForMultipleObjects(NEMU, threads, true, INFINITE);
+    while (!done) {
+        sdlReadButtons();
+        SDL_Delay(10);
+    }
+
+	WaitForMultipleObjects(NUM_EMULATORS, threads, true, INFINITY);
+
 #else
-	
+    done = 0;
 #if 1
 	if(loadRom(&mbc1_rom, romfile) > 0) {
 #else
 	if(loadTestRom(0) > 0){
 #endif
 		//DBG_run(mbc1_rom);		// Run loaded rom in debug mode
-	
-		cgbmu(mbc1_rom);  // Run emulator in normal mode	
+
+        cgbmuInit(mbc1_rom);
+
+        while (!done) {
+		    enum videores vid = cgbmu();  // Run emulator in normal mode
+            if (vid == EMU_RES_VBLANK) {
+                uint16_t fps = cgbmuFps();
+                drawInt(SCREEN_W + 8, 0, fps, 10, 4);
+            }
+        }
 	}
 	else {
 		LIB2D_Text(0, 4, "Fail to load rom");
